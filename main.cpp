@@ -87,6 +87,7 @@ int main(void)
 			float v = float(j) / float(ny);
 			ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 			vec3 col = color(r, world, 0);
+			col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
 
 			//vec3 col(float(i) / float(nx), float(j) / float(ny), 0.2);
 			int ir = int(255.99*col[0]);
