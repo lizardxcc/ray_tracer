@@ -30,10 +30,7 @@ vec3 random_in_unit_sphere(void)
 vec3 color(const ray& r, hitable *world, int count)
 {
 	if (count >= 20) {
-
-		vec3 unit_direction = unit_vector(r.direction());
-		float t = 0.5 * (unit_direction.y() + 1.0);
-		return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+		return vec3(0.0, 0.0, 0.0);
 	}
 	hit_record rec;
 	if (world->hit(r, 0.0, MAXFLOAT, rec)) {
