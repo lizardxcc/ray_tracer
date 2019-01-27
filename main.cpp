@@ -30,7 +30,6 @@ vec3 color(const ray& r, hitable *world, int count)
 {
 	if (count >= 100) {
 
-		//std::cout << "stack" << std::endl;
 		vec3 unit_direction = unit_vector(r.direction());
 		float t = 0.5 * (unit_direction.y() + 1.0);
 		return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
@@ -39,7 +38,6 @@ vec3 color(const ray& r, hitable *world, int count)
 	if (world->hit(r, 0.0, MAXFLOAT, rec)) {
 		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
 		return 0.5 * color(ray(rec.p, target-rec.p), world, count+1);
-		//return 0.5 * vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
 	} else {
 		vec3 unit_direction = unit_vector(r.direction());
 		float t = 0.5 * (unit_direction.y() + 1.0);
@@ -48,20 +46,6 @@ vec3 color(const ray& r, hitable *world, int count)
 }
 
 
-//vec3 color(const ray& r)
-//{
-//	vec3 center = vec3(0, 0, -1);
-//	float t = hit_sphere(center, 0.5, r);
-//	if (t >= 0.0) {
-//		vec3 hit_point = r.point_at_parameter(t);
-//		vec3 normal = unit_vector(hit_point - center);
-//		return 0.5*vec3(normal.x()+1, normal.y()+1, normal.z()+1);
-//	}
-//
-//	vec3 unit_direction = unit_vector(r.direction());
-//	float s = 0.5 * (unit_direction.y() + 1.0);
-//	return (1.0-s)*vec3(1.0, 1.0, 1.0) + s*vec3(0.5, 0.7, 1.0);
-//}
 
 int main(void)
 {
