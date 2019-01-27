@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random>
 #include "vec3.h"
 #include "ray.h"
 #include "sphere.h"
@@ -12,11 +13,33 @@ float hit_sphere(const vec3& center, float radius, const ray& r)
 	return 0.0;
 }
 
-vec3 color(const ray& r, hitable *world)
+vec3 random_in_unit_sphere(void)
 {
+	//std::random_device rnd;
+	vec3 p;
+	do {
+		p = 2.0*vec3(drand48(), drand48(), drand48()) - vec3(1, 1, 1);
+	} while (p.squared_length() >= 1.0);
+
+	//std::cout << p << std::endl;
+
+	return p;
+}
+
+vec3 color(const ray& r, hitable *world, int count)
+{
+	if (count >= 100) {
+
+		//std::cout << "stack" << std::endl;
+		vec3 unit_direction = unit_vector(r.direction());
+		float t = 0.5 * (unit_direction.y() + 1.0);
+		return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+	}
 	hit_record rec;
 	if (world->hit(r, 0.0, MAXFLOAT, rec)) {
-		return 0.5 * vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
+		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+		return 0.5 * color(ray(rec.p, target-rec.p), world, count+1);
+		//return 0.5 * vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
 	} else {
 		vec3 unit_direction = unit_vector(r.direction());
 		float t = 0.5 * (unit_direction.y() + 1.0);
@@ -63,7 +86,7 @@ int main(void)
 			float u = float(i) / float(nx);
 			float v = float(j) / float(ny);
 			ray r(origin, lower_left_corner + u*horizontal + v*vertical);
-			vec3 col = color(r, world);
+			vec3 col = color(r, world, 0);
 
 			//vec3 col(float(i) / float(nx), float(j) / float(ny), 0.2);
 			int ir = int(255.99*col[0]);
