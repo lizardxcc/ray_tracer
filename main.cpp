@@ -14,7 +14,7 @@
 vec3 color(const ray& r, hitable *world, int count)
 {
 	hit_record rec;
-	if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+	if (world->hit(r, 0.001, MAXFLOAT, rec)) {
 		ray scatterd;
 		vec3 attenuation;
 
