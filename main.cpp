@@ -9,20 +9,12 @@
 
 
 
-float hit_sphere(const vec3& center, float radius, const ray& r)
-{
-	return 0.0;
-}
-
 vec3 random_in_unit_sphere(void)
 {
-	//std::random_device rnd;
 	vec3 p;
 	do {
 		p = 2.0*vec3(drand48(), drand48(), drand48()) - vec3(1, 1, 1);
 	} while (p.squared_length() >= 1.0);
-
-	//std::cout << p << std::endl;
 
 	return p;
 }
@@ -73,7 +65,7 @@ int main(void)
 
 			col /= float(ns);
 			col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
-			//vec3 col(float(i) / float(nx), float(j) / float(ny), 0.2);
+
 			int ir = int(255.99*col[0]);
 			int ig = int(255.99*col[1]);
 			int ib = int(255.99*col[2]);
