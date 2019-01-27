@@ -1,3 +1,7 @@
+#ifndef VEC3_H
+#define VEC3_H
+
+#include <iostream>
 #include <math.h>
 
 class vec3 {
@@ -161,3 +165,6 @@ inline vec3 unit_vector(vec3 v)
 {
 	return v / v.length();
 }
+
+
+#endif
