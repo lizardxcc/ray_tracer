@@ -62,8 +62,8 @@ vec3 color(const ray& r)
 
 int main(void)
 {
-	int nx = 200;
-	int ny = 100;
+	int nx = 800;
+	int ny = 400;
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
