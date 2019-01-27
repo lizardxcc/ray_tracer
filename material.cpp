@@ -18,3 +18,14 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	attenuation = albedo;
 	return true;
 }
+
+
+bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+{
+	vec3 v = unit_vector(r_in.direction());
+	vec3 reflected = v - 2*dot(v, rec.normal)*rec.normal;
+	scattered = ray(rec.p, reflected);
+	attenuation = albedo;
+	//return (dot(scattered.direction(), rec.normal) > 0);
+	return true;
+}
