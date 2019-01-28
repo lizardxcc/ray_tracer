@@ -46,7 +46,7 @@ int main(void)
 	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
 	//list[2] = new sphere(vec3(1.2, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 0.0));
 	list[2] = new sphere(vec3(0.8, 0, -1), 0.5, new dielectric());
-	list[3] = new sphere(vec3(-1.2, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 0.0));
+	list[3] = new sphere(vec3(-1.2, 0, -1), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.0));
 	list[4] = new sphere(vec3(-0.8, 0, -2), 0.5, new dielectric());
 	list[5] = new sphere(vec3(-0.8, 0, -4), 0.5, new metal(vec3(0.4, 0.2, 0.8), 0.0));
 	hitable *world = new hitable_list(list, 6);
