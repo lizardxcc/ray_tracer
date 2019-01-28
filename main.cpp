@@ -18,16 +18,16 @@ vec3 color(const ray& r, hitable *world, int count)
 	if (world->hit(r, 0.001, MAXFLOAT, rec)) {
 		ray scatterd;
 		vec3 attenuation;
+		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+		vec3 emitted = rec.mat_ptr->emitted(0, 0, rec.p);
 
-		if (count < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd)) {
-			return attenuation*color(scatterd, world, count+1);
+		if (count < 10 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd)) {
+			return emitted + attenuation*color(scatterd, world, count+1);
 		} else {
-			return vec3(0, 0, 0);
+			return emitted;
 		}
 	} else {
-		vec3 unit_direction = unit_vector(r.direction());
-		float t = 0.5 * (unit_direction.y() + 1.0);
-		return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+		return vec3(0, 0, 0);
 	}
 }
 
@@ -35,26 +35,33 @@ vec3 color(const ray& r, hitable *world, int count)
 
 int main(void)
 {
-	int nx = 800;
+	int nx = 400;
 	int ny = 400;
 
 	int ns = 100;
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-	hitable *list[8];
-	list[0] = new sphere(vec3(0, 0, -3), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
-	//list[1] = new sphere(vec3(0, -1000.5, -1), 1000, new lambertian(vec3(0.8, 0.8, 0.0)));
-	list[1] = new plane(vec3(0, -0.5, 0), vec3(0, 1, 0), new lambertian(vec3(0.5, 0.8, 0.7)));
-	//list[2] = new sphere(vec3(1.2, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 0.0));
-	//list[2] = new sphere(vec3(0.8, 0, -1), 0.5, new dielectric(2.42));
-	list[2] = new sphere(vec3(2.8, 0, -3), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.03));
-	list[3] = new sphere(vec3(0.4, 0, -5), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.0));
-	list[4] = new sphere(vec3(-0.8, 0, -2), 0.5, new dielectric(2.42));
-	list[5] = new sphere(vec3(-0.8, 0, -4), 0.5, new metal(vec3(0.4, 0.2, 0.8), 0.0));
-	list[6] = new sphere(vec3(1.0, 1, -1), 0.20, new metal(vec3(0.8, 0.8, 0.8), 0.03));
-	list[7] = new sphere(vec3(-1.8, 0.0, -1.5), 0.5, new dielectric(1.2));
-	hitable *world = new hitable_list(list, 8);
+	hitable *list[6];
+	float size = 0.2;
+	list[0] = new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(1.0, 1.0, 1.0)));
+	list[1] = new plane(vec3(0, size, 0), vec3(0, -1, 0), new diffuse_light());
+	list[2] = new plane(vec3(size, 0, 0), vec3(-1, 0, 0), new lambertian(vec3(0.0, 1.0, 0.0)));
+	list[3] = new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new lambertian(vec3(1.0, 0.0, 0.0)));
+	list[4] = new plane(vec3(0, 0, -size), vec3(0, 0, 1), new lambertian(vec3(1.0, 1.0, 1.0)));
+	list[5] = new plane(vec3(0, 0, size), vec3(0, 0, -1), new lambertian(vec3(1.0, 1.0, 1.0)));
+	//list[0] = new sphere(vec3(0, 0, -3), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
+	////list[1] = new sphere(vec3(0, -1000.5, -1), 1000, new lambertian(vec3(0.8, 0.8, 0.0)));
+	//list[1] = new plane(vec3(0, -0.5, 0), vec3(0, 1, 0), new lambertian(vec3(0.5, 0.8, 0.7)));
+	////list[2] = new sphere(vec3(1.2, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 0.0));
+	////list[2] = new sphere(vec3(0.8, 0, -1), 0.5, new dielectric(2.42));
+	//list[2] = new sphere(vec3(2.8, 0, -3), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.03));
+	//list[3] = new sphere(vec3(0.4, 0, -5), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.0));
+	//list[4] = new sphere(vec3(-0.8, 0, -2), 0.5, new dielectric(2.42));
+	//list[5] = new sphere(vec3(-0.8, 0, -4), 0.5, new metal(vec3(0.4, 0.2, 0.8), 0.0));
+	//list[6] = new sphere(vec3(1.0, 1, -1), 0.20, new metal(vec3(0.8, 0.8, 0.8), 0.03));
+	//list[7] = new sphere(vec3(-1.8, 0.0, -1.5), 0.5, new dielectric(1.2));
+	hitable *world = new hitable_list(list, 6);
 	camera cam;
 
 
