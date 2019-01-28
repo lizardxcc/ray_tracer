@@ -29,3 +29,43 @@ bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, r
 	//return (dot(scattered.direction(), rec.normal) > 0);
 	return true;
 }
+
+
+
+bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+{
+	vec3 v = unit_vector(r_in.direction());
+	attenuation = vec3(0.8, 0.8, 0.8);
+	float n = 1.0;
+	float n_p = 2.42;
+	float critical_angle = asin(n / n_p);
+	if (dot(-v, unit_vector(rec.normal)) >= 0.0) {
+		vec3 normal = unit_vector(rec.normal);
+		vec3 v2 = normal * dot(v, normal);
+		vec3 v1 = v - v2;
+		vec3 v1_p = (n / n_p) * v1.length() * unit_vector(v1);
+		vec3 v2_p = -sqrt(1-v1_p.length()*v1_p.length()) * normal;
+		scattered = ray(rec.p, v1_p + v2_p);
+	} else {
+		float temp = n;
+		n = n_p;
+		n_p = temp;
+		vec3 normal = -unit_vector(rec.normal);
+
+		if (dot(-v, normal) < cos(critical_angle)) {
+			// total reflection
+			vec3 reflected = v - 2 * normal * dot(v, normal);
+			scattered = ray(rec.p, reflected);
+			attenuation = vec3(1.0, 1.0, 1.0);
+		} else {
+			// refraction
+			vec3 v2 = normal * dot(v, normal);
+			vec3 v1 = v - v2;
+			vec3 v1_p = n / n_p * v1.length() * unit_vector(v1);
+			vec3 v2_p = -sqrt(1-v1_p.length()*v1_p.length()) * normal;
+			scattered = ray(rec.p, v1_p + v2_p);
+		}
+	}
+
+	return true;
+}
