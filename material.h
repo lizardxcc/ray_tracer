@@ -39,7 +39,7 @@ class metal : public material {
 
 class dielectric : public material {
 	public:
-		dielectric() {}
+		dielectric(float ref_idx) : ref_idx(ref_idx) {}
 		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const;
 
 		float ref_idx;
