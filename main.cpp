@@ -4,6 +4,7 @@
 #include "ray.h"
 #include "camera.h"
 #include "sphere.h"
+#include "plane.h"
 #include "hitablelist.h"
 #include "material.h"
 
@@ -41,15 +42,19 @@ int main(void)
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-	hitable *list[6];
+	hitable *list[8];
 	list[0] = new sphere(vec3(0, 0, -3), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
-	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
+	//list[1] = new sphere(vec3(0, -1000.5, -1), 1000, new lambertian(vec3(0.8, 0.8, 0.0)));
+	list[1] = new plane(vec3(0, -0.5, 0), vec3(0, 1, 0), new lambertian(vec3(0.5, 0.8, 0.7)));
 	//list[2] = new sphere(vec3(1.2, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 0.0));
-	list[2] = new sphere(vec3(0.8, 0, -1), 0.5, new dielectric(2.42));
-	list[3] = new sphere(vec3(-1.2, 0, -1), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.0));
+	//list[2] = new sphere(vec3(0.8, 0, -1), 0.5, new dielectric(2.42));
+	list[2] = new sphere(vec3(2.8, 0, -3), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.03));
+	list[3] = new sphere(vec3(0.4, 0, -5), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.0));
 	list[4] = new sphere(vec3(-0.8, 0, -2), 0.5, new dielectric(2.42));
 	list[5] = new sphere(vec3(-0.8, 0, -4), 0.5, new metal(vec3(0.4, 0.2, 0.8), 0.0));
-	hitable *world = new hitable_list(list, 6);
+	list[6] = new sphere(vec3(1.0, 1, -1), 0.20, new metal(vec3(0.8, 0.8, 0.8), 0.03));
+	list[7] = new sphere(vec3(-1.8, 0.0, -1.5), 0.5, new dielectric(1.2));
+	hitable *world = new hitable_list(list, 8);
 	camera cam;
 
 
