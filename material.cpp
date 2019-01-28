@@ -11,6 +11,11 @@ vec3 random_in_unit_sphere(void)
 	return p;
 }
 
+vec3 reflect(vec3 v, vec3 normal)
+{
+	return (v - 2 * normal * dot(v, normal));
+}
+
 bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
 {
 	vec3 target = rec.p + rec.normal + random_in_unit_sphere();
@@ -23,7 +28,7 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
 {
 	vec3 v = unit_vector(r_in.direction());
-	vec3 reflected = v - 2*dot(v, rec.normal)*rec.normal;
+	vec3 reflected = reflect(v, rec.normal);
 	scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
 	attenuation = albedo;
 	//return (dot(scattered.direction(), rec.normal) > 0);
@@ -54,7 +59,7 @@ bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 
 		if (dot(-v, normal) < cos(critical_angle)) {
 			// total reflection
-			vec3 reflected = v - 2 * normal * dot(v, normal);
+			vec3 reflected = reflect(v, normal);
 			scattered = ray(rec.p, reflected);
 			attenuation = vec3(1.0, 1.0, 1.0);
 		} else {
