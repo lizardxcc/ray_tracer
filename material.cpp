@@ -82,5 +82,6 @@ bool diffuse_light::scatter(const ray& r_in, const hit_record& rec, vec3& attenu
 
 vec3 diffuse_light::emitted(float u, float v, const vec3& p) const
 {
-	return vec3(1.0, 1.0, 1.0);
+	//return vec3(1.0, 1.0, 1.0);
+	return light_color;
 }
