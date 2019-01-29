@@ -46,6 +46,12 @@ bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, r
 }
 
 
+float shlick(float theta, float n1, float n2)
+{
+	float R0 = pow((n1-n2)/(n1+n2), 2.0);
+	return R0 + (1-R0)*pow(1-cos(theta), 5.0);
+}
+
 
 bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
 {
@@ -54,9 +60,17 @@ bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	float n = 1.0;
 	float critical_angle = asin(n / ref_idx);
 	if (dot(-v, unit_vector(rec.normal)) >= 0.0) {
-		// refraction
-		vec3 v_p = refract(v, unit_vector(rec.normal), n, ref_idx);
+		vec3 v_p;
+		// from outside to inside
+		if (drand48() <= shlick(dot(-v, unit_vector(rec.normal)), 1.0, ref_idx)) {
+			// reflection
+			v_p = reflect(v, unit_vector(rec.normal));
+		} else {
+			// refraction
+			v_p = refract(v, unit_vector(rec.normal), n, ref_idx);
+		}
 		scattered = ray(rec.p, v_p);
+
 	} else {
 		vec3 inverse_normal = -unit_vector(rec.normal);
 
@@ -66,8 +80,16 @@ bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 			scattered = ray(rec.p, reflected);
 			attenuation = vec3(1.0, 1.0, 1.0);
 		} else {
-			// refraction
-			vec3 v_p = refract(v, inverse_normal, ref_idx, n);
+			float costheta_t = sqrt(1-ref_idx*ref_idx / (1.0*1.0) * (1- pow(dot(-v, unit_vector(inverse_normal)), 2.0)));
+
+			vec3 v_p;
+			if (drand48() <= shlick(costheta_t, 1.0, ref_idx)) {
+				// reflection
+				v_p = reflect(v, inverse_normal);
+			} else {
+				// refraction
+				v_p = refract(v, inverse_normal, ref_idx, n);
+			}
 			scattered = ray(rec.p, v_p);
 		}
 	}
