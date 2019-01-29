@@ -36,25 +36,26 @@ vec3 color(const ray& r, hitable *world, int count)
 
 int main(void)
 {
-	int nx = 400;
-	int ny = 400;
+	int nx = 300;
+	int ny = 300;
 
-	int ns = 1000;
+	int ns = 300;
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-	hitable *list[8];
+	std::vector<hitable*> list;
 	float size = 1.0;
 	float reflection = 0.90;
-	list[0] = new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection)));
-	list[1] = new plane(vec3(0, size, 0), vec3(0, -1, 0), new lambertian(vec3(reflection, reflection, reflection)));
-	list[2] = new plane(vec3(size, 0, 0), vec3(-1, 0, 0), new lambertian(vec3(0.0, reflection, 0.0)));
-	list[3] = new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new lambertian(vec3(reflection, 0.0, 0.0)));
-	list[4] = new plane(vec3(0, 0, -size), vec3(0, 0, 1), new lambertian(vec3(reflection, reflection, reflection)));
-	//list[5] = new plane(vec3(0, 0, size), vec3(0, 0, -1), new lambertian(vec3(1.0, 1.0, 1.0)));
-	list[5] = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(20.0, 20.0, 20.0)));
-	list[6] = new sphere(vec3(0.4, -0.6, 0.4), 0.4, new dielectric(2.42));
-	list[7] = new sphere(vec3(-0.4, -0.6, -0.4), 0.4, new metal(vec3(0.8, 0.8, 0.8), 0.0));
+	list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new plane(vec3(0, size, 0), vec3(0, -1, 0), new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new plane(vec3(size, 0, 0), vec3(-1, 0, 0), new lambertian(vec3(0.0, reflection, 0.0))));
+	list.push_back(new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new lambertian(vec3(reflection, 0.0, 0.0))));
+	list.push_back(new plane(vec3(0, 0, -size), vec3(0, 0, 1), new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new plane(vec3(0, 0, size), vec3(0, 0, -1), new lambertian(vec3(1.0, 1.0, 1.0))));
+	list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(20.0, 20.0, 20.0))));
+	list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.4, new dielectric(1.42)));
+	list.push_back(new sphere(vec3(-0.4, -0.6, -0.4), 0.4, new metal(vec3(0.8, 0.8, 0.8), 0.0)));
+	list.push_back(new rectangle(vec3(0, 0, -size+0.3), vec3(0, 0, 1), vec3(-1, 0, 0), 1.8, 1.8, new metal(vec3(0.99, 0.99, 0.99), 0.000)));
 
 	//list[6] = new plane(vec3(0, size-0.1, 0), vec3(0, -1, 0), new diffuse_light(vec3(0.0, size-0.1, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 1.0, 1.0));
 
@@ -69,7 +70,7 @@ int main(void)
 	//list[5] = new sphere(vec3(-0.8, 0, -4), 0.5, new metal(vec3(0.4, 0.2, 0.8), 0.0));
 	//list[6] = new sphere(vec3(1.0, 1, -1), 0.20, new metal(vec3(0.8, 0.8, 0.8), 0.03));
 	//list[7] = new sphere(vec3(-1.8, 0.0, -1.5), 0.5, new dielectric(1.2));
-	hitable *world = new hitable_list(list, 8);
+	hitable *world = new hitable_list(list);
 	camera cam;
 
 
