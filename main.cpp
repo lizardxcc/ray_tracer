@@ -9,6 +9,10 @@
 #include "material.h"
 #include "object.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 
 
 
@@ -22,7 +26,7 @@ vec3 color(const ray& r, hitable *world, int count)
 		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
 		vec3 emitted = rec.mat_ptr->emitted(0, 0, rec.p);
 
-		if (count < 10 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd)) {
+		if (count < 20 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd)) {
 			return emitted + attenuation*color(scatterd, world, count+1);
 		} else {
 			return emitted;
@@ -36,26 +40,55 @@ vec3 color(const ray& r, hitable *world, int count)
 
 int main(void)
 {
-	int nx = 300;
-	int ny = 300;
+	int nx = 400;
+	int ny = 400;
 
-	int ns = 300;
+	int ns = 500;
+
+	vec3 array[nx][ny];
 
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
 	std::vector<hitable*> list;
 	float size = 1.0;
 	float reflection = 0.90;
-	list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection))));
-	list.push_back(new plane(vec3(0, size, 0), vec3(0, -1, 0), new lambertian(vec3(reflection, reflection, reflection))));
-	list.push_back(new plane(vec3(size, 0, 0), vec3(-1, 0, 0), new lambertian(vec3(0.0, reflection, 0.0))));
-	list.push_back(new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new lambertian(vec3(reflection, 0.0, 0.0))));
-	list.push_back(new plane(vec3(0, 0, -size), vec3(0, 0, 1), new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(0.9, 0.5, 0.4))));
+	list.push_back(new rectangle(vec3(0, -size+0.01, 0), vec3(0, 1, 0), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new rectangle(vec3(0, size, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new plane(vec3(0, size, 0), vec3(0, -1, 0), new lambertian(vec3(reflection, reflection, reflection))));
+
+	list.push_back(new rectangle(vec3(size, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0), 2.0, 2.0, new lambertian(vec3(0, reflection, 0))));
+
+
+	float window_size = 1.0;
+	float a = (2.0-window_size);
+	list.push_back(new rectangle(vec3(-size, window_size/2+a/4, 0), vec3(1, 0, 0), vec3(0, 1, 0), a/2, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new rectangle(vec3(-size, -window_size/2-a/4, 0), vec3(1, 0, 0), vec3(0, 1, 0), a/2, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new rectangle(vec3(-size, 0, -window_size/2-a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
+	list.push_back(new rectangle(vec3(-size, 0, window_size/2+a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(-size, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), 0.6, 0.6, new dielectric(2.0)));
+
+
+	//list.push_back(new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new dielectric(2.0)));
+	list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+
+
+
+	//list.push_back(new rectangle(vec3(-size, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new plane(vec3(size, 0, 0), vec3(-1, 0, 0), new lambertian(vec3(0.0, reflection, 0.0))));
+	////list.push_back(new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new lambertian(vec3(reflection, 0.0, 0.0))));
+
+	list.push_back(new sphere(vec3(-7.0, 5.0, 5.3), 1.0, new diffuse_light(vec3(260.0, 250.0, 250.0))));
+	//list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection))));
+
+	//list.push_back(new plane(vec3(0, 0, -size), vec3(0, 0, 1), new lambertian(vec3(reflection, reflection, reflection))));
 	//list.push_back(new plane(vec3(0, 0, size), vec3(0, 0, -1), new lambertian(vec3(1.0, 1.0, 1.0))));
-	list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(20.0, 20.0, 20.0))));
+	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(20.0, 20.0, 20.0))));
+	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(5.0, 5.0, 5.0))));
 	list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.4, new dielectric(1.42)));
 	list.push_back(new sphere(vec3(-0.4, -0.6, -0.4), 0.4, new metal(vec3(0.8, 0.8, 0.8), 0.0)));
-	list.push_back(new rectangle(vec3(0, 0, -size+0.3), vec3(0, 0, 1), vec3(-1, 0, 0), 1.8, 1.8, new metal(vec3(0.99, 0.99, 0.99), 0.000)));
+	//list.push_back(new rectangle(vec3(0, 0, -size+0.3), vec3(0, 0, 1), vec3(-1, 0, 0), 1.8, 1.8, new metal(vec3(0.99, 0.99, 0.99), 0.000)));
 
 	//list[6] = new plane(vec3(0, size-0.1, 0), vec3(0, -1, 0), new diffuse_light(vec3(0.0, size-0.1, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 1.0, 1.0));
 
@@ -74,22 +107,33 @@ int main(void)
 	camera cam;
 
 
-	for (int j = ny-1; j >= 0; j--) {
-		for (int i = 0; i < nx; i++) {
+int i, j, s;
+#ifdef _OPENMP
+#pragma omp parallel for private(j, s)
+#endif
+	for (i = 0; i < nx; i++) {
+		for (j = 0; j < ny; j++) {
 			vec3 col(0, 0, 0);
-			for (int s = 0; s < ns; s++) {
+			for (s = 0; s < ns; s++) {
 				float u = float(i + drand48()) / float(nx);
 				float v = float(j + drand48()) / float(ny);
 				ray r = cam.get_ray(u, v);
 				col += color(r, world, 0);
 			}
 
-			col /= float(ns);
-			col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
+			array[i][j] = col;
 
-			int ir = int(255.99*col[0]);
-			int ig = int(255.99*col[1]);
-			int ib = int(255.99*col[2]);
+		}
+	}
+
+	for (int j = ny-1; j >= 0; j--) {
+		for (int i = 0; i < nx; i++) {
+			array[i][j] /= float(ns);
+			array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
+
+			int ir = int(255.99*array[i][j][0]);
+			int ig = int(255.99*array[i][j][1]);
+			int ib = int(255.99*array[i][j][2]);
 
 			std::cout << ir << " " << ig << " " << ib << "\n";
 		}
