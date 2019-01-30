@@ -17,4 +17,15 @@ class rectangle : public hitable {
 		material *mat_ptr;
 };
 
+class xy_rect : public hitable {
+	public:
+		xy_rect() { }
+		xy_rect(float x0, float y0, float x1, float y1, float k, material *mat) :
+		x0(x0), x1(x1), y0(y0), y1(y1), k(k), mat_ptr(mat) {};
+		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+
+		float x0, x1, y0, y1, k;
+		material *mat_ptr;
+};
+
 #endif
