@@ -28,4 +28,25 @@ class xy_rect : public hitable {
 		material *mat_ptr;
 };
 
+class yz_rect : public hitable {
+	public:
+		yz_rect() { }
+		yz_rect(float y0, float z0, float y1, float z1, float k, material *mat) :
+		y0(y0), y1(y1), z0(z0), z1(z1), k(k), mat_ptr(mat) {};
+		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+
+		float y0, y1, z0, z1, k;
+		material *mat_ptr;
+};
+
+class zx_rect : public hitable {
+	public:
+		zx_rect() { }
+		zx_rect(float z0, float x0, float z1, float x1, float k, material *mat) :
+		z0(z0), z1(z1), x0(x0), x1(x1), k(k), mat_ptr(mat) {};
+		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+
+		float z0, z1, x0, x1, k;
+		material *mat_ptr;
+};
 #endif
