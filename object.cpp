@@ -114,3 +114,16 @@ bool box::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
 	return list_ptr->hit(r, t_min, t_max, rec);
 }
+
+
+
+
+bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+{
+	ray moved_r(r.origin() - offset, r.direction());
+	if (ptr->hit(moved_r, t_min, t_max, rec)) {
+		rec.p += offset;
+		return true;
+	} else
+		return false;
+}
