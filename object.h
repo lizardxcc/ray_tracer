@@ -49,4 +49,25 @@ class zx_rect : public hitable {
 		float z0, z1, x0, x1, k;
 		material *mat_ptr;
 };
+
+
+
+class flip_normals : public hitable {
+	public:
+		flip_normals(hitable *p) : ptr(p) {}
+		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		hitable *ptr;
+};
+
+class box : public hitable {
+	public:
+		box() { }
+		box(const vec3& p0, const vec3& p1, material *mat);
+		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+
+		vec3 pmin;
+		vec3 pmax;
+		hitable *list_ptr;
+		material *mat_ptr;
+};
 #endif
