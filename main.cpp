@@ -38,27 +38,14 @@ vec3 color(const ray& r, hitable *world, int count)
 
 
 
-int main(void)
+hitable *room(void)
 {
-	int nx = 800;
-	int ny = 800;
+	std::vector<hitable *> list;
 
-	int ns = 100;
-
-	vec3 array[nx][ny];
-
-	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-
-	std::vector<hitable*> list;
 	float size = 1.0;
 	float reflection = 0.90;
-	//list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection))));
-	//list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(0.9, 0.5, 0.4))));
 	list.push_back(new rectangle(vec3(0, -size+0.01, 0), vec3(0, 1, 0), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
 	list.push_back(new rectangle(vec3(0, size, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
-	//list.push_back(new plane(vec3(0, size, 0), vec3(0, -1, 0), new lambertian(vec3(reflection, reflection, reflection))));
-
-	//list.push_back(new rectangle(vec3(size, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0), 2.0, 2.0, new lambertian(vec3(0, reflection, 0))));
 	list.push_back(new rectangle(vec3(size, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0), 2.0, 2.0, new lambertian(vec3(0.6, 0.5, 0.3))));
 
 
@@ -68,43 +55,60 @@ int main(void)
 	list.push_back(new rectangle(vec3(-size, -window_size/2-a/4, 0), vec3(1, 0, 0), vec3(0, 1, 0), a/2, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
 	list.push_back(new rectangle(vec3(-size, 0, -window_size/2-a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
 	list.push_back(new rectangle(vec3(-size, 0, window_size/2+a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
-	//list.push_back(new rectangle(vec3(-size, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), 0.6, 0.6, new dielectric(2.0)));
-
-
-	//list.push_back(new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new dielectric(2.0)));
 	list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
 
-
-
-	//list.push_back(new rectangle(vec3(-size, 0, 0), vec3(1, 0, 0), vec3(0, 1, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
-	//list.push_back(new plane(vec3(size, 0, 0), vec3(-1, 0, 0), new lambertian(vec3(0.0, reflection, 0.0))));
-	////list.push_back(new plane(vec3(-size, 0, 0), vec3(1, 0, 0), new lambertian(vec3(reflection, 0.0, 0.0))));
-
-	//list.push_back(new sphere(vec3(-7.0, 5.0, 5.3), 1.0, new diffuse_light(vec3(260.0, 250.0, 250.0))));
-	//list.push_back(new plane(vec3(0, -size, 0), vec3(0, 1, 0), new lambertian(vec3(reflection, reflection, reflection))));
-
-	//list.push_back(new plane(vec3(0, 0, -size), vec3(0, 0, 1), new lambertian(vec3(reflection, reflection, reflection))));
-	//list.push_back(new plane(vec3(0, 0, size), vec3(0, 0, -1), new lambertian(vec3(1.0, 1.0, 1.0))));
-	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(20.0, 20.0, 20.0))));
-	list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(5.0, 5.0, 5.0))));
-	list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.3, new dielectric(1.42)));
+	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*6, 0.576*6, 0.1607*6))));
+	list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*56, 0.576*56, 0.1607*56))));
+	//list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.3, new dielectric(1.42)));
 	list.push_back(new sphere(vec3(-0.4, -0.6, -0.4), 0.3, new metal(vec3(0.8, 0.8, 0.8), 0.0)));
-	//list.push_back(new rectangle(vec3(0, 0, -size+0.3), vec3(0, 0, 1), vec3(-1, 0, 0), 1.8, 1.8, new metal(vec3(0.99, 0.99, 0.99), 0.000)));
 
-	//list[6] = new plane(vec3(0, size-0.1, 0), vec3(0, -1, 0), new diffuse_light(vec3(0.0, size-0.1, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 1.0, 1.0));
+	float box_size = 0.5;
+	list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
 
-	//list[0] = new sphere(vec3(0, 0, -3), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
-	////list[1] = new sphere(vec3(0, -1000.5, -1), 1000, new lambertian(vec3(0.8, 0.8, 0.0)));
-	//list[1] = new plane(vec3(0, -0.5, 0), vec3(0, 1, 0), new lambertian(vec3(0.5, 0.8, 0.7)));
-	////list[2] = new sphere(vec3(1.2, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 0.0));
-	////list[2] = new sphere(vec3(0.8, 0, -1), 0.5, new dielectric(2.42));
-	//list[2] = new sphere(vec3(2.8, 0, -3), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.03));
-	//list[3] = new sphere(vec3(0.4, 0, -5), 0.5, new metal(vec3(0.6, 0.6, 0.6), 0.0));
-	//list[4] = new sphere(vec3(-0.8, 0, -2), 0.5, new dielectric(2.42));
-	//list[5] = new sphere(vec3(-0.8, 0, -4), 0.5, new metal(vec3(0.4, 0.2, 0.8), 0.0));
-	//list[6] = new sphere(vec3(1.0, 1, -1), 0.20, new metal(vec3(0.8, 0.8, 0.8), 0.03));
-	//list[7] = new sphere(vec3(-1.8, 0.0, -1.5), 0.5, new dielectric(1.2));
-	hitable *world = new hitable_list(list);
+	//list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
+
+	return new hitable_list(list);
+}
+
+int main(void)
+{
+	int nx = 400;
+	int ny = 400;
+
+	int ns = 300;
+
+	vec3 array[nx][ny];
+
+	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+
+	//std::vector<hitable*> list;
+	//float size = 1.0;
+	//float reflection = 0.90;
+	//list.push_back(new rectangle(vec3(0, -size+0.01, 0), vec3(0, 1, 0), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(0, size, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(size, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0), 2.0, 2.0, new lambertian(vec3(0.6, 0.5, 0.3))));
+
+
+	//float window_size = 1.0;
+	//float a = (2.0-window_size);
+	//list.push_back(new rectangle(vec3(-size, window_size/2+a/4, 0), vec3(1, 0, 0), vec3(0, 1, 0), a/2, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(-size, -window_size/2-a/4, 0), vec3(1, 0, 0), vec3(0, 1, 0), a/2, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(-size, 0, -window_size/2-a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(-size, 0, window_size/2+a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
+	//list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+
+	////list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*6, 0.576*6, 0.1607*6))));
+	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*16, 0.576*16, 0.1607*16))));
+	//list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.3, new dielectric(1.42)));
+	//list.push_back(new sphere(vec3(-0.4, -0.6, -0.4), 0.3, new metal(vec3(0.8, 0.8, 0.8), 0.0)));
+
+	//float box_size = 0.4;
+	//list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size, box_size), new lambertian(vec3(1.0, 0.9, 0.8))), vec3(0.3, -0.5, -0.5)));
+
+	////list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
+
+	//hitable *world = new hitable_list(list);
+	hitable *world = room();
 	camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
 
 
