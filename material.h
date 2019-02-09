@@ -7,7 +7,10 @@
 
 class material {
 	public:
-		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
+		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const = 0;
+		virtual float BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+			return 0.0;
+		}
 		virtual vec3 emitted(float u, float v, const vec3& p) const {
 			return vec3(0, 0, 0);
 		}
@@ -16,7 +19,8 @@ class material {
 class lambertian : public material {
 	public:
 		lambertian(const vec3& a) : albedo(a) {}
-		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const;
+		virtual float BxDF(const ray& r_in, const hit_record& rec, const ray& scatterd) const;
+		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const;
 
 
 		vec3 albedo;
@@ -32,7 +36,7 @@ class metal : public material {
 			else
 				fuzz = 1.0;
 		}
-		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const;
+		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const;
 
 
 		vec3 albedo;
@@ -43,7 +47,7 @@ class metal : public material {
 class dielectric : public material {
 	public:
 		dielectric(float ref_idx) : ref_idx(ref_idx) {}
-		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const;
+		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const;
 
 		float ref_idx;
 };
@@ -51,7 +55,7 @@ class dielectric : public material {
 class diffuse_light : public material {
 	public:
 		diffuse_light(vec3 color) : light_color(color) {}
-		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const;
+		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const;
 		virtual vec3 emitted(float u, float v, const vec3& p) const;
 		vec3 light_color;
 };

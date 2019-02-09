@@ -1,4 +1,5 @@
 #include "material.h"
+#include "onb.h"
 
 
 vec3 random_in_unit_sphere(void)
@@ -9,6 +10,19 @@ vec3 random_in_unit_sphere(void)
 	} while (p.squared_length() >= 1.0);
 
 	return p;
+}
+
+
+vec3 random_on_unit_hemisphere(void)
+{
+	float r1 = drand48();
+	float r2 = drand48();
+	float phi = 2 * M_PI * r1;
+	float sin_theta = sqrt(r2*(2-r2));
+	float x = sin_theta * cos(phi);
+	float y = sin_theta * sin(phi);
+	float z = 1-r2;
+	return vec3(x, y, z);
 }
 
 vec3 reflect(vec3 v, vec3 normal)
@@ -26,16 +40,34 @@ vec3 refract(vec3 v, vec3 normal, float n_in, float n_out)
 	return v1_p + v2_p;
 }
 
-bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
-	vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-	scattered = ray(rec.p, target-rec.p);
+	//return albedo / M_PI;
+	float rho = 0.3;
+	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+	if (cosine < 0)
+		return 0;
+
+	return rho / M_PI;
+}
+
+bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+{
+	//vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+	onb uvw;
+	uvw.build_from_w(rec.normal);
+	vec3 generated_direction = uvw.local(random_on_unit_hemisphere());
+
+	//vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+
+	scattered = ray(rec.p, unit_vector(generated_direction));
 	attenuation = albedo;
+	pdf = 1/(2*M_PI);
 	return true;
 }
 
 
-bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
 	vec3 reflected = reflect(v, rec.normal);
@@ -53,7 +85,7 @@ float shlick(float theta, float n1, float n2)
 }
 
 
-bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
 	attenuation = vec3(0.8, 0.8, 0.8);
@@ -97,7 +129,7 @@ bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	return true;
 }
 
-bool diffuse_light::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+bool diffuse_light::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	return false;
 }

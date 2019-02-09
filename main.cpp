@@ -25,9 +25,11 @@ vec3 color(const ray& r, hitable *world, int count)
 		vec3 attenuation;
 		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
 		vec3 emitted = rec.mat_ptr->emitted(0, 0, rec.p);
+		float pdf;
 
-		if (count < 20 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd)) {
-			return emitted + attenuation*color(scatterd, world, count+1);
+		if (count < 20 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd, pdf)) {
+			//return emitted + attenuation*color(scatterd, world, count+1);
+			return emitted + attenuation*rec.mat_ptr->BxDF(r, rec, scatterd)*color(scatterd, world, count+1) * dot(rec.normal, unit_vector(scatterd.direction()))/ pdf;
 		} else {
 			return emitted;
 		}
