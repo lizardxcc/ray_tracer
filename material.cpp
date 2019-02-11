@@ -1,5 +1,6 @@
 #include "material.h"
 #include "onb.h"
+#include "pdf.h"
 
 
 vec3 random_in_unit_sphere(void)
@@ -13,17 +14,6 @@ vec3 random_in_unit_sphere(void)
 }
 
 
-vec3 random_on_unit_hemisphere(void)
-{
-	float r1 = drand48();
-	float r2 = drand48();
-	float phi = 2 * M_PI * r1;
-	float sin_theta = sqrt(r2*(2-r2));
-	float x = sin_theta * cos(phi);
-	float y = sin_theta * sin(phi);
-	float z = 1-r2;
-	return vec3(x, y, z);
-}
 
 vec3 reflect(vec3 v, vec3 normal)
 {
@@ -53,16 +43,21 @@ float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scatte
 
 bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
-	//vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-	onb uvw;
-	uvw.build_from_w(rec.normal);
-	vec3 generated_direction = uvw.local(random_on_unit_hemisphere());
+	////vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+	//onb uvw;
+	//uvw.build_from_w(rec.normal);
+	//vec3 generated_direction = uvw.local(random_on_unit_hemisphere());
+
+	uniform_pdf _pdf(rec.normal);
+	vec3 generated_direction;
+	pdf = _pdf.generate(generated_direction);
 
 	//vec3 target = rec.p + rec.normal + random_in_unit_sphere();
 
 	scattered = ray(rec.p, unit_vector(generated_direction));
 	attenuation = albedo;
-	pdf = 1/(2*M_PI);
+	//pdf = 1/(2*M_PI);
+	//pdf = pdf.value();
 	return true;
 }
 
