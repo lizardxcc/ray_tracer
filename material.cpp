@@ -32,7 +32,6 @@ vec3 refract(vec3 v, vec3 normal, float n_in, float n_out)
 
 float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
-	//return albedo / M_PI;
 	float rho = 0.5;
 	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
@@ -43,29 +42,18 @@ float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scatte
 
 bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
-	////vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-	//onb uvw;
-	//uvw.build_from_w(rec.normal);
-	//vec3 generated_direction = uvw.local(random_on_unit_hemisphere());
-
 	uniform_pdf _pdf(rec.normal);
 	vec3 generated_direction;
 	pdf = _pdf.generate(generated_direction);
 
-	//vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-
 	scattered = ray(rec.p, unit_vector(generated_direction));
 	attenuation = albedo;
-	//pdf = 1/(2*M_PI);
-	//pdf = pdf.value();
 	return true;
 }
 
 
 float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
-	//return albedo / M_PI;
-	//float rho = 0.3;
 	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
 		return 0;
