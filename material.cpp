@@ -43,7 +43,7 @@ vec3 refract(vec3 v, vec3 normal, float n_in, float n_out)
 float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
 	//return albedo / M_PI;
-	float rho = 0.3;
+	float rho = 0.5;
 	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
 		return 0;
@@ -67,6 +67,35 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 }
 
 
+float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
+{
+	//return albedo / M_PI;
+	//float rho = 0.3;
+	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+	if (cosine < 0)
+		return 0;
+
+	vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+
+	return 3.0*pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100) / M_PI;
+	return pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100);
+}
+
+bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+{
+	onb uvw;
+	uvw.build_from_w(rec.normal);
+	//vec3 generated_direction = uvw.local(random_on_unit_hemisphere());
+	vec3 generated_direction = reflect(unit_vector(r_in.direction()), rec.normal);
+
+	scattered = ray(rec.p, unit_vector(generated_direction));
+	attenuation = albedo;
+	//pdf = 1/(2*M_PI);
+	pdf = 1;
+	return true;
+}
+
+/*
 bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
@@ -76,6 +105,7 @@ bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, r
 	//return (dot(scattered.direction(), rec.normal) > 0);
 	return true;
 }
+*/
 
 
 float shlick(float theta, float n1, float n2)

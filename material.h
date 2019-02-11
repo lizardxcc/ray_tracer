@@ -36,6 +36,7 @@ class metal : public material {
 			else
 				fuzz = 1.0;
 		}
+		virtual float BxDF(const ray& r_in, const hit_record& rec, const ray& scatterd) const;
 		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const;
 
 
