@@ -2,7 +2,14 @@
 #include "object.h"
 #include "ray.h"
 #include "hitablelist.h"
+#include "pdf.h"
 
+
+pdf *hitable::generate_pdf_object(const vec3& o)
+{
+	pdf *p = new uniform_pdf(vec3(0.0, 0.0, 1.0));
+	return p;
+}
 
 bool rectangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
@@ -24,6 +31,14 @@ bool rectangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
 		return true;
 	}
 	return false;
+}
+
+pdf *rectangle::generate_pdf_object(const vec3& o)
+{
+	vec3 v = center - o;
+	float r = 0.5 * sqrt(width*width + height*height);
+	pdf *p = new toward_object_pdf(unit_vector(v), atan2(r, v.length()));
+	return p;
 }
 
 
@@ -82,6 +97,22 @@ bool zx_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 	return true;
 }
 
+
+//float zx_rect::generate_pdf_dir(const vec3& o, vec3& direction)
+//{
+//	vec3 random_point_on_rect = vec3(
+//	x0 + drand48()*(x1-x0),
+//	k,
+//	z0 + drand48()*(z1-z0));
+//	vec3 generated_direction = random_point_on_rect - o;
+//	direction = unit_vector(generated_direction);
+//
+//	float area = (x1-x0)*(z1-z0);
+//	float distance_squared = generated_direction.squared_length();
+//	//float cosine = fabs(dot(direction, rec.normall);
+//	float cosine = fabs(dot(direction, vec3(0, -1, 0));
+//	return distance_squared / (cosine * area);
+//}
 
 
 bool flip_normals::hit(const ray& r, float t_min, float t_max, hit_record& rec) const

@@ -2,8 +2,10 @@
 #define HITABLE_H
 
 #include "ray.h"
+//#include "pdf.h"
 
 class material;
+class pdf;
 
 struct hit_record {
 	float t;
@@ -16,6 +18,7 @@ struct hit_record {
 class hitable {
 	public:
 		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+		virtual pdf *generate_pdf_object(const vec3& o);
 };
 
 #endif

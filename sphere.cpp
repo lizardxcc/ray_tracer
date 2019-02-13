@@ -30,3 +30,7 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 
 	return false;
 }
+
+//float sphere::generate_pdf_dir(const vec3& o, vec3& direction)
+//{
+//}

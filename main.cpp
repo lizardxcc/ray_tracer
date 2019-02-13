@@ -76,10 +76,10 @@ hitable *room(void)
 
 int main(void)
 {
-	int nx = 600;
-	int ny = 600;
+	int nx = 800;
+	int ny = 800;
 
-	int ns = 300;
+	int ns = 20;
 
 	vec3 array[nx][ny];
 

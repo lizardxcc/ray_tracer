@@ -9,6 +9,7 @@ class rectangle : public hitable {
 		rectangle() { }
 		rectangle(vec3 center, vec3 normal, vec3 width_dir, float width, float height, material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height), mat_ptr(mat_ptr) {};
 		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual pdf *generate_pdf_object(const vec3& o);
 		vec3 center;
 		vec3 normal;
 		vec3 width_dir;
@@ -45,6 +46,7 @@ class zx_rect : public hitable {
 		zx_rect(float z0, float x0, float z1, float x1, float k, material *mat) :
 		z0(z0), z1(z1), x0(x0), x1(x1), k(k), mat_ptr(mat) {};
 		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		//virtual float generate_pdf_dir(const vec3& o, vec3& direction);
 
 		float z0, z1, x0, x1, k;
 		material *mat_ptr;

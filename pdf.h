@@ -2,13 +2,15 @@
 #define PDF_H
 
 #include "vec3.h"
+#include "object.h"
 #include "onb.h"
+
+class hitable;
 
 class pdf {
 	public:
-		//virtual float value(const vec3& direction) const = 0;
-		//virtual vec3 generate() const = 0;
-		virtual float generate(vec3& direction) const = 0;
+		virtual vec3 generate() const = 0;
+		virtual float pdf_val(const vec3& direction) const = 0;
 };
 
 class uniform_pdf : public pdf {
@@ -17,11 +19,42 @@ class uniform_pdf : public pdf {
 		{
 			uvw.build_from_w(w);
 		}
-		//virtual float value(const vec3& direction) const;
-		//virtual vec3 generate() const;
-		virtual float generate(vec3& direction) const;
+		virtual vec3 generate() const;
+		virtual float pdf_val(const vec3& direction) const;
 
 		onb uvw;
+};
+
+class toward_object_pdf : public pdf {
+	public:
+		toward_object_pdf(const vec3& w, float _theta_max)
+		{
+			uvw.build_from_w(w);
+			this->theta_max = _theta_max;
+		}
+		virtual vec3 generate() const;
+		virtual float pdf_val(const vec3& direction) const;
+
+		onb uvw;
+		float theta_max;
+};
+
+
+class hitable_pdf : public pdf {
+	public:
+		hitable_pdf(hitable *p, const vec3& origin)
+		{
+			ptr = p;
+			o = origin;
+			pdf_ptr = p->generate_pdf_object(origin);
+		}
+		virtual vec3 generate() const;
+		virtual float pdf_val(const vec3& direction) const;
+
+		vec3 o;
+		hitable *ptr;
+
+		pdf *pdf_ptr;
 };
 
 #endif
