@@ -76,3 +76,24 @@ float hitable_pdf::pdf_val(const vec3& direction) const
 {
 	return pdf_ptr->pdf_val(direction);
 }
+
+
+
+vec3 mixture_pdf::generate() const
+{
+	float r = drand48();
+	for (size_t i = 0; i < pdf_list.size(); i++) {
+		if (r < ((float)(i+1)*1.0/(float)pdf_list.size())) {
+			return pdf_list[i]->generate();
+		}
+	}
+}
+
+float mixture_pdf::pdf_val(const vec3& direction) const
+{
+	float sum = 0.0;
+	for (size_t i = 0; i < pdf_list.size(); i++) {
+		sum += pdf_list[i]->pdf_val(direction);
+	}
+	return sum/(float)pdf_list.size();
+}

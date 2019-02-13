@@ -1,6 +1,8 @@
 #ifndef PDF_H
 #define PDF_H
 
+#include <vector>
+#include <algorithm>
 #include "vec3.h"
 #include "object.h"
 #include "onb.h"
@@ -55,6 +57,21 @@ class hitable_pdf : public pdf {
 		hitable *ptr;
 
 		pdf *pdf_ptr;
+};
+
+
+class mixture_pdf : public pdf {
+	public:
+		mixture_pdf(const std::vector<pdf *>& pdf_list)
+		{
+			this->pdf_list.resize(pdf_list.size());
+			std::copy(pdf_list.begin(), pdf_list.end(), this->pdf_list.begin());
+		}
+
+		virtual vec3 generate() const;
+		virtual float pdf_val(const vec3& direction) const;
+
+		std::vector<pdf *> pdf_list;
 };
 
 #endif

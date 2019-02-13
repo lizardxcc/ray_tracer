@@ -47,19 +47,15 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 
 	uniform_pdf pdf0(rec.normal);
 
-
 	float size = 1.0;
 	rectangle light = rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(15, 15, 15)));
 	hitable_pdf pdf1(&light, rec.p);
 
 
-	float ratio = 0.30;
-	if (drand48() < ratio) {
-		generated_direction = pdf0.generate();
-	} else {
-		generated_direction = pdf1.generate();
-	}
-	pdf_val = ratio*pdf0.pdf_val(generated_direction) + (1.0-ratio)*pdf1.pdf_val(generated_direction);
+	std::vector<pdf *> pdfs{&pdf0, &pdf1};
+	mixture_pdf pdf(pdfs);
+	generated_direction = pdf.generate();
+	pdf_val = pdf.pdf_val(generated_direction);
 
 	scattered = ray(rec.p, unit_vector(generated_direction));
 	attenuation = albedo;
