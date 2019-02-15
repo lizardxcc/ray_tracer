@@ -69,7 +69,7 @@ hitable *room(void)
 
 	//float box_size = 0.5;
 	//list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
-	//list.push_back(new translate(new plymodel("bmonky.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
+	list.push_back(new translate(new plymodel("bmonky.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
 	//list.push_back(new translate(new plymodel("nmonky3.ply", new metal(vec3(0.9, 0.9, 0.9), 0.0)), vec3(0.0, -0.3, -0.3)));
 
 	//list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
@@ -84,10 +84,10 @@ int main(int argc, char **argv)
 		std::cout << "wrong number of arguments" << std::endl;
 		exit(-1);
 	}
-	int nx = 1000;
-	int ny = 1000;
+	int nx = 500;
+	int ny = 500;
 
-	int ns = 10;
+	int ns = 20;
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
@@ -131,6 +131,8 @@ int main(int argc, char **argv)
 	camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
 
 
+	size_t count = 0;
+
 int i, j, s;
 #ifdef _OPENMP
 #pragma omp parallel for private(j, s)
@@ -145,7 +147,14 @@ int i, j, s;
 				col += color(r, world, 0);
 			}
 
+			count++;
 			array[i][j] = col;
+			if (count % 5000 == 0) {
+#ifdef _OPENMP
+				std::cout << "thread: " << omp_get_thread_num() << "  ";
+#endif
+				std::cout << 100.0 * (float)count / (float)(nx*ny) << "%" << std::endl;
+			}
 
 		}
 	}
