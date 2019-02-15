@@ -89,7 +89,10 @@ int main(int argc, char **argv)
 
 	int ns = 10;
 
-	vec3 array[nx][ny];
+	vec3 **array = new vec3*[nx];
+	for (int i = 0; i < nx; i++) {
+		array[i] = new vec3[ny];
+	}
 
 
 	std::ofstream ofs;
