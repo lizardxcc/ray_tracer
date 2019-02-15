@@ -60,14 +60,17 @@ hitable *room(void)
 	//list.push_back(new rectangle(vec3(-size, 0, window_size/2+a/4), vec3(1, 0, 0), vec3(0, 1, 0), window_size, a/2, new lambertian(vec3(reflection, reflection, reflection))));
 	list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
 
-	list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(15, 15, 15))));
+	list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30))));
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*6, 0.576*6, 0.1607*6))));
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*56, 0.576*56, 0.1607*56))));
 	//list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.3, new dielectric(1.42)));
-	list.push_back(new sphere(vec3(-0.5, -0.5, -0.5), 0.5, new metal(vec3(0.85, 0.85, 0.85), 0.0)));
 
-	float box_size = 0.5;
-	list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
+	//list.push_back(new sphere(vec3(-0.5, -0.5, -0.5), 0.5, new metal(vec3(0.85, 0.85, 0.85), 0.0)));
+
+	//float box_size = 0.5;
+	//list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
+	//list.push_back(new translate(new plymodel("nmonky3.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
+	list.push_back(new translate(new plymodel("nmonky3.ply", new metal(vec3(0.9, 0.9, 0.9), 0.0)), vec3(0.0, -0.3, -0.3)));
 
 	//list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
 
@@ -76,10 +79,10 @@ hitable *room(void)
 
 int main(void)
 {
-	int nx = 800;
-	int ny = 800;
+	int nx = 400;
+	int ny = 400;
 
-	int ns = 20;
+	int ns = 30;
 
 	vec3 array[nx][ny];
 

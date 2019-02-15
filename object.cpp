@@ -158,3 +158,36 @@ bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
 	} else
 		return false;
 }
+
+
+bool plymodel::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+{
+	bool hit_flag = false;
+	rec.t = t_max;
+	for (size_t i = 0; i < p.faces.size(); i++) {
+		if (p.faces[i].size() == 3) {
+			vec3 normal = unit_vector(p.vertices[p.faces[i][0]][1]);
+			vec3 a = p.vertices[p.faces[i][0]][0]*0.8;
+			vec3 b = p.vertices[p.faces[i][1]][0]*0.8;
+			vec3 c = p.vertices[p.faces[i][2]][0]*0.8;
+			float t = dot(a - r.origin(), normal) / dot(r.direction(), normal);
+			if (t >= t_min && t <= rec.t) {
+				vec3 p = r.point_at_parameter(t);
+				vec3 result0 = cross(b-a, p-b);
+				vec3 result1 = cross(c-b, p-c);
+				vec3 result2 = cross(a-c, p-a);
+				if (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0) {
+					rec.t = t;
+					rec.p = p;
+					rec.normal = normal;
+					rec.mat_ptr = mat_ptr;
+					hit_flag = true;
+				}
+			}
+		} else {
+			return false;
+		}
+	}
+
+	return hit_flag;
+}

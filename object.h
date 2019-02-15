@@ -3,6 +3,7 @@
 
 #include "hitable.h"
 #include "material.h"
+#include "ply.h"
 
 class rectangle : public hitable {
 	public:
@@ -82,4 +83,18 @@ class translate : public hitable {
 		hitable *ptr;
 		vec3 offset;
 };
+
+class plymodel : public hitable {
+	public:
+		plymodel(const char *filename, material *mat)
+		{
+			p.Load(filename);
+			mat_ptr = mat;
+		}
+		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		ply p;
+		material *mat_ptr;
+};
+
+
 #endif
