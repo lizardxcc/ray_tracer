@@ -86,14 +86,18 @@ class translate : public hitable {
 
 class plymodel : public hitable {
 	public:
-		plymodel(const char *filename, material *mat)
-		{
-			p.Load(filename);
-			mat_ptr = mat;
-		}
+		plymodel(const char *filename, material *mat);
 		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
 		ply p;
+		std::vector<hitable *> polygon;
+};
+
+class triangle : public hitable {
+	public:
+		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
 		material *mat_ptr;
+		vec3 v[3];
+		vec3 normal;
 };
 
 

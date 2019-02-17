@@ -159,35 +159,51 @@ bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
 		return false;
 }
 
+plymodel::plymodel(const char *filename, material *mat)
+{
+	p.Load(filename);
+	for (size_t i = 0; i < p.faces.size(); i++) {
+		if (p.faces[i].size() == 3) {
+			triangle *tri = new triangle();
+			for (int j = 0; j < 3; j++) {
+				tri->v[j] = p.vertices[p.faces[i][j]][0];
+			}
+			tri->normal = p.vertices[p.faces[i][0]][1];
+			tri->mat_ptr = mat;
+			polygon.push_back(tri);
+		}
+	}
+}
 
 bool plymodel::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
 	bool hit_flag = false;
 	rec.t = t_max;
-	for (size_t i = 0; i < p.faces.size(); i++) {
-		if (p.faces[i].size() == 3) {
-			vec3 normal = unit_vector(p.vertices[p.faces[i][0]][1]);
-			vec3 a = p.vertices[p.faces[i][0]][0]*0.8;
-			vec3 b = p.vertices[p.faces[i][1]][0]*0.8;
-			vec3 c = p.vertices[p.faces[i][2]][0]*0.8;
-			float t = dot(a - r.origin(), normal) / dot(r.direction(), normal);
-			if (t >= t_min && t <= rec.t) {
-				vec3 p = r.point_at_parameter(t);
-				vec3 result0 = cross(b-a, p-b);
-				vec3 result1 = cross(c-b, p-c);
-				vec3 result2 = cross(a-c, p-a);
-				if (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0) {
-					rec.t = t;
-					rec.p = p;
-					rec.normal = normal;
-					rec.mat_ptr = mat_ptr;
-					hit_flag = true;
-				}
-			}
-		} else {
-			return false;
+	for (size_t i = 0; i < polygon.size(); i++) {
+		if (polygon[i]->hit(r, t_min, rec.t, rec)) {
+			hit_flag = true;
 		}
 	}
 
 	return hit_flag;
+}
+
+
+bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+{
+	float t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
+	if (t >= t_min && t <= rec.t) {
+		vec3 p = r.point_at_parameter(t);
+		vec3 result0 = cross(v[1]-v[0], p-v[1]);
+		vec3 result1 = cross(v[2]-v[1], p-v[2]);
+		vec3 result2 = cross(v[0]-v[2], p-v[0]);
+		if (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0) {
+			rec.t = t;
+			rec.p = p;
+			rec.normal = normal;
+			rec.mat_ptr = mat_ptr;
+			return true;
+		}
+	}
+	return false;
 }
