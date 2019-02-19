@@ -11,6 +11,7 @@ class hitable;
 
 class pdf {
 	public:
+		virtual ~pdf(){}
 		virtual vec3 generate() const = 0;
 		virtual float pdf_val(const vec3& direction) const = 0;
 };
@@ -49,6 +50,10 @@ class hitable_pdf : public pdf {
 			ptr = p;
 			o = origin;
 			pdf_ptr = p->generate_pdf_object(origin);
+		}
+		~hitable_pdf()
+		{
+			delete pdf_ptr;
 		}
 		virtual vec3 generate() const;
 		virtual float pdf_val(const vec3& direction) const;
