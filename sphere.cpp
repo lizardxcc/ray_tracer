@@ -31,6 +31,15 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 	return false;
 }
 
+bool sphere::bounding_box(aabb& box) const
+{
+	box = aabb(
+		center - vec3(radius, radius, radius),
+		center + vec3(radius, radius, radius)
+	);
+	return true;
+}
+
 //float sphere::generate_pdf_dir(const vec3& o, vec3& direction)
 //{
 //}

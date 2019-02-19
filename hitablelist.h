@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "hitable.h"
+#include "bvh.h"
 
 class hitable_list: public hitable {
 	public:
@@ -12,6 +13,7 @@ class hitable_list: public hitable {
 		list = l;
 	}
 	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+	virtual bool bounding_box(aabb& box) const;
 
 	std::vector<hitable*> list;
 	int list_size;

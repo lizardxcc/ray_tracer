@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include "object.h"
 #include "ray.h"
 #include "hitablelist.h"
@@ -33,6 +34,8 @@ bool rectangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
 	return false;
 }
 
+
+
 pdf *rectangle::generate_pdf_object(const vec3& o)
 {
 	vec3 v = center - o;
@@ -41,6 +44,10 @@ pdf *rectangle::generate_pdf_object(const vec3& o)
 	return p;
 }
 
+bool rectangle::bounding_box(aabb& box) const
+{
+	return false;
+}
 
 bool xy_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
@@ -98,6 +105,24 @@ bool zx_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 }
 
 
+bool xy_rect::bounding_box(aabb& box) const
+{
+	box.minp = vec3(x0, y0, k - 0.001);
+	box.maxp = vec3(x1, y1, k + 0.001);
+	return true;
+}
+bool yz_rect::bounding_box(aabb& box) const
+{
+	box.minp = vec3(k - 0.001, y0, z0);
+	box.maxp = vec3(k + 0.001, y1, z1);
+	return true;
+}
+bool zx_rect::bounding_box(aabb& box) const
+{
+	box.minp = vec3(x0, k - 0.001, z0);
+	box.maxp = vec3(x1, k + 0.001, z1);
+	return true;
+}
 //float zx_rect::generate_pdf_dir(const vec3& o, vec3& direction)
 //{
 //	vec3 random_point_on_rect = vec3(
@@ -123,6 +148,10 @@ bool flip_normals::hit(const ray& r, float t_min, float t_max, hit_record& rec) 
 	} else
 		return false;
 }
+bool flip_normals::bounding_box(aabb& box) const
+{
+	return ptr->bounding_box(box);
+}
 
 
 box::box(const vec3& p0, const vec3& p1, material *ptr)
@@ -147,6 +176,12 @@ bool box::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 }
 
 
+bool box::bounding_box(aabb& box) const
+{
+	box.minp = pmin;
+	box.maxp = pmax;
+	return true;
+}
 
 
 bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
@@ -157,6 +192,16 @@ bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
 		return true;
 	} else
 		return false;
+}
+bool translate::bounding_box(aabb& box) const
+{
+	if (ptr->bounding_box(box)) {
+		box.minp += offset;
+		box.maxp += offset;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 plymodel::plymodel(const char *filename, material *mat)
@@ -173,26 +218,55 @@ plymodel::plymodel(const char *filename, material *mat)
 			polygon.push_back(tri);
 		}
 	}
+
+	pol = new bvh_node(polygon);
 }
 
 bool plymodel::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
-	bool hit_flag = false;
-	rec.t = t_max;
+	//bool hit_flag = false;
+	//rec.t = t_max;
+	//for (size_t i = 0; i < polygon.size(); i++) {
+	//	if (polygon[i]->hit(r, t_min, rec.t, rec)) {
+	//		hit_flag = true;
+	//	}
+	//}
+
+	//return hit_flag;
+	//return pol.hit(r, t_min, t_max, rec);
+	return pol->hit(r, t_min, t_max, rec);
+}
+
+
+bool plymodel::bounding_box(aabb& box) const
+{
+	aabb temp_box;
+	if (polygon.size() == 0) {
+		return false;
+	}
+
+	if (polygon[0]->bounding_box(temp_box) == false) {
+		return false;
+	}
+
+	box = temp_box;
+
 	for (size_t i = 0; i < polygon.size(); i++) {
-		if (polygon[i]->hit(r, t_min, rec.t, rec)) {
-			hit_flag = true;
+		if (polygon[i]->bounding_box(temp_box)) {
+			box = surrounding_box(box, temp_box);
+		} else {
+			return false;
 		}
 	}
 
-	return hit_flag;
+	return true;
 }
 
 
 bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
 	float t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
-	if (t >= t_min && t <= rec.t) {
+	if (t >= t_min && t <= t_max) {
 		vec3 p = r.point_at_parameter(t);
 		vec3 result0 = cross(v[1]-v[0], p-v[1]);
 		vec3 result1 = cross(v[2]-v[1], p-v[2]);
@@ -206,4 +280,21 @@ bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
 		}
 	}
 	return false;
+}
+
+
+
+bool triangle::bounding_box(aabb& box) const
+{
+	box.minp = vec3(
+	std::min(v[0].x(), std::min(v[1].x(), v[2].x())),
+	std::min(v[0].y(), std::min(v[1].y(), v[2].y())),
+	std::min(v[0].z(), std::min(v[1].z(), v[2].z()))
+	);
+	box.maxp = vec3(
+	std::max(v[0].x(), std::max(v[1].x(), v[2].x())),
+	std::max(v[0].y(), std::max(v[1].y(), v[2].y())),
+	std::max(v[0].z(), std::max(v[1].z(), v[2].z()))
+	);
+	return true;
 }

@@ -15,3 +15,29 @@ bool hitable_list::hit(const ray& r, float t_min, float t_max, hit_record& rec) 
 
 	return hit_anything;
 }
+
+
+
+bool hitable_list::bounding_box(aabb& box) const
+{
+	aabb temp_box;
+	if (list.size() == 0) {
+		return false;
+	}
+
+	if (list[0]->bounding_box(temp_box) == false) {
+		return false;
+	}
+
+	box = temp_box;
+
+	for (size_t i = 0; i < list.size(); i++) {
+		if (list[i]->bounding_box(temp_box)) {
+			box = surrounding_box(box, temp_box);
+		} else {
+			return false;
+		}
+	}
+
+	return true;
+}

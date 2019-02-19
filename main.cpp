@@ -69,7 +69,8 @@ hitable *room(void)
 
 	//float box_size = 0.5;
 	//list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
-	list.push_back(new translate(new plymodel("bmonky.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
+	//list.push_back(new translate(new plymodel("human2.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
+	list.push_back(new translate(new plymodel("human2.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(0.0, -0.2, -0.3)));
 	//list.push_back(new translate(new plymodel("nmonky3.ply", new metal(vec3(0.9, 0.9, 0.9), 0.0)), vec3(0.0, -0.3, -0.3)));
 
 	//list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
@@ -84,10 +85,10 @@ int main(int argc, char **argv)
 		std::cout << "wrong number of arguments" << std::endl;
 		exit(-1);
 	}
-	int nx = 500;
-	int ny = 500;
+	int nx = 800;
+	int ny = 800;
 
-	int ns = 20;
+	int ns = 50;
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
