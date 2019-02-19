@@ -3,8 +3,6 @@
 #include "vec3.h"
 #include "ray.h"
 #include "camera.h"
-#include "sphere.h"
-#include "plane.h"
 #include "hitablelist.h"
 #include "material.h"
 #include "object.h"

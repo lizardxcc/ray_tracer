@@ -7,6 +7,28 @@
 #include "aabb.h"
 #include "bvh.h"
 
+class sphere: public hitable {
+	public:
+		sphere() { }
+		sphere(vec3 center, float r, material *mat_ptr) : center(center), radius(r), mat_ptr(mat_ptr) {};
+		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+		virtual bool bounding_box(aabb& box) const;
+		//virtual float generate_pdf_dir(const vec3& o, vec3& direction);
+		vec3 center;
+		float radius;
+		material *mat_ptr;
+};
+
+class plane: public hitable {
+	public:
+		plane() { }
+		plane(vec3 somewhere, vec3 normal, material *mat_ptr) : somewhere(somewhere), normal(normal), mat_ptr(mat_ptr) {};
+		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+		vec3 somewhere;
+		vec3 normal;
+		material *mat_ptr;
+};
+
 class rectangle : public hitable {
 	public:
 		rectangle() { }
