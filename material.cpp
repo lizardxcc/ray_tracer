@@ -49,8 +49,8 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	uniform_pdf uni_pdf(rec.normal);
 	std::vector<pdf *> pdf_list(lights.size()+1);
 	pdf_list[0] = &uni_pdf;
-	for (size_t i = 0; i < lights.size(); i++) {
-		pdf_list[i+1] = new hitable_pdf(lights[i], rec.p);
+	for (size_t i = 1; i < pdf_list.size(); i++) {
+		pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
 	}
 	mixture_pdf pdf(pdf_list);
 
@@ -59,6 +59,10 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 
 	scattered = ray(rec.p, unit_vector(generated_direction));
 	attenuation = albedo;
+
+	for (size_t i = 1; i < pdf_list.size(); i++) {
+		delete pdf_list[i];
+	}
 	return true;
 }
 
