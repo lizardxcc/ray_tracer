@@ -82,11 +82,13 @@ float hitable_pdf::pdf_val(const vec3& direction) const
 vec3 mixture_pdf::generate() const
 {
 	float r = drand48();
-	for (size_t i = 0; i < pdf_list.size(); i++) {
-		if (r < ((float)(i+1)*1.0/(float)pdf_list.size())) {
+	size_t l = pdf_list.size();
+	for (size_t i = 0; i < l; i++) {
+		if (i == (l-1) || r < ((float)(i+1)/(float)l)) {
 			return pdf_list[i]->generate();
 		}
 	}
+	return pdf_list[l-1]->generate();
 }
 
 float mixture_pdf::pdf_val(const vec3& direction) const
