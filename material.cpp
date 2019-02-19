@@ -3,6 +3,7 @@
 #include "pdf.h"
 #include "object.h"
 
+std::vector<hitable *> material::lights;
 
 vec3 random_in_unit_sphere(void)
 {
@@ -45,15 +46,14 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 {
 	vec3 generated_direction;
 
-	uniform_pdf pdf0(rec.normal);
+	uniform_pdf uni_pdf(rec.normal);
+	std::vector<pdf *> pdf_list(lights.size()+1);
+	pdf_list[0] = &uni_pdf;
+	for (size_t i = 0; i < lights.size(); i++) {
+		pdf_list[i+1] = new hitable_pdf(lights[i], rec.p);
+	}
+	mixture_pdf pdf(pdf_list);
 
-	float size = 1.0;
-	rectangle light = rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(15, 15, 15)));
-	hitable_pdf pdf1(&light, rec.p);
-
-
-	std::vector<pdf *> pdfs{&pdf0, &pdf1};
-	mixture_pdf pdf(pdfs);
 	generated_direction = pdf.generate();
 	pdf_val = pdf.pdf_val(generated_direction);
 
