@@ -22,7 +22,7 @@ vec3 color(const ray& r, hitable *world, int count)
 		ray scatterd;
 		vec3 attenuation;
 		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-		vec3 emitted = rec.mat_ptr->emitted(0, 0, rec.p);
+		vec3 emitted = rec.mat_ptr->emitted(0, 0, r, rec);
 		float pdf;
 
 		if (count < 20 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd, pdf)) {
@@ -59,9 +59,12 @@ hitable *room(void)
 	list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
 
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30))));
-	hitable * light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30)));
+	hitable *light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30)));
 	list.push_back(light);
 	lambertian mat(vec3(0, 0, 0));
+	mat.lights.push_back(light);
+	light = new rectangle(vec3(0, size-0.01, 0.7), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30)));
+	list.push_back(light);
 	mat.lights.push_back(light);
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*6, 0.576*6, 0.1607*6))));
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*56, 0.576*56, 0.1607*56))));
@@ -72,10 +75,97 @@ hitable *room(void)
 	//float box_size = 0.5;
 	//list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
 	//list.push_back(new translate(new plymodel("human2.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
-	list.push_back(new translate(new plymodel("human2.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(0.0, -0.2, -0.3)));
+	list.push_back(new translate(new plymodel("smooth_monkey.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, 0.5)));
+
+	//list.push_back(new translate(new plymodel("blender_monkey.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(0.0, -0.2, 0.5)));
+	//list.push_back(new translate(new plymodel("human3.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(-0.45, -0.2, 0.5)));
+	//list.push_back(new translate(new plymodel("human3.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.45, -0.2, 0.5)));
+
 	//list.push_back(new translate(new plymodel("nmonky3.ply", new metal(vec3(0.9, 0.9, 0.9), 0.0)), vec3(0.0, -0.3, -0.3)));
 
 	//list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
+
+	return new hitable_list(list);
+}
+
+
+hitable *testroom(void)
+{
+	float size = 1.0;
+	float reflection = 0.90;
+	std::vector<hitable *> list;
+
+	//list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
+
+	quadrilateral *quad = new quadrilateral();
+	quad->v[0] = vec3(-10.0, -1, 10.0);
+	quad->v[1] = vec3(10.0, -1, 10.0);
+	quad->v[2] = vec3(10.0, -1, -10.0);
+	quad->v[3] = vec3(-10.0, -1, -10.0);
+	quad->normal = vec3(0.0, 1.0, 0.0);
+	quad->mat_ptr = new lambertian(vec3(0.2, 0.2, 0.2));
+	list.push_back(quad);
+
+	hitable *light;
+	lambertian mat(vec3(0, 0, 0));
+	//light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+
+	//light = new rectangle(vec3(0, size-0.01, 0.7), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+
+	light = new sphere(vec3(0.0, 10000.2, 0.0), 1000.05, new diffuse_light(vec3(50, 50, 50)));
+	list.push_back(light);
+	mat.lights.push_back(light);
+
+	quad = new quadrilateral();
+	quad->v[0] = vec3(-0.04, 0, 0.04);
+	quad->v[1] = vec3(0.04, 0, 0.04);
+	quad->v[2] = vec3(0.04, 0, -0.04);
+	quad->v[3] = vec3(-0.04, 0, -0.04);
+	quad->normal = vec3(0.0, -1.0, 0.0);
+	quad->mat_ptr = new straight_light(vec3(300, 0, 0));
+	light = new translate(quad, vec3(-0.6, 0.05, 0.2));
+	list.push_back(light);
+	mat.lights.push_back(light);
+
+	quad = new quadrilateral();
+	quad->v[0] = vec3(-0.07, 0, 0.07);
+	quad->v[1] = vec3(0.07, 0, 0.07);
+	quad->v[2] = vec3(0.07, 0, -0.07);
+	quad->v[3] = vec3(-0.07, 0, -0.07);
+	quad->normal = vec3(0.0, -1.0, 0.0);
+	quad->mat_ptr = new straight_light(vec3(0, 300, 0));
+	light = new translate(quad, vec3(0, 0.05, 0.2));
+	list.push_back(light);
+	mat.lights.push_back(light);
+
+	quad = new quadrilateral();
+	quad->v[0] = vec3(-0.1, 0, 0.1);
+	quad->v[1] = vec3(0.1, 0, 0.1);
+	quad->v[2] = vec3(0.1, 0, -0.1);
+	quad->v[3] = vec3(-0.1, 0, -0.1);
+	quad->normal = vec3(0.0, -1.0, 0.0);
+	quad->mat_ptr = new straight_light(vec3(0, 0, 300));
+	light = new translate(quad, vec3(0.6, 0.05, 0.2));
+	list.push_back(light);
+	mat.lights.push_back(light);
+	
+
+	//light = new sphere(vec3(-0.6, 0.05, 0.2), 0.02, new straight_light(vec3(500, 0, 0)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+	//light = new sphere(vec3(0.0, 0.05, 0.2), 0.07, new straight_light(vec3(0, 500, 0)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+	//light = new sphere(vec3(0.6, 0.05, 0.2), 0.15, new straight_light(vec3(0, 0, 500)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+
+	list.push_back(new translate(new plymodel("testroom.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.8, 0.3)));
+
 
 	return new hitable_list(list);
 }
@@ -87,10 +177,10 @@ int main(int argc, char **argv)
 		std::cout << "wrong number of arguments" << std::endl;
 		exit(-1);
 	}
-	int nx = 800;
-	int ny = 800;
+	int nx = 500;
+	int ny = 500;
 
-	int ns = 20;
+	int ns = 3000;
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
@@ -130,7 +220,7 @@ int main(int argc, char **argv)
 	////list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
 
 	//hitable *world = new hitable_list(list);
-	hitable *world = room();
+	hitable *world = testroom();
 	camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
 
 

@@ -13,7 +13,7 @@ class sphere: public hitable {
 		sphere(vec3 center, float r, material *mat_ptr) : center(center), radius(r), mat_ptr(mat_ptr) {};
 		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		//virtual float generate_pdf_dir(const vec3& o, vec3& direction);
+		virtual pdf *generate_pdf_object(const vec3& o);
 		vec3 center;
 		float radius;
 		material *mat_ptr;
@@ -138,6 +138,7 @@ class quadrilateral : public hitable {
 	public:
 		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
+		virtual pdf *generate_pdf_object(const vec3& o);
 		material *mat_ptr;
 		vec3 v[4];
 		vec3 normal;

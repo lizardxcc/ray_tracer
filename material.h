@@ -12,7 +12,7 @@ class material {
 		virtual float BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const {
 			return 0.0;
 		}
-		virtual vec3 emitted(float u, float v, const vec3& p) const {
+		virtual vec3 emitted(float u, float v, const ray& r_in, const hit_record& rec) const {
 			return vec3(0, 0, 0);
 		}
 		static std::vector<hitable *> lights;
@@ -59,7 +59,15 @@ class diffuse_light : public material {
 	public:
 		diffuse_light(vec3 color) : light_color(color) {}
 		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf_val) const;
-		virtual vec3 emitted(float u, float v, const vec3& p) const;
+		virtual vec3 emitted(float u, float v, const ray& r_in, const hit_record& rec) const;
+		vec3 light_color;
+};
+
+class straight_light : public material {
+	public:
+		straight_light(vec3 color) : light_color(color) {}
+		virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf_val) const;
+		virtual vec3 emitted(float u, float v, const ray& r_in, const hit_record& rec) const;
 		vec3 light_color;
 };
 

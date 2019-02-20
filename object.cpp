@@ -52,6 +52,14 @@ bool sphere::bounding_box(aabb& box) const
 	return true;
 }
 
+pdf *sphere::generate_pdf_object(const vec3& o)
+{
+	vec3 v = center - o;
+	float r = radius;
+	pdf *p = new toward_object_pdf(unit_vector(v), atan2(r, v.length()));
+	return p;
+}
+
 
 bool plane::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
@@ -415,4 +423,14 @@ bool quadrilateral::bounding_box(aabb& box) const
 	std::max({v[0].z(), v[1].z(), v[2].z(), v[3].z()})
 	);
 	return true;
+}
+
+
+pdf *quadrilateral::generate_pdf_object(const vec3& o)
+{
+	vec3 c = 0.25 * (v[0]+v[1]+v[2]+v[3]);
+	vec3 vec = c - o;
+	float r = 0.25*((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length()+(v[3]-c).length());
+	pdf *p = new toward_object_pdf(unit_vector(vec), atan2(r, vec.length()));
+	return p;
 }
