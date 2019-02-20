@@ -134,5 +134,13 @@ class triangle : public hitable {
 		vec3 normal;
 };
 
+class quadrilateral : public hitable {
+	public:
+		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool bounding_box(aabb& box) const;
+		material *mat_ptr;
+		vec3 v[4];
+		vec3 normal;
+};
 
 #endif

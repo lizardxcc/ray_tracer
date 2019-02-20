@@ -262,16 +262,35 @@ bool translate::bounding_box(aabb& box) const
 plymodel::plymodel(const char *filename, material *mat)
 {
 	p.Load(filename);
+	polygon.resize(p.faces.size());
 	for (size_t i = 0; i < p.faces.size(); i++) {
-		if (p.faces[i].size() == 3) {
+		size_t l = p.faces[i].size();
+		if (l != 3 && l != 4) {
+			std::cerr << "Error: " << std::to_string(l) << " sided polygon is unsupported" << std::endl;
+			return;
+
+		}
+		hitable *tmp_polygon;
+		if (l == 3) {
 			triangle *tri = new triangle();
-			for (int j = 0; j < 3; j++) {
+			for (size_t j = 0; j < l; j++) {
 				tri->v[j] = p.vertices[p.faces[i][j]][0];
 			}
 			tri->normal = p.vertices[p.faces[i][0]][1];
 			tri->mat_ptr = mat;
-			polygon.push_back(tri);
+			tmp_polygon = tri;
 		}
+		else if (l == 4) {
+			quadrilateral *quad= new quadrilateral();
+			for (size_t j = 0; j < l; j++) {
+				quad->v[j] = p.vertices[p.faces[i][j]][0];
+			}
+			quad->normal = p.vertices[p.faces[i][0]][1];
+			quad->mat_ptr = mat;
+			tmp_polygon = quad;
+
+		}
+		polygon[i] = tmp_polygon;
 	}
 
 	pol = new bvh_node(polygon);
@@ -350,6 +369,50 @@ bool triangle::bounding_box(aabb& box) const
 	std::max(v[0].x(), std::max(v[1].x(), v[2].x())),
 	std::max(v[0].y(), std::max(v[1].y(), v[2].y())),
 	std::max(v[0].z(), std::max(v[1].z(), v[2].z()))
+	);
+	return true;
+}
+
+
+bool quadrilateral::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+{
+	float t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
+	if (t >= t_min && t <= t_max) {
+		vec3 p = r.point_at_parameter(t);
+		vec3 result0 = cross(v[1]-v[0], p-v[1]);
+		vec3 result1 = cross(v[2]-v[1], p-v[2]);
+		vec3 result2 = cross(v[0]-v[2], p-v[0]);
+
+		vec3 result3 = cross(v[3]-v[2], p-v[3]);
+		vec3 result4 = cross(v[0]-v[3], p-v[0]);
+		vec3 result5 = cross(v[2]-v[0], p-v[2]);
+
+		bool dot_result0 = (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0);
+		bool dot_result1 = (dot(result3, result4) > 0.0 && dot(result4, result5) > 0.0);
+		if (dot_result0 || dot_result1) {
+			rec.t = t;
+			rec.p = p;
+			rec.normal = normal;
+			rec.mat_ptr = mat_ptr;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+bool quadrilateral::bounding_box(aabb& box) const
+{
+	box.minp = vec3(
+	std::min({v[0].x(), v[1].x(), v[2].x(), v[3].x()}),
+	std::min({v[0].y(), v[1].y(), v[2].y(), v[3].y()}),
+	std::min({v[0].z(), v[1].z(), v[2].z(), v[3].z()})
+	);
+	box.maxp = vec3(
+	std::max({v[0].x(), v[1].x(), v[2].x(), v[3].x()}),
+	std::max({v[0].y(), v[1].y(), v[2].y(), v[3].y()}),
+	std::max({v[0].z(), v[1].z(), v[2].z(), v[3].z()})
 	);
 	return true;
 }
