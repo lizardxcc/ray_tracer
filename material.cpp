@@ -42,7 +42,7 @@ float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scatte
 	return rho / M_PI;
 }
 
-bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf_val) const
+bool lambertian::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf_val) const
 {
 	vec3 generated_direction;
 
@@ -79,7 +79,7 @@ float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) 
 	return pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100);
 }
 
-bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+bool metal::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	onb uvw;
 	uvw.build_from_w(rec.normal);
@@ -113,7 +113,7 @@ float shlick(float theta, float n1, float n2)
 }
 
 
-bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
 	attenuation = vec3(0.8, 0.8, 0.8);
@@ -157,7 +157,7 @@ bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	return true;
 }
 
-bool diffuse_light::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+bool diffuse_light::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	return false;
 }
@@ -168,7 +168,7 @@ vec3 diffuse_light::emitted(float u, float v, const ray& r_in, const hit_record&
 	return light_color;
 }
 
-bool straight_light::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+bool straight_light::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
 {
 	return false;
 }
