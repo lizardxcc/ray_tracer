@@ -167,47 +167,8 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 		pdf_val = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
-	attenuation = vec3(0.9, 0.9, 0.9);
+	attenuation = vec3(1.0, 1.0, 1.0);
 
-/*
-	float n = 1.0;
-	float critical_angle = asin(n / ref_idx);
-	if (dot(-v, unit_vector(rec.normal)) >= 0.0) {
-		vec3 v_p;
-		// from outside to inside
-		if (drand48() <= shlick(dot(-v, unit_vector(rec.normal)), 1.0, ref_idx)) {
-			// reflection
-			v_p = reflect(v, unit_vector(rec.normal));
-		} else {
-			// refraction
-			v_p = refract(v, unit_vector(rec.normal), n, ref_idx);
-		}
-		scattered = ray(rec.p, v_p);
-
-	} else {
-		vec3 inverse_normal = -unit_vector(rec.normal);
-
-		if (dot(-v, inverse_normal) < cos(critical_angle)) {
-			// total reflection
-			vec3 reflected = reflect(v, inverse_normal);
-			scattered = ray(rec.p, reflected);
-			attenuation = vec3(1.0, 1.0, 1.0);
-		} else {
-			float costheta_t = sqrt(1-ref_idx*ref_idx / (1.0*1.0) * (1- pow(dot(-v, unit_vector(inverse_normal)), 2.0)));
-
-			vec3 v_p;
-			if (drand48() <= shlick(costheta_t, 1.0, ref_idx)) {
-				// reflection
-				v_p = reflect(v, inverse_normal);
-			} else {
-				// refraction
-				v_p = refract(v, inverse_normal, ref_idx, n);
-			}
-			scattered = ray(rec.p, v_p);
-		}
-	}
-
-*/
 	return true;
 }
 
