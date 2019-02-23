@@ -23,11 +23,12 @@ vec3 color(const ray& r, hitable *world, int count)
 		vec3 attenuation;
 		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
 		vec3 emitted = rec.mat_ptr->emitted(0, 0, r, rec);
-		float pdf;
 
-		if (count < 20 && rec.mat_ptr->scatter(r, rec, attenuation, scatterd, pdf)) {
+		float bxdf;
+		float pdf;
+		if (count < 20 && rec.mat_ptr->sample(r, rec, attenuation, scatterd, bxdf, pdf)) {
 			//return emitted + attenuation*color(scatterd, world, count+1);
-			return emitted + attenuation*rec.mat_ptr->BxDF(r, rec, scatterd)*color(scatterd, world, count+1) * dot(rec.normal, unit_vector(scatterd.direction()))/ pdf;
+			return emitted + bxdf*attenuation*color(scatterd, world, count+1) * abs(dot(rec.normal, unit_vector(scatterd.direction())))/ pdf;
 		} else {
 			return emitted;
 		}
@@ -59,7 +60,7 @@ hitable *room(void)
 	list.push_back(new rectangle(vec3(0, 0, -size), vec3(0, 0, 1), vec3(-1, 0, 0), 2.0, 2.0, new lambertian(vec3(reflection, reflection, reflection))));
 
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30))));
-	hitable *light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(30, 30, 30)));
+	hitable *light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(50, 50, 50)));
 	list.push_back(light);
 	lambertian mat(vec3(0, 0, 0));
 	mat.lights.push_back(light);
@@ -71,11 +72,14 @@ hitable *room(void)
 	//list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.3, new dielectric(1.42)));
 
 	//list.push_back(new sphere(vec3(-0.5, -0.5, -0.5), 0.5, new metal(vec3(0.85, 0.85, 0.85), 0.0)));
+	//list.push_back(new sphere(vec3(0.4, -0.5, 0.4), 0.5, new dielectric(2.4)));
 
 	//float box_size = 0.5;
 	//list.push_back(new translate(new box(vec3(0, 0, 0), vec3(box_size, box_size*2, box_size), new dielectric(1.5)), vec3(0.4, -0.5, -0.8)));
 	//list.push_back(new translate(new plymodel("human2.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
-	list.push_back(new translate(new plymodel("smooth_monkey.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, 0.5)));
+
+	//list.push_back(new translate(new plymodel("smooth_monkey.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, 0.5)));
+	list.push_back(new translate(new plymodel("torus2.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
 
 	//list.push_back(new translate(new plymodel("blender_monkey.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(0.0, -0.2, 0.5)));
 	//list.push_back(new translate(new plymodel("human3.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(-0.45, -0.2, 0.5)));
@@ -180,7 +184,7 @@ int main(int argc, char **argv)
 	int nx = 500;
 	int ny = 500;
 
-	int ns = 3000;
+	int ns = 30;
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
@@ -220,7 +224,7 @@ int main(int argc, char **argv)
 	////list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
 
 	//hitable *world = new hitable_list(list);
-	hitable *world = testroom();
+	hitable *world = room();
 	camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
 
 
