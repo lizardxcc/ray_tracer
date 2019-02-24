@@ -49,10 +49,13 @@ class metal : public material {
 
 class dielectric : public material {
 	public:
-		dielectric(float ref_idx) : ref_idx(ref_idx) {}
+		dielectric(float ref_idx) : ref_idx(ref_idx) {
+			//R0 = pow((1.0-ref_idx)/(1.0+ref_idx), 2);
+		}
 		virtual bool sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const;
 
 		float ref_idx;
+		//float R0;
 };
 
 class diffuse_light : public material {

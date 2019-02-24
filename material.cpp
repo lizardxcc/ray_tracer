@@ -148,6 +148,8 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 		float r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
 		float r_s = (n_out*cos_o - n_in*cos_t)/(n_out*cos_o + n_in*cos_t);
 		fresnel = (r_p*r_p + r_s*r_s)/2.0;
+		//float R0 = pow((n_out-n_in)/(n_out+n_in), 2);
+		//fresnel = R0 + (1-R0) * pow(1-cos_t, 5);
 	}
 
 	float rand = drand48();
