@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <random>
 #include "vec3.h"
 #include "ray.h"
@@ -18,7 +19,7 @@
 vec3 color(const ray& r, hitable *world, int count)
 {
 	hit_record rec;
-	if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+	if (world->hit(r, 0.001, std::numeric_limits<float>::max(), rec)) {
 		ray scatterd;
 		vec3 attenuation;
 		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -79,7 +80,9 @@ hitable *room(void)
 	//list.push_back(new translate(new plymodel("human2.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
 
 	//list.push_back(new translate(new plymodel("smooth_monkey.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, 0.5)));
-	list.push_back(new translate(new plymodel("torus2.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	//hitable *obj = new sphere(vec3(0.0, -0.2, 0.5), 0.7, new dielectric(2.4));
+	//mat.lights.push_back(obj);
 
 	//list.push_back(new translate(new plymodel("blender_monkey.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(0.0, -0.2, 0.5)));
 	//list.push_back(new translate(new plymodel("human3.ply", new metal(vec3(1.0, 1.0, 1.0), 0.0)), vec3(-0.45, -0.2, 0.5)));
@@ -174,6 +177,40 @@ hitable *testroom(void)
 	return new hitable_list(list);
 }
 
+hitable *caustics_room(void)
+{
+	std::vector<hitable *> list;
+
+	quadrilateral *quad = new quadrilateral();
+	quad->v[0] = vec3(-10.0, -1, 10.0);
+	quad->v[1] = vec3(10.0, -1, 10.0);
+	quad->v[2] = vec3(10.0, -1, -10.0);
+	quad->v[3] = vec3(-10.0, -1, -10.0);
+	quad->normal = vec3(0.0, 1.0, 0.0);
+	quad->mat_ptr = new lambertian(vec3(0.7, 0.7, 0.7));
+	list.push_back(quad);
+
+	lambertian mat(vec3(0, 0, 0));
+	hitable *light;
+
+	float size = 1.0;
+	//float reflection = 0.90;
+	//light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(50, 50, 50)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+
+	light = new sphere(vec3(0.0, 10000.2, 0.0), 1000.05, new diffuse_light(vec3(50, 50, 50)));
+	list.push_back(light);
+	mat.lights.push_back(light);
+
+	list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	hitable *obj = new sphere(vec3(0.0, -0.2, 0.5), 0.5, new dielectric(2.4));
+	mat.lights.push_back(obj);
+
+	return new hitable_list(list);
+}
+
+
 int main(int argc, char **argv)
 {
 
@@ -181,10 +218,10 @@ int main(int argc, char **argv)
 		std::cout << "wrong number of arguments" << std::endl;
 		exit(-1);
 	}
-	int nx = 500;
-	int ny = 500;
+	int nx = 800;
+	int ny = 800;
 
-	int ns = 30;
+	int ns = 500;
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
@@ -196,6 +233,7 @@ int main(int argc, char **argv)
 	ofs.open(argv[1]);
 
 	ofs << "P3\n" << nx << " " << ny << "\n255\n";
+	//ofs << "P3\n" << nx << " " << ny << "\n65535\n";
 
 	//std::vector<hitable*> list;
 	//float size = 1.0;
@@ -261,9 +299,12 @@ int i, j, s;
 			array[i][j] /= float(ns);
 			array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
 
-			int ir = int(255.99*array[i][j][0]);
-			int ig = int(255.99*array[i][j][1]);
-			int ib = int(255.99*array[i][j][2]);
+			int ir = std::min(std::max(int(255.99*array[i][j][0]), 0), 255);
+			int ig = std::min(std::max(int(255.99*array[i][j][1]), 0), 255);
+			int ib = std::min(std::max(int(255.99*array[i][j][2]), 0), 255);
+			//int ir = std::min(std::max(int(65535.99*array[i][j][0]), 0), 65535);
+			//int ig = std::min(std::max(int(65535.99*array[i][j][1]), 0), 65535);
+			//int ib = std::min(std::max(int(65535.99*array[i][j][2]), 0), 65535);
 
 			ofs << ir << " " << ig << " " << ib << "\n";
 		}
