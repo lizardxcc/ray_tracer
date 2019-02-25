@@ -83,15 +83,13 @@ float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) 
 
 bool metal::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf) const
 {
-	onb uvw;
-	uvw.build_from_w(rec.normal);
-	//vec3 generated_direction = uvw.local(random_on_unit_hemisphere());
-	vec3 generated_direction = reflect(unit_vector(r_in.direction()), rec.normal);
-
-	scattered = ray(rec.p, unit_vector(generated_direction));
+	vec3 normal = unit_vector(rec.normal);
+	vec3 v = unit_vector(r_in.direction());
+	float abs_cos_o = abs(dot(v, normal));
+	vec3 r_out = v + 2*abs_cos_o*normal;
+	scattered = ray(rec.p, unit_vector(r_out));
 	attenuation = albedo;
-	//pdf = 1/(2*M_PI);
-	BxDF = this->BxDF(r_in, rec, scattered);
+	BxDF = 1.0/abs_cos_o;
 	pdf = 1;
 	return true;
 }
