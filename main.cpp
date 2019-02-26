@@ -297,7 +297,8 @@ int i, j, s;
 	for (int j = ny-1; j >= 0; j--) {
 		for (int i = 0; i < nx; i++) {
 			array[i][j] /= float(ns);
-			array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
+			//array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
+			array[i][j] = vec3(pow(array[i][j][0], 1.0/2.2), pow(array[i][j][1], 1.0/2.2), pow(array[i][j][2], 1.0/2.2));
 
 			int ir = std::min(std::max(int(255.99*array[i][j][0]), 0), 255);
 			int ig = std::min(std::max(int(255.99*array[i][j][1]), 0), 255);
