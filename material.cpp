@@ -173,6 +173,55 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 	return true;
 }
 
+
+bool oren_nayar::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const
+{
+	vec3 generated_direction;
+
+	uniform_pdf uni_pdf(rec.normal);
+	std::vector<pdf *> pdf_list(lights.size()+1);
+	pdf_list[0] = &uni_pdf;
+	for (size_t i = 1; i < pdf_list.size(); i++) {
+		pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
+	}
+	mixture_pdf pdf(pdf_list);
+
+	generated_direction = pdf.generate();
+	pdf_val = pdf.pdf_val(generated_direction);
+
+	scattered = ray(rec.p, unit_vector(generated_direction));
+	attenuation = albedo;
+
+	for (size_t i = 1; i < pdf_list.size(); i++) {
+		delete pdf_list[i];
+	}
+
+	vec3 vo = -unit_vector(r_in.direction());
+	vec3 normal = unit_vector(rec.normal);
+	float cos_theta_i = dot(generated_direction, normal);
+	if (cos_theta_i < 0) {
+		BxDF = 0;
+		return true;
+	}
+	float cos_theta_o = dot(vo, normal);
+	float cos_alpha = std::min(cos_theta_i, cos_theta_o);
+	float cos_beta = std::max(cos_theta_i, cos_theta_o);
+	float sin_alpha = sqrt(1.0-cos_alpha*cos_alpha);
+	float tan_beta = sqrt(1.0/(cos_beta*cos_beta) - 1.0);
+
+	float A = 1 - sigma*sigma/(2*(sigma*sigma + 0.33));
+	float B = 0.45 * sigma * sigma / (sigma*sigma+0.09);
+
+	vec3 hori_vo = vo - cos_theta_o * normal;
+	vec3 hori_scattered = generated_direction - cos_theta_i * normal;
+	float tmp = std::max(0.0f, dot(hori_vo, hori_scattered));
+
+	BxDF = 1.0/M_PI * (A + B * tmp * sin_alpha * tan_beta);
+
+	//BxDF = this->BxDF(r_in, rec, scattered);
+	return true;
+}
+
 bool diffuse_light::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf) const
 {
 	return false;

@@ -58,6 +58,15 @@ class dielectric : public material {
 		//float R0;
 };
 
+
+class oren_nayar : public material {
+	public:
+		oren_nayar(const vec3& albedo, float sigma) : albedo(albedo), sigma(sigma) {}
+		virtual bool sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const;
+		vec3 albedo;
+		float sigma;
+};
+
 class diffuse_light : public material {
 	public:
 		diffuse_light(vec3 color) : light_color(color) {}
