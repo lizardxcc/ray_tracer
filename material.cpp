@@ -34,12 +34,13 @@ vec3 refract(vec3 v, vec3 normal, float n_in, float n_out)
 
 float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
-	float rho = 0.5;
+	//float rho = 0.5;
 	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
 		return 0;
 
-	return rho / M_PI;
+	//return rho / M_PI;
+	return 1.0/M_PI;
 }
 
 bool lambertian::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const
