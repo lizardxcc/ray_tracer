@@ -72,7 +72,9 @@ hitable *room(void)
 	//list.push_back(new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.4, 0.4, new diffuse_light(vec3(1.0*56, 0.576*56, 0.1607*56))));
 	//list.push_back(new sphere(vec3(0.4, -0.6, 0.4), 0.3, new dielectric(1.42)));
 
-	//list.push_back(new sphere(vec3(-0.5, -0.5, -0.5), 0.5, new metal(vec3(0.85, 0.85, 0.85), 0.0)));
+	//list.push_back(new sphere(vec3(-0.2, -0.5, -0.2), 0.5, new metal(vec3(0.95, 0.05, 0.85), 0.0)));
+	list.push_back(new sphere(vec3(-0.5, -0.5, -0.2), 0.4, new lambertian(vec3(0.90, 0.90, 0.90))));
+	list.push_back(new sphere(vec3(0.5, -0.5, -0.2), 0.4, new oren_nayar(vec3(0.90, 0.90, 0.90), 0.5)));
 	//list.push_back(new sphere(vec3(0.4, -0.5, 0.4), 0.5, new dielectric(2.4)));
 
 	//float box_size = 0.5;
@@ -80,7 +82,7 @@ hitable *room(void)
 	//list.push_back(new translate(new plymodel("human2.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, -0.3)));
 
 	//list.push_back(new translate(new plymodel("smooth_monkey.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(0.0, -0.2, 0.5)));
-	list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	//list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
 	//hitable *obj = new sphere(vec3(0.0, -0.2, 0.5), 0.7, new dielectric(2.4));
 	//mat.lights.push_back(obj);
 
@@ -203,9 +205,44 @@ hitable *caustics_room(void)
 	list.push_back(light);
 	mat.lights.push_back(light);
 
-	list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	//list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	list.push_back(new translate(new plymodel("blender_monkey.ply", new lambertian(vec3(1.0, 1.0, 1.0))), vec3(-0.7, -0.2, 0.0)));
+	list.push_back(new translate(new plymodel("blender_monkey.ply", new oren_nayar(vec3(1.0, 1.0, 1.0), 1.0)), vec3(0.7, -0.2, 0.0)));
 	hitable *obj = new sphere(vec3(0.0, -0.2, 0.5), 0.5, new dielectric(2.4));
 	mat.lights.push_back(obj);
+
+	return new hitable_list(list);
+}
+
+hitable *moon_room(void)
+{
+	std::vector<hitable *> list;
+
+	quadrilateral *quad = new quadrilateral();
+	float size = 1.0;
+	quad->v[0] = vec3(-size, -1, size);
+	quad->v[1] = vec3(size, -1, size);
+	quad->v[2] = vec3(size, -1, -size);
+	quad->v[3] = vec3(-size, -1, -size);
+	quad->normal = vec3(0.0, 1.0, 0.0);
+	quad->mat_ptr = new lambertian(vec3(0.7, 0.7, 0.7));
+	//list.push_back(quad);
+
+	lambertian mat(vec3(0, 0, 0));
+	hitable *light;
+
+
+	//light = new sphere(vec3(0.0, 0.0, 10000.2), 1000.05, new diffuse_light(vec3(50, 50, 50)));
+	light = new sphere(vec3(0.0, 0000.0, 100.0), 50.05, new diffuse_light(vec3(3, 3, 3)));
+	list.push_back(light);
+	mat.lights.push_back(light);
+
+	//list.push_back(new translate(new plymodel("blender_monkey.ply", new dielectric(1.4)), vec3(0.0, -0.2, 0.5)));
+	//hitable *obj = new sphere(vec3(0.0, -0.2, 0.5), 0.5, new dielectric(2.4));
+	//mat.lights.push_back(obj);
+	list.push_back(new sphere(vec3(-0.7, -0.0, 0.5), 0.3, new lambertian(vec3(1, 1, 1))));
+	list.push_back(new sphere(vec3(0.0, -0.0, 0.5), 0.3, new oren_nayar(vec3(1, 1, 1), 0.3)));
+	list.push_back(new sphere(vec3(0.7, -0.0, 0.5), 0.3, new oren_nayar(vec3(1, 1, 1), 10000.0)));
 
 	return new hitable_list(list);
 }
@@ -221,7 +258,7 @@ int main(int argc, char **argv)
 	int nx = 800;
 	int ny = 800;
 
-	int ns = 500;
+	int ns = 300;
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
@@ -262,7 +299,7 @@ int main(int argc, char **argv)
 	////list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
 
 	//hitable *world = new hitable_list(list);
-	hitable *world = room();
+	hitable *world = moon_room();
 	camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
 
 
