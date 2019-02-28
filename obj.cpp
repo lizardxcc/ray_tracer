@@ -50,7 +50,7 @@ bool obj::LoadObject(void)
 	iss >> s;
 
 	obj->name = s;
-	std::cout << s << std::endl;
+	//std::cout << s << std::endl;
 
 
 	size_t property_size = 0;
@@ -94,17 +94,17 @@ bool obj::LoadObject(void)
 
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
-						std::cout << " AAA :" << vs << ";" << std::endl;
+						//std::cout << " AAA :" << vs << ";" << std::endl;
 						va[0] = atoi(vs.c_str());
 					}
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
-						std::cout << " AAA :" << vs << ";" << std::endl;
+						//std::cout << " AAA :" << vs << ";" << std::endl;
 						va[1] = atoi(vs.c_str());
 					}
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
-						std::cout << " AAA :" << vs << ";" << std::endl;
+						//std::cout << " AAA :" << vs << ";" << std::endl;
 						va[2] = atoi(vs.c_str());
 					}
 					face.push_back(va);
