@@ -168,7 +168,7 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 		pdf_val = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
-	attenuation = vec3(1.0, 1.0, 1.0);
+	attenuation = albedo;
 
 	return true;
 }

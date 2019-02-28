@@ -50,11 +50,14 @@ class metal : public material {
 class dielectric : public material {
 	public:
 		dielectric(float ref_idx) : ref_idx(ref_idx) {
+			albedo = vec3(1.0, 1.0, 1.0);
 			//R0 = pow((1.0-ref_idx)/(1.0+ref_idx), 2);
 		}
+		dielectric(const vec3& albedo, float ref_idx) : albedo(albedo), ref_idx(ref_idx) {}
 		virtual bool sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const;
 
 		float ref_idx;
+		vec3 albedo;
 		//float R0;
 };
 
