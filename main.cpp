@@ -251,14 +251,14 @@ hitable *moon_room(void)
 int main(int argc, char **argv)
 {
 
-	if (argc < 2) {
+	if (argc < 5) {
 		std::cout << "wrong number of arguments" << std::endl;
 		exit(-1);
 	}
-	int nx = 800;
-	int ny = 800;
+	int nx = atoi(argv[2]);
+	int ny = atoi(argv[3]);
 
-	int ns = 300;
+	int ns = atoi(argv[4]);
 
 	vec3 **array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
