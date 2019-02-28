@@ -267,6 +267,105 @@ bool translate::bounding_box(aabb& box) const
 	}
 }
 
+
+objmodel::objmodel(const char *filename)
+{
+	o.Load(filename);
+	for (const auto& s : o.mtl_file) {
+		mtl_loader.Load(s);
+	}
+	models.resize(o.objects.size());
+	for (size_t i = 0; i < o.objects.size(); i++) {
+		auto& object = o.objects[i];
+		std::vector<hitable *> model;
+		model.resize(object->f.size());
+		std::cout << "f: " << object->f.size() << std::endl;
+		material *mat;
+		Mtl *mtl = mtl_loader.mtls[object->material_name];
+		float Tr = 1.0 - mtl->d;
+		bool light_flag = false;
+		if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
+			mat = new diffuse_light(mtl->Ke);
+			light_flag = true;
+		} else if (Tr != 0.0) {
+			mat = new dielectric(mtl->Kd, mtl->Ni);
+		} else {
+			mat = new lambertian(mtl->Kd);
+		}
+
+		for (size_t j = 0; j < o.objects[i]->f.size(); j++) {
+			auto& f = o.objects[i]->f[j];
+			size_t l = f.size();
+			if (l != 3 && l != 4) {
+				std::cerr << "Error: " << l << " sided polygon is unsupported" << std::endl;
+				return;
+			}
+			hitable *tmp_model;
+			if (l == 3) {
+				triangle *tri = new triangle();
+				tri->normal = vec3(0, 0, 0);
+				for (size_t k = 0; k < l; k++) {
+					tri->v[k] = object->v[*f[k][0]];
+					tri->normal += object->vn[*f[k][2]];
+				}
+				//tri->normal.make_unit_vector();
+				//tri->normal = object->vn[*f[0][2]];
+				tri->normal = unit_vector(cross(tri->v[1] - tri->v[0], tri->v[2] - tri->v[1]));
+				tri->mat_ptr = mat;
+				tmp_model = tri;
+			} else if (l == 4) {
+				quadrilateral *quad = new quadrilateral();
+				quad->normal = vec3(0, 0, 0);
+				for (size_t k = 0; k < l; k++) {
+					quad->v[k] = object->v[*f[k][0]];
+					quad->normal += object->vn[*f[k][2]];
+				}
+				//quad->normal.make_unit_vector();
+				quad->normal = unit_vector(cross(quad->v[1] - quad->v[0], quad->v[2] - quad->v[1]));
+				quad->mat_ptr = mat;
+				tmp_model = quad;
+			}
+			model[j] = tmp_model;
+		}
+		bvh_node *b = new bvh_node(model);
+		models[i] = b;
+		if (light_flag) {
+			aabb box = b->box;
+			hitable *sphere = new ::sphere((box.minp+box.maxp)/2.0, (box.maxp-box.minp).length()/2.0, nullptr);
+			std::cout << (box.maxp-box.minp).length()/2.0 << std::endl;
+			material *mat = new lambertian(vec3(1.0, 1.0, 1.0));
+			mat->lights.push_back(sphere);
+
+			//mat->lights.push_back(tmp_model);
+		}
+	}
+
+	//bvh = new bvh_node(models);
+}
+
+bool objmodel::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+{
+	hit_record temp_rec;
+	bool hit_anything = false;
+	for (const auto& b : models) {
+		if (b->hit(r, t_min, t_max, temp_rec)) {
+			if (temp_rec.t < t_max || !hit_anything) {
+				t_max = temp_rec.t;
+				rec = temp_rec;
+				hit_anything = true;
+			}
+		}
+	}
+	return hit_anything;
+	//return bvh->hit(r, t_min, t_max, rec);
+}
+bool objmodel::bounding_box(aabb& box) const
+{
+	box = bvh->box;
+
+	return true;
+}
+
 plymodel::plymodel(const char *filename, material *mat)
 {
 	p.Load(filename);
@@ -378,9 +477,26 @@ bool triangle::bounding_box(aabb& box) const
 	std::max(v[0].y(), std::max(v[1].y(), v[2].y())),
 	std::max(v[0].z(), std::max(v[1].z(), v[2].z()))
 	);
+
+	for (size_t i = 0; i < 3; i++) {
+		if (box.minp.e[i] == box.maxp.e[i]) {
+			box.minp.e[i] -= 0.0001;
+			box.maxp.e[i] += 0.0001;
+		}
+	}
 	return true;
 }
 
+
+
+pdf *triangle::generate_pdf_object(const vec3& o)
+{
+	vec3 c = (v[0]+v[1]+v[2])/3.0;
+	vec3 vec = c - o;
+	float r = ((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length())/3.0;
+	pdf *p = new toward_object_pdf(unit_vector(vec), atan2(r, vec.length()));
+	return p;
+}
 
 bool quadrilateral::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
@@ -422,6 +538,13 @@ bool quadrilateral::bounding_box(aabb& box) const
 	std::max({v[0].y(), v[1].y(), v[2].y(), v[3].y()}),
 	std::max({v[0].z(), v[1].z(), v[2].z(), v[3].z()})
 	);
+
+	for (size_t i = 0; i < 3; i++) {
+		if (box.minp.e[i] == box.maxp.e[i]) {
+			box.minp.e[i] -= 0.0001;
+			box.maxp.e[i] += 0.0001;
+		}
+	}
 	return true;
 }
 

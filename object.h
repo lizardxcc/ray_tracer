@@ -3,6 +3,8 @@
 
 #include "hitable.h"
 #include "material.h"
+#include "obj.h"
+#include "mtl.h"
 #include "ply.h"
 #include "aabb.h"
 #include "bvh.h"
@@ -115,6 +117,19 @@ class translate : public hitable {
 		vec3 offset;
 };
 
+
+class objmodel : public hitable {
+	public:
+		objmodel(const char *filename);
+		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool bounding_box(aabb& box) const;
+		obj o;
+		MtlLoader mtl_loader;
+		//std::vector<std::vector<hitable *>> models;
+		std::vector<hitable *> models;
+		bvh_node *bvh;
+};
+
 class plymodel : public hitable {
 	public:
 		plymodel(const char *filename, material *mat);
@@ -129,6 +144,7 @@ class triangle : public hitable {
 	public:
 		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
+		virtual pdf *generate_pdf_object(const vec3& o);
 		material *mat_ptr;
 		vec3 v[3];
 		vec3 normal;
