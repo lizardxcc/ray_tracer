@@ -247,6 +247,33 @@ hitable *moon_room(void)
 	return new hitable_list(list);
 }
 
+hitable *obj_room(void)
+{
+	std::vector<hitable *> list;
+	list.push_back(new objmodel("city.obj"));
+	float size = 1.0;
+
+	//quadrilateral *quad = new quadrilateral();
+	//quad->v[0] = vec3(-10.0, -1, 10.0);
+	//quad->v[1] = vec3(10.0, -1, 10.0);
+	//quad->v[2] = vec3(10.0, -1, -10.0);
+	//quad->v[3] = vec3(-10.0, -1, -10.0);
+	//quad->normal = vec3(0.0, 1.0, 0.0);
+	//quad->mat_ptr = new lambertian(vec3(0.2, 0.2, 0.2));
+	//list.push_back(quad);
+
+	//hitable *light;
+	//lambertian mat(vec3(0, 0, 0));
+	//light = new sphere(vec3(0.0, 0000.0, 100.0), 50.05, new diffuse_light(vec3(3, 3, 3)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+	//light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(8, 8, 8)));
+	//list.push_back(light);
+	//mat.lights.push_back(light);
+
+
+	return new hitable_list(list);
+}
 
 int main(int argc, char **argv)
 {
@@ -299,8 +326,9 @@ int main(int argc, char **argv)
 	////list.push_back(new xy_rect(0, 0, 0.5, 0.5, -0.5, new diffuse_light(vec3(1.0*5, 0.576*5, 0.1607*5))));
 
 	//hitable *world = new hitable_list(list);
-	hitable *world = moon_room();
-	camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
+	hitable *world = obj_room();
+	//camera cam(vec3(0.0, 0.0, 2.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
+	camera cam(vec3(-1.0, 2.0, 6.4), vec3(0.0, 4.2, 0.0), vec3(0, 1, 0), 90.0, 1.0);
 
 
 	size_t count = 0;
