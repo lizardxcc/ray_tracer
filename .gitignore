@@ -3,3 +3,8 @@ a.out
 test.pnm
 tmp/
 *.ply
+*.obj
+*.mtl
+*.png
+*.blend
+*.pnm
