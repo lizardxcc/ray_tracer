@@ -40,10 +40,10 @@ float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scatte
 		return 0;
 
 	//return rho / M_PI;
-	return 1.0/M_PI;
+	return albedo.get(r_in.central_wl)/M_PI;
 }
 
-bool lambertian::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const
+bool lambertian::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
 {
 	vec3 generated_direction;
 
@@ -59,7 +59,10 @@ bool lambertian::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 	pdf_val = pdf.pdf_val(generated_direction);
 
 	scattered = ray(rec.p, unit_vector(generated_direction));
-	attenuation = albedo;
+	scattered.min_wl = r_in.min_wl;
+	scattered.max_wl = r_in.max_wl;
+	scattered.central_wl = r_in.central_wl;
+	//attenuation = albedo;
 
 	for (size_t i = 1; i < pdf_list.size(); i++) {
 		delete pdf_list[i];
@@ -78,18 +81,21 @@ float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) 
 
 	vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
 
-	return 3.0*pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100) / M_PI;
+	return albedo.get(r_in.central_wl) * 3.0*pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100) / M_PI;
 	return pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100);
 }
 
-bool metal::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf) const
+bool metal::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf) const
 {
 	vec3 normal = unit_vector(rec.normal);
 	vec3 v = unit_vector(r_in.direction());
 	float abs_cos_o = abs(dot(v, normal));
 	vec3 r_out = v + 2*abs_cos_o*normal;
 	scattered = ray(rec.p, unit_vector(r_out));
-	attenuation = albedo;
+	scattered.min_wl = r_in.min_wl;
+	scattered.max_wl = r_in.max_wl;
+	scattered.central_wl = r_in.central_wl;
+	//attenuation = albedo;
 	BxDF = 1.0/abs_cos_o;
 	pdf = 1;
 	return true;
@@ -115,9 +121,10 @@ float shlick(float theta, float n1, float n2)
 }
 
 
-bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const
+bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
 {
 
+	float ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
 	//vec3 v = unit_vector(r_in.direction());
 	vec3 vo = -unit_vector(r_in.direction());
 	vec3 normal = unit_vector(rec.normal);
@@ -168,13 +175,16 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 		pdf_val = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
-	attenuation = albedo;
+	scattered.min_wl = r_in.min_wl;
+	scattered.max_wl = r_in.max_wl;
+	scattered.central_wl = r_in.central_wl;
+	//attenuation = albedo;
 
 	return true;
 }
 
 
-bool oren_nayar::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf_val) const
+bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
 {
 	vec3 generated_direction;
 
@@ -190,7 +200,10 @@ bool oren_nayar::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 	pdf_val = pdf.pdf_val(generated_direction);
 
 	scattered = ray(rec.p, unit_vector(generated_direction));
-	attenuation = albedo;
+	scattered.min_wl = r_in.min_wl;
+	scattered.max_wl = r_in.max_wl;
+	scattered.central_wl = r_in.central_wl;
+	//attenuation = albedo;
 
 	for (size_t i = 1; i < pdf_list.size(); i++) {
 		delete pdf_list[i];
@@ -222,23 +235,30 @@ bool oren_nayar::sample(const ray& r_in, const hit_record& rec, vec3& attenuatio
 	return true;
 }
 
-bool diffuse_light::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf) const
+bool diffuse_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf) const
 {
 	return false;
 }
 
-vec3 diffuse_light::emitted(float u, float v, const ray& r_in, const hit_record& rec) const
+float diffuse_light::emitted(float u, float v, const ray& r_in, const hit_record& rec) const
 {
 	//return vec3(1.0, 1.0, 1.0);
-	return light_color;
+	return light_color.integrate(r_in.min_wl, r_in.max_wl);
+	//return 10.0;
 }
 
-bool straight_light::sample(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& BxDF, float& pdf) const
+bool straight_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf) const
 {
 	return false;
 }
 
-vec3 straight_light::emitted(float u, float v, const ray& r_in, const hit_record& rec) const
+float straight_light::emitted(float u, float v, const ray& r_in, const hit_record& rec) const
 {
-	return light_color*pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 20.0);
+	//return light_color*pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 20.0);
+	//return light_color.integrate(r_in.min_wl, r_in.max_wl) * pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 100);
+	float t = 0.0;
+	float d = dot(unit_vector(rec.normal), -unit_vector(r_in.direction()));
+	if (abs(d) >= 0.95)
+		t = 1.0;
+	return light_color.integrate(r_in.min_wl, r_in.max_wl) * t;
 }

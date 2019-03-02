@@ -285,12 +285,18 @@ objmodel::objmodel(const char *filename)
 		float Tr = 1.0 - mtl->d;
 		bool light_flag = false;
 		if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
-			mat = new diffuse_light(mtl->Ke);
+			//mat = new diffuse_light(mtl->Ke);
+			Spectrum l(0.1);
+			//l.data[0] = 0.1;
+			//l.data[5] = 0.1;
+			//l.data[9] = 0.1;
+			mat = new straight_light(l);
 			light_flag = true;
 		} else if (Tr != 0.0) {
-			mat = new dielectric(mtl->Kd, mtl->Ni);
+			//mat = new dielectric(mtl->Kd, mtl->Ni);
+			mat = new dielectric(Spectrum(1), 1.728, 0.01342);
 		} else {
-			mat = new lambertian(mtl->Kd);
+			mat = new lambertian(Spectrum(1.0));
 		}
 
 		for (size_t j = 0; j < o.objects[i]->f.size(); j++) {
@@ -333,7 +339,8 @@ objmodel::objmodel(const char *filename)
 			aabb box = b->box;
 			hitable *sphere = new ::sphere((box.minp+box.maxp)/2.0, (box.maxp-box.minp).length()/2.0, nullptr);
 			std::cout << (box.maxp-box.minp).length()/2.0 << std::endl;
-			material *mat = new lambertian(vec3(1.0, 1.0, 1.0));
+			//material *mat = new lambertian(vec3(1.0, 1.0, 1.0));
+			material *mat = new lambertian(Spectrum(1.0));
 			mat->lights.push_back(sphere);
 
 			//mat->lights.push_back(tmp_model);

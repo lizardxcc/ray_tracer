@@ -23,6 +23,9 @@ public:
 
 	vec3 A;
 	vec3 B;
+	float central_wl;
+	float min_wl;
+	float max_wl;
 };
 
 
