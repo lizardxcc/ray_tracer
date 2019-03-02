@@ -63,7 +63,7 @@ $(DEPS_DIR):
 	mkdir -p $@
 
 $(RELEASE_OBJS_DIR)/%.o: %.cpp $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR) Makefile
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
 
 $(DEBUG_OBJS_DIR)/%.o: %.cpp $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR) Makefile
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
