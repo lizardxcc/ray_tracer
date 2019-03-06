@@ -2,6 +2,7 @@
 #define VEC3_H
 
 #include <iostream>
+#include <algorithm>
 #include <math.h>
 
 class vec3 {
@@ -164,6 +165,14 @@ inline vec3& vec3::operator/=(const float t)
 inline vec3 unit_vector(vec3 v)
 {
 	return v / v.length();
+}
+
+
+inline vec3 complementary_rgb(vec3 rgb)
+{
+	float max = std::max({rgb[0], rgb[1], rgb[2]});
+	float min = std::min({rgb[0], rgb[1], rgb[2]});
+	return vec3(max+min, max+min, max+min) - rgb;
 }
 
 
