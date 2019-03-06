@@ -105,5 +105,6 @@ inline Spectrum operator/(const Spectrum &s1, float t)
 }
 vec3 xyz(const Spectrum &s);
 vec3 rgb(const Spectrum &s);
+Spectrum RGBtoSpectrum(const vec3& rgb);
 
 #endif

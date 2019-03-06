@@ -101,3 +101,19 @@ vec3 rgb(const Spectrum &s)
 
 	return rgb;
 }
+
+
+Spectrum RGBtoSpectrum(const vec3& rgb)
+{
+	Spectrum s;
+	for (int i = 0; i < N_SAMPLE/3.0; i++) {
+		s.data[i] = rgb[2];
+	}
+	for (int i = N_SAMPLE/3.0; i < N_SAMPLE/3.0*2.0; i++) {
+		s.data[i] = rgb[1];
+	}
+	for (int i = N_SAMPLE/3.0*2.0; i < N_SAMPLE; i++) {
+		s.data[i] = rgb[0];
+	}
+	return s;
+}
