@@ -365,15 +365,6 @@ int i, j, s;
 			//spectrum_array[i][j] *= 1.0;
 			//array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
 			vec3 rgb_col = rgb(spectrum_array[i][j]);
-			if (rgb_col[0] < 0.0) {
-				std::cout << "R";
-			}
-			if (rgb_col[1] < 0.0) {
-				std::cout << "G";
-			}
-			if (rgb_col[2] < 0.0) {
-				std::cout << "B";
-			}
 			for (size_t i = 0; i < 3; i++) {
 				if (rgb_col[i] >= 0.0) {
 					rgb_col.e[i] = pow(rgb_col[i], 1.0/2.2);
