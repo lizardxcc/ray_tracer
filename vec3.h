@@ -176,4 +176,47 @@ inline vec3 complementary_rgb(vec3 rgb)
 }
 
 
+inline vec3 RGBtoHSV(const vec3& rgb)
+{
+	float max = std::max({rgb[0], rgb[1], rgb[2]});
+	float min = std::min({rgb[0], rgb[1], rgb[2]});
+	float h = 0.0, s, v;
+	if (min == max) {
+	} else if (min == rgb[2]) {
+		h = 60.0 * (rgb[1] - rgb[0]) / (max-min) + 60.0;
+	} else if (min == rgb[0]) {
+		h = 60.0 * (rgb[2] - rgb[1]) / (max-min) + 180.0;
+	} else if (min == rgb[1]) {
+		h = 60.0 * (rgb[0] - rgb[2]) / (max-min) + 300.0;
+	}
+	s = max - min;
+	v = max;
+	return vec3(h, s, v);
+}
+
+
+inline vec3 HSVtoRGB(const vec3& hsv)
+{
+	float c = hsv[1];
+	float h_p = hsv[0] / 60.0;
+	float x = c * (1 - abs(fmod(h_p, 2.0) - 1));
+	vec3 rgb = (hsv[2]-c) * vec3(1, 1, 1);
+	std::cout << x << " " << c << std::endl;
+	if (h_p >= 0 && h_p < 1) {
+		rgb += vec3(c, x, 0);
+	} else if (h_p >= 1 && h_p < 2) {
+		rgb += vec3(x, c, 0);
+	} else if (h_p >= 2 && h_p < 3) {
+		rgb += vec3(0, c, x);
+	} else if (h_p >= 3 && h_p < 4) {
+		rgb += vec3(0, x, c);
+	} else if (h_p >= 4 && h_p < 5) {
+		rgb += vec3(x, 0, c);
+	} else if (h_p >= 5 && h_p < 6) {
+		rgb += vec3(c, 0, x);
+	}
+
+	return rgb;
+}
+
 #endif
