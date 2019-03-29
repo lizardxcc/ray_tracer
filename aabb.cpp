@@ -4,24 +4,24 @@
 
 
 
-inline float ffmin(float a, float b)
+inline double ffmin(double a, double b)
 {
 	return a < b ? a : b;
 }
 
-inline float ffmax(float a, float b)
+inline double ffmax(double a, double b)
 {
 	return a > b ? a : b;
 }
 
-bool aabb::hit(const ray& r, float t_min, float t_max) const
+bool aabb::hit(const ray& r, double t_min, double t_max) const
 {
 	for (int i = 0; i < 3; i++) {
-		float t0 = ffmin(
+		double t0 = ffmin(
 		(minp[i] - r.origin()[i]) / r.direction()[i],
 		(maxp[i] - r.origin()[i]) / r.direction()[i]
 		);
-		float t1 = ffmax(
+		double t1 = ffmax(
 		(minp[i] - r.origin()[i]) / r.direction()[i],
 		(maxp[i] - r.origin()[i]) / r.direction()[i]
 		);

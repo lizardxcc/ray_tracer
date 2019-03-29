@@ -12,12 +12,12 @@
 class sphere: public hitable {
 	public:
 		sphere() { }
-		sphere(vec3 center, float r, material *mat_ptr) : center(center), radius(r), mat_ptr(mat_ptr) {};
-		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+		sphere(vec3 center, double r, material *mat_ptr) : center(center), radius(r), mat_ptr(mat_ptr) {};
+		virtual bool hit(const ray& r, double tmin, double tmux, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		virtual pdf *generate_pdf_object(const vec3& o);
 		vec3 center;
-		float radius;
+		double radius;
 		material *mat_ptr;
 };
 
@@ -25,7 +25,7 @@ class plane: public hitable {
 	public:
 		plane() { }
 		plane(vec3 somewhere, vec3 normal, material *mat_ptr) : somewhere(somewhere), normal(normal), mat_ptr(mat_ptr) {};
-		virtual bool hit(const ray& r, float tmin, float tmux, hit_record& rec) const;
+		virtual bool hit(const ray& r, double tmin, double tmux, hit_record& rec) const;
 		vec3 somewhere;
 		vec3 normal;
 		material *mat_ptr;
@@ -34,52 +34,52 @@ class plane: public hitable {
 class rectangle : public hitable {
 	public:
 		rectangle() { }
-		rectangle(vec3 center, vec3 normal, vec3 width_dir, float width, float height, material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height), mat_ptr(mat_ptr) {};
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		rectangle(vec3 center, vec3 normal, vec3 width_dir, double width, double height, material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height), mat_ptr(mat_ptr) {};
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual pdf *generate_pdf_object(const vec3& o);
 		virtual bool bounding_box(aabb& box) const;
 		vec3 center;
 		vec3 normal;
 		vec3 width_dir;
-		float width;
-		float height;
+		double width;
+		double height;
 		material *mat_ptr;
 };
 
 class xy_rect : public hitable {
 	public:
 		xy_rect() { }
-		xy_rect(float x0, float y0, float x1, float y1, float k, material *mat) :
+		xy_rect(double x0, double y0, double x1, double y1, double k, material *mat) :
 		x0(x0), x1(x1), y0(y0), y1(y1), k(k), mat_ptr(mat) {};
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 
-		float x0, x1, y0, y1, k;
+		double x0, x1, y0, y1, k;
 		material *mat_ptr;
 };
 
 class yz_rect : public hitable {
 	public:
 		yz_rect() { }
-		yz_rect(float y0, float z0, float y1, float z1, float k, material *mat) :
+		yz_rect(double y0, double z0, double y1, double z1, double k, material *mat) :
 		y0(y0), y1(y1), z0(z0), z1(z1), k(k), mat_ptr(mat) {};
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 
-		float y0, y1, z0, z1, k;
+		double y0, y1, z0, z1, k;
 		material *mat_ptr;
 };
 
 class zx_rect : public hitable {
 	public:
 		zx_rect() { }
-		zx_rect(float z0, float x0, float z1, float x1, float k, material *mat) :
+		zx_rect(double z0, double x0, double z1, double x1, double k, material *mat) :
 		z0(z0), z1(z1), x0(x0), x1(x1), k(k), mat_ptr(mat) {};
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		//virtual float generate_pdf_dir(const vec3& o, vec3& direction);
+		//virtual double generate_pdf_dir(const vec3& o, vec3& direction);
 
-		float z0, z1, x0, x1, k;
+		double z0, z1, x0, x1, k;
 		material *mat_ptr;
 };
 
@@ -88,7 +88,7 @@ class zx_rect : public hitable {
 class flip_normals : public hitable {
 	public:
 		flip_normals(hitable *p) : ptr(p) {}
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		hitable *ptr;
 };
@@ -97,7 +97,7 @@ class box : public hitable {
 	public:
 		box() { }
 		box(const vec3& p0, const vec3& p1, material *mat);
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 
 		vec3 pmin;
@@ -110,7 +110,7 @@ class box : public hitable {
 class translate : public hitable {
 	public:
 		translate(hitable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 
 		hitable *ptr;
@@ -121,7 +121,7 @@ class translate : public hitable {
 class objmodel : public hitable {
 	public:
 		objmodel(const char *filename);
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		obj o;
 		MtlLoader mtl_loader;
@@ -133,7 +133,7 @@ class objmodel : public hitable {
 class plymodel : public hitable {
 	public:
 		plymodel(const char *filename, material *mat);
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		ply p;
 		std::vector<hitable *> polygon;
@@ -142,7 +142,7 @@ class plymodel : public hitable {
 
 class triangle : public hitable {
 	public:
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		virtual pdf *generate_pdf_object(const vec3& o);
 		material *mat_ptr;
@@ -152,7 +152,7 @@ class triangle : public hitable {
 
 class quadrilateral : public hitable {
 	public:
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		virtual pdf *generate_pdf_object(const vec3& o);
 		material *mat_ptr;

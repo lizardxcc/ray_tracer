@@ -16,7 +16,7 @@ class aabb {
 			maxp = b;
 		}
 
-		bool hit(const ray& r, float t_min, float t_max) const;
+		bool hit(const ray& r, double t_min, double t_max) const;
 
 		vec3 minp;
 		vec3 maxp;

@@ -13,16 +13,16 @@ pdf *hitable::generate_pdf_object(const vec3& o)
 }
 
 
-bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float a = pow(r.B.length(), 2.0);
-	float b_prime = dot(r.A - center, r.B);
-	float c = pow((r.A - center).length(), 2.0) - pow(radius, 2.0);
-	float discriminant_prime = pow(b_prime, 2.0) - a * c;
+	double a = pow(r.B.length(), 2.0);
+	double b_prime = dot(r.A - center, r.B);
+	double c = pow((r.A - center).length(), 2.0) - pow(radius, 2.0);
+	double discriminant_prime = pow(b_prime, 2.0) - a * c;
 	if (discriminant_prime < 0.0) {
 		return false;
 	}
-	float t1 = (-b_prime - sqrt(discriminant_prime)) / a;
+	double t1 = (-b_prime - sqrt(discriminant_prime)) / a;
 
 	if (t1 >= t_min && t1 <= t_max) {
 		rec.t = t1;
@@ -31,7 +31,7 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 		rec.mat_ptr = mat_ptr;
 		return true;
 	}
-	float t2 = (-b_prime + sqrt(discriminant_prime)) / a;
+	double t2 = (-b_prime + sqrt(discriminant_prime)) / a;
 	if (t2 >= t_min && t2 <= t_max) {
 		rec.t = t2;
 		rec.p = r.point_at_parameter(rec.t);
@@ -55,15 +55,15 @@ bool sphere::bounding_box(aabb& box) const
 pdf *sphere::generate_pdf_object(const vec3& o)
 {
 	vec3 v = center - o;
-	float r = radius;
+	double r = radius;
 	pdf *p = new toward_object_pdf(unit_vector(v), atan2(r, v.length()));
 	return p;
 }
 
 
-bool plane::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool plane::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = dot(somewhere - r.origin(), normal) / dot(r.direction(), normal);
+	double t = dot(somewhere - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
 		rec.t = t;
 		rec.p = r.point_at_parameter(rec.t);
@@ -75,9 +75,9 @@ bool plane::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 	return false;
 }
 
-bool rectangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool rectangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = dot(center - r.origin(), normal) / dot(r.direction(), normal);
+	double t = dot(center - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
 		rec.t = t;
 		rec.p = r.point_at_parameter(rec.t);
@@ -102,7 +102,7 @@ bool rectangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
 pdf *rectangle::generate_pdf_object(const vec3& o)
 {
 	vec3 v = center - o;
-	float r = 0.5 * sqrt(width*width + height*height);
+	double r = 0.5 * sqrt(width*width + height*height);
 	pdf *p = new toward_object_pdf(unit_vector(v), atan2(r, v.length()));
 	return p;
 }
@@ -112,14 +112,14 @@ bool rectangle::bounding_box(aabb& box) const
 	return false;
 }
 
-bool xy_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = (k - r.origin().z()) / r.direction().z();
+	double t = (k - r.origin().z()) / r.direction().z();
 	if (t < t_min || t > t_max)
 		return false;
 
-	float x = r.origin().x() + t * r.direction().x();
-	float y = r.origin().y() + t * r.direction().y();
+	double x = r.origin().x() + t * r.direction().x();
+	double y = r.origin().y() + t * r.direction().y();
 	if (x < x0 || x > x1 || y < y0 || y > y1)
 		return false;
 
@@ -130,14 +130,14 @@ bool xy_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 
 	return true;
 }
-bool yz_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = (k - r.origin().x()) / r.direction().x();
+	double t = (k - r.origin().x()) / r.direction().x();
 	if (t < t_min || t > t_max)
 		return false;
 
-	float y = r.origin().y() + t * r.direction().y();
-	float z = r.origin().z() + t * r.direction().z();
+	double y = r.origin().y() + t * r.direction().y();
+	double z = r.origin().z() + t * r.direction().z();
 	if (y < y0 || y > y1 || z < z0 || z > z1)
 		return false;
 
@@ -148,14 +148,14 @@ bool yz_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 
 	return true;
 }
-bool zx_rect::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool zx_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = (k - r.origin().y()) / r.direction().y();
+	double t = (k - r.origin().y()) / r.direction().y();
 	if (t < t_min || t > t_max)
 		return false;
 
-	float z = r.origin().z() + t * r.direction().z();
-	float x = r.origin().x() + t * r.direction().x();
+	double z = r.origin().z() + t * r.direction().z();
+	double x = r.origin().x() + t * r.direction().x();
 	if (z < z0 || z > z1 || x < x0 || x > x1)
 		return false;
 
@@ -186,7 +186,7 @@ bool zx_rect::bounding_box(aabb& box) const
 	box.maxp = vec3(x1, k + 0.001, z1);
 	return true;
 }
-//float zx_rect::generate_pdf_dir(const vec3& o, vec3& direction)
+//double zx_rect::generate_pdf_dir(const vec3& o, vec3& direction)
 //{
 //	vec3 random_point_on_rect = vec3(
 //	x0 + drand48()*(x1-x0),
@@ -195,15 +195,15 @@ bool zx_rect::bounding_box(aabb& box) const
 //	vec3 generated_direction = random_point_on_rect - o;
 //	direction = unit_vector(generated_direction);
 //
-//	float area = (x1-x0)*(z1-z0);
-//	float distance_squared = generated_direction.squared_length();
-//	//float cosine = fabs(dot(direction, rec.normall);
-//	float cosine = fabs(dot(direction, vec3(0, -1, 0));
+//	double area = (x1-x0)*(z1-z0);
+//	double distance_squared = generated_direction.squared_length();
+//	//double cosine = fabs(dot(direction, rec.normall);
+//	double cosine = fabs(dot(direction, vec3(0, -1, 0));
 //	return distance_squared / (cosine * area);
 //}
 
 
-bool flip_normals::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool flip_normals::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
 	if (ptr->hit(r, t_min, t_max, rec)) {
 		rec.normal = -rec.normal;
@@ -233,7 +233,7 @@ box::box(const vec3& p0, const vec3& p1, material *ptr)
 	list_ptr = new hitable_list(list);
 }
 
-bool box::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool box::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
 	return list_ptr->hit(r, t_min, t_max, rec);
 }
@@ -247,7 +247,7 @@ bool box::bounding_box(aabb& box) const
 }
 
 
-bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
 	ray moved_r(r.origin() - offset, r.direction());
 	if (ptr->hit(moved_r, t_min, t_max, rec)) {
@@ -282,7 +282,7 @@ objmodel::objmodel(const char *filename)
 		std::cout << "f: " << object->f.size() << std::endl;
 		material *mat;
 		Mtl *mtl = mtl_loader.mtls[object->material_name];
-		float Tr = 1.0 - mtl->d;
+		double Tr = 1.0 - mtl->d;
 		bool light_flag = false;
 		if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
 			mat = new diffuse_light(RGBtoSpectrum(mtl->Ke));
@@ -296,7 +296,7 @@ objmodel::objmodel(const char *filename)
 		} else if (Tr != 0.0) {
 			Spectrum n, k(0);
 			//vec3 hsv = RGBtoHSV(mtl->Kd);
-			//float wl = 620 - 170.0 /270.0 * hsv[0];
+			//double wl = 620 - 170.0 /270.0 * hsv[0];
 			//for (int i = 0; i < N_SAMPLES; i++) {
 			//}
 			//std::cout << wl << std::endl;
@@ -306,11 +306,11 @@ objmodel::objmodel(const char *filename)
 			//std::cout << complementary_rgb(mtl->Kd) << std::endl;
 			//k = RGBtoSpectrum(complementary_rgb(mtl->Kd));
 
-			float b = mtl->Ni;
-			//float c = 0.11342;
-			float c = 0.00342;
+			double b = mtl->Ni;
+			//double c = 0.11342;
+			double c = 0.00342;
 			for (size_t i = 0; i < 10; i++) {
-				float wl = 415 + 30 * i;
+				double wl = 415 + 30 * i;
 				n.data[i] = b + c/pow(wl/1000, 2.0);
 				std::cout << n.data[i] << std::endl;
 				//k.data[i] = 0;
@@ -376,7 +376,7 @@ objmodel::objmodel(const char *filename)
 	//bvh = new bvh_node(models);
 }
 
-bool objmodel::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool objmodel::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
 	hit_record temp_rec;
 	bool hit_anything = false;
@@ -436,7 +436,7 @@ plymodel::plymodel(const char *filename, material *mat)
 	pol = new bvh_node(polygon);
 }
 
-bool plymodel::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool plymodel::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
 	//bool hit_flag = false;
 	//rec.t = t_max;
@@ -477,9 +477,9 @@ bool plymodel::bounding_box(aabb& box) const
 }
 
 
-bool triangle::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
+	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
 		vec3 p = r.point_at_parameter(t);
 		vec3 result0 = cross(v[1]-v[0], p-v[1]);
@@ -526,14 +526,14 @@ pdf *triangle::generate_pdf_object(const vec3& o)
 {
 	vec3 c = (v[0]+v[1]+v[2])/3.0;
 	vec3 vec = c - o;
-	float r = ((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length())/3.0;
+	double r = ((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length())/3.0;
 	pdf *p = new toward_object_pdf(unit_vector(vec), atan2(r, vec.length()));
 	return p;
 }
 
-bool quadrilateral::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
+bool quadrilateral::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	float t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
+	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
 		vec3 p = r.point_at_parameter(t);
 		vec3 result0 = cross(v[1]-v[0], p-v[1]);
@@ -586,7 +586,7 @@ pdf *quadrilateral::generate_pdf_object(const vec3& o)
 {
 	vec3 c = 0.25 * (v[0]+v[1]+v[2]+v[3]);
 	vec3 vec = c - o;
-	float r = 0.25*((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length()+(v[3]-c).length());
+	double r = 0.25*((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length()+(v[3]-c).length());
 	pdf *p = new toward_object_pdf(unit_vector(vec), atan2(r, vec.length()));
 	return p;
 }

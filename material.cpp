@@ -22,7 +22,7 @@ vec3 reflect(vec3 v, vec3 normal)
 	return (v - 2 * normal * dot(v, normal));
 }
 
-vec3 refract(vec3 v, vec3 normal, float n_in, float n_out)
+vec3 refract(vec3 v, vec3 normal, double n_in, double n_out)
 {
 	//vec3 normal = unit_vector(rec.normal);
 	vec3 v2 = normal * dot(v, normal);
@@ -32,10 +32,10 @@ vec3 refract(vec3 v, vec3 normal, float n_in, float n_out)
 	return v1_p + v2_p;
 }
 
-float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
+double lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
-	//float rho = 0.5;
-	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+	//double rho = 0.5;
+	double cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
 		return 0;
 
@@ -43,7 +43,7 @@ float lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scatte
 	return albedo.get(r_in.central_wl)/M_PI;
 }
 
-bool lambertian::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
+bool lambertian::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const
 {
 	vec3 generated_direction;
 
@@ -73,9 +73,9 @@ bool lambertian::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 }
 
 
-float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
+double metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
-	float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+	double cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
 		return 0;
 
@@ -85,11 +85,11 @@ float metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) 
 	return pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100);
 }
 
-bool metal::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf) const
+bool metal::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf) const
 {
 	vec3 normal = unit_vector(rec.normal);
 	vec3 v = unit_vector(r_in.direction());
-	float abs_cos_o = abs(dot(v, normal));
+	double abs_cos_o = abs(dot(v, normal));
 	vec3 r_out = v + 2*abs_cos_o*normal;
 	scattered = ray(rec.p, unit_vector(r_out));
 	scattered.min_wl = r_in.min_wl;
@@ -102,7 +102,7 @@ bool metal::sample(const ray& r_in, const hit_record& rec, ray& scattered, float
 }
 
 /*
-bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, float& pdf) const
+bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, double& pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
 	vec3 reflected = reflect(v, rec.normal);
@@ -114,19 +114,19 @@ bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, r
 */
 
 
-float shlick(float theta, float n1, float n2)
+double shlick(double theta, double n1, double n2)
 {
-	float R0 = pow((n1-n2)/(n1+n2), 2.0);
+	double R0 = pow((n1-n2)/(n1+n2), 2.0);
 	return R0 + (1-R0)*pow(1-cos(theta), 5.0);
 }
 
 
-bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
+bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const
 {
 
-	//float ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
-	float ref_idx = n.get(r_in.central_wl);
-	float alpha = 4.0 * M_PI * k.get(r_in.central_wl) / (r_in.central_wl * pow(10, -9));
+	//double ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
+	double ref_idx = n.get(r_in.central_wl);
+	double alpha = 4.0 * M_PI * k.get(r_in.central_wl) / (r_in.central_wl * pow(10, -9));
 	//alpha *= 0.000002;
 	//alpha = 0.05;
 	alpha *= rec.t;
@@ -134,10 +134,10 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 	//vec3 v = unit_vector(r_in.direction());
 	vec3 vo = -unit_vector(r_in.direction());
 	vec3 normal = unit_vector(rec.normal);
-	float cos_o = dot(vo, normal);
-	float n_vacuum = 1.0;
-	float n_in, n_out;
-	float fresnel;
+	double cos_o = dot(vo, normal);
+	double n_vacuum = 1.0;
+	double n_in, n_out;
+	double fresnel;
 	if (cos_o >= 0.0) {
 		n_in = ref_idx;
 		n_out = n_vacuum;
@@ -150,24 +150,24 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 		//std::cout << rec.t << std::endl;
 		//std::cout << alpha << std::endl;
 	}
-	float sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
-	float sin_t = n_out/n_in * sin_o;
+	double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
+	double sin_t = n_out/n_in * sin_o;
 	bool total_internal_reflection = false;
-	float cos_t;
+	double cos_t;
 	if (sin_t >= 1.0) { // total internal reflection
 		fresnel = 1.0;
 		total_internal_reflection = true;
 		//std::cout << "total internal reflection" << std::endl;
 	} else {
 		cos_t = sqrt(std::max(0.0, 1.0-sin_t*sin_t));
-		float r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
-		float r_s = (n_out*cos_o - n_in*cos_t)/(n_out*cos_o + n_in*cos_t);
+		double r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
+		double r_s = (n_out*cos_o - n_in*cos_t)/(n_out*cos_o + n_in*cos_t);
 		fresnel = (r_p*r_p + r_s*r_s)/2.0;
-		//float R0 = pow((n_out-n_in)/(n_out+n_in), 2);
+		//double R0 = pow((n_out-n_in)/(n_out+n_in), 2);
 		//fresnel = R0 + (1-R0) * pow(1-cos_t, 5);
 	}
 
-	float rand = drand48();
+	double rand = drand48();
 	// mutiple importance sampling
 	if (rand <= fresnel || total_internal_reflection) { // reflection (includes total internal reflection)
 		vec3 v_in = unit_vector(r_in.direction());
@@ -194,7 +194,7 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 }
 
 
-bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
+bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const
 {
 	vec3 generated_direction;
 
@@ -221,23 +221,23 @@ bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 
 	vec3 vo = -unit_vector(r_in.direction());
 	vec3 normal = unit_vector(rec.normal);
-	float cos_theta_i = dot(generated_direction, normal);
+	double cos_theta_i = dot(generated_direction, normal);
 	if (cos_theta_i < 0) {
 		BxDF = 0;
 		return true;
 	}
-	float cos_theta_o = dot(vo, normal);
-	float cos_alpha = std::min(cos_theta_i, cos_theta_o);
-	float cos_beta = std::max(cos_theta_i, cos_theta_o);
-	float sin_alpha = sqrt(1.0-cos_alpha*cos_alpha);
-	float tan_beta = sqrt(1.0/(cos_beta*cos_beta) - 1.0);
+	double cos_theta_o = dot(vo, normal);
+	double cos_alpha = std::min(cos_theta_i, cos_theta_o);
+	double cos_beta = std::max(cos_theta_i, cos_theta_o);
+	double sin_alpha = sqrt(1.0-cos_alpha*cos_alpha);
+	double tan_beta = sqrt(1.0/(cos_beta*cos_beta) - 1.0);
 
-	float A = 1 - sigma*sigma/(2*(sigma*sigma + 0.33));
-	float B = 0.45 * sigma * sigma / (sigma*sigma+0.09);
+	double A = 1 - sigma*sigma/(2*(sigma*sigma + 0.33));
+	double B = 0.45 * sigma * sigma / (sigma*sigma+0.09);
 
 	vec3 hori_vo = vo - cos_theta_o * normal;
 	vec3 hori_scattered = generated_direction - cos_theta_i * normal;
-	float tmp = std::max(0.0f, dot(hori_vo, hori_scattered));
+	double tmp = std::max(0.0, dot(hori_vo, hori_scattered));
 
 	BxDF = 1.0/M_PI * (A + B * tmp * sin_alpha * tan_beta);
 
@@ -245,29 +245,29 @@ bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 	return true;
 }
 
-bool diffuse_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf) const
+bool diffuse_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf) const
 {
 	return false;
 }
 
-float diffuse_light::emitted(float u, float v, const ray& r_in, const hit_record& rec) const
+double diffuse_light::emitted(double u, double v, const ray& r_in, const hit_record& rec) const
 {
 	//return vec3(1.0, 1.0, 1.0);
 	return light_color.integrate(r_in.min_wl, r_in.max_wl);
 	//return 10.0;
 }
 
-bool straight_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf) const
+bool straight_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf) const
 {
 	return false;
 }
 
-float straight_light::emitted(float u, float v, const ray& r_in, const hit_record& rec) const
+double straight_light::emitted(double u, double v, const ray& r_in, const hit_record& rec) const
 {
 	//return light_color*pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 20.0);
 	//return light_color.integrate(r_in.min_wl, r_in.max_wl) * pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 100);
-	float t = 0.0;
-	float d = dot(unit_vector(rec.normal), -unit_vector(r_in.direction()));
+	double t = 0.0;
+	double d = dot(unit_vector(rec.normal), -unit_vector(r_in.direction()));
 	if (abs(d) >= 0.95)
 		t = 1.0;
 	return light_color.integrate(r_in.min_wl, r_in.max_wl) * t;

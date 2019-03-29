@@ -13,7 +13,7 @@ class pdf {
 	public:
 		virtual ~pdf(){}
 		virtual vec3 generate() const = 0;
-		virtual float pdf_val(const vec3& direction) const = 0;
+		virtual double pdf_val(const vec3& direction) const = 0;
 };
 
 class uniform_pdf : public pdf {
@@ -23,23 +23,23 @@ class uniform_pdf : public pdf {
 			uvw.build_from_w(w);
 		}
 		virtual vec3 generate() const;
-		virtual float pdf_val(const vec3& direction) const;
+		virtual double pdf_val(const vec3& direction) const;
 
 		onb uvw;
 };
 
 class toward_object_pdf : public pdf {
 	public:
-		toward_object_pdf(const vec3& w, float _theta_max)
+		toward_object_pdf(const vec3& w, double _theta_max)
 		{
 			uvw.build_from_w(w);
 			this->theta_max = _theta_max;
 		}
 		virtual vec3 generate() const;
-		virtual float pdf_val(const vec3& direction) const;
+		virtual double pdf_val(const vec3& direction) const;
 
 		onb uvw;
-		float theta_max;
+		double theta_max;
 };
 
 
@@ -56,7 +56,7 @@ class hitable_pdf : public pdf {
 			delete pdf_ptr;
 		}
 		virtual vec3 generate() const;
-		virtual float pdf_val(const vec3& direction) const;
+		virtual double pdf_val(const vec3& direction) const;
 
 		vec3 o;
 		hitable *ptr;
@@ -74,7 +74,7 @@ class mixture_pdf : public pdf {
 		}
 
 		virtual vec3 generate() const;
-		virtual float pdf_val(const vec3& direction) const;
+		virtual double pdf_val(const vec3& direction) const;
 
 		std::vector<pdf *> pdf_list;
 };

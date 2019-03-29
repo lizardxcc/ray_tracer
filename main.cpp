@@ -15,17 +15,17 @@
 
 
 
-float sample(ray& r, const hitable *world, int count)
+double sample(ray& r, const hitable *world, int count)
 {
 	hit_record rec;
 	//if (count > 20) {
 	//	return 0.0;
 	//}
-	if (world->hit(r, 0.001, std::numeric_limits<float>::max(), rec)) {
+	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
 		ray scattered;
-		float bxdf, pdf;
-		float value = rec.mat_ptr->emitted(0, 0, r, rec);
-		float prr = 0.8;
+		double bxdf, pdf;
+		double value = rec.mat_ptr->emitted(0, 0, r, rec);
+		double prr = 0.8;
 		if (drand48() < prr) {
 			if (rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf)) {
 				value += bxdf * sample(scattered, world, count+1) *
@@ -46,12 +46,12 @@ float sample(ray& r, const hitable *world, int count)
 vec3 color(const ray& r, hitable *world, int count)
 {
 	hit_record rec;
-	if (world->hit(r, 0.001, std::numeric_limits<float>::max(), rec)) {
+	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
 		ray scatterd;
 		//vec3 attenuation;
 		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-		float bxdf;
-		float pdf;
+		double bxdf;
+		double pdf;
 		rec.mat_ptr->emitted(0, 0, r, rec);
 		rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf);
 
@@ -85,7 +85,7 @@ hitable *room(void)
 
 	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new dielectric(Spectrum(1), 1.72, 0.41342)));
 
-	float size = 1.0;
+	double size = 1.0;
 	hitable *light;
 	lambertian mat(Spectrum(0));
 	Spectrum light_s;
@@ -110,8 +110,8 @@ hitable *room(void)
 /*
 hitable *testroom(void)
 {
-	float size = 1.0;
-	float reflection = 0.90;
+	double size = 1.0;
+	double reflection = 0.90;
 	std::vector<hitable *> list;
 
 
@@ -204,8 +204,8 @@ hitable *caustics_room(void)
 	lambertian mat(vec3(0, 0, 0));
 	hitable *light;
 
-	float size = 1.0;
-	//float reflection = 0.90;
+	double size = 1.0;
+	//double reflection = 0.90;
 	//light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(vec3(50, 50, 50)));
 	//list.push_back(light);
 	//mat.lights.push_back(light);
@@ -228,7 +228,7 @@ hitable *moon_room(void)
 	std::vector<hitable *> list;
 
 	quadrilateral *quad = new quadrilateral();
-	float size = 1.0;
+	double size = 1.0;
 	quad->v[0] = vec3(-size, -1, size);
 	quad->v[1] = vec3(size, -1, size);
 	quad->v[2] = vec3(size, -1, -size);
@@ -261,7 +261,7 @@ hitable *obj_room(void)
 {
 	std::vector<hitable *> list;
 	list.push_back(new objmodel("test.obj"));
-	//float size = 5.0;
+	//double size = 5.0;
 	//hitable *light;
 	//lambertian mat(Spectrum(0));
 	//Spectrum light_s(0.01);
@@ -318,27 +318,27 @@ int i, j, s;
 			//vec3 col(0, 0, 0);
 			Spectrum radiance(0);
 			for (s = 0; s < ns; s++) {
-				float u = float(i + drand48()) / float(nx);
-				float v = float(j + drand48()) / float(ny);
+				double u = double(i + drand48()) / double(nx);
+				double v = double(j + drand48()) / double(ny);
 				ray r = cam.get_ray(u, v);
 
-				float rand = drand48();
+				double rand = drand48();
 				const size_t num = 10;
 				for (size_t k = 0; k < num; k++) {
-					if (rand <= ((float)(k+1)/ (float)num)) {
-						float min_wl = 400 + 300.0/(float)num*(float)k;
-						float max_wl = min_wl + 300.0/(float)num - 0.00001;
-						//float max_wl = min_wl + SAMPLE_SIZE - 0.00001;
-						//float max_wl = 400 + 300.0/(float)num*(float)(k+1) - 0.00001;
+					if (rand <= ((double)(k+1)/ (double)num)) {
+						double min_wl = 400 + 300.0/(double)num*(double)k;
+						double max_wl = min_wl + 300.0/(double)num - 0.00001;
+						//double max_wl = min_wl + SAMPLE_SIZE - 0.00001;
+						//double max_wl = 400 + 300.0/(double)num*(double)(k+1) - 0.00001;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
 						double rad = sample(r, world, 0);
-						//if (rad > std::numeric_limits<float>::max()) {
+						//if (rad > std::numeric_limits<double>::max()) {
 						//	std::cout << "ALARM" << std::endl;
 						//}
 						if (!std::isnan(rad)) {
-							radiance.add((float)(rad/(double)ns), min_wl, max_wl);
+							radiance.add((double)(rad/(double)ns), min_wl, max_wl);
 						}
 						break;
 					}
@@ -351,7 +351,7 @@ int i, j, s;
 #ifdef _OPENMP
 				std::cout << "thread: " << omp_get_thread_num() << "  ";
 #endif
-				std::cout << 100.0 * (float)count / (float)(nx*ny) << "%" << std::endl;
+				std::cout << 100.0 * (double)count / (double)(nx*ny) << "%" << std::endl;
 			}
 
 		}
@@ -361,7 +361,7 @@ int i, j, s;
 		for (int i = 0; i < nx; i++) {
 	//for (int j = 0; j < ny; j++) {
 	//	for (int i = nx-1; i >= 0; i--) {
-			//spectrum_array[i][j] /= float(ns);
+			//spectrum_array[i][j] /= double(ns);
 			//spectrum_array[i][j] *= 1.0;
 			//array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
 			vec3 rgb_col = rgb(spectrum_array[i][j]);

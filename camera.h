@@ -3,11 +3,11 @@
 
 class camera {
 	public:
-		camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect)
+		camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
 		{
-			float theta = vfov*M_PI/180;
-			float half_height = tan(theta/2);
-			float half_width = aspect * half_height;
+			double theta = vfov*M_PI/180;
+			double half_height = tan(theta/2);
+			double half_width = aspect * half_height;
 			origin = lookfrom;
 			vec3 w = unit_vector(lookfrom - lookat);
 			vec3 u = unit_vector(cross(vup, w));
@@ -17,7 +17,7 @@ class camera {
 			vertical = 2 * half_height * v;
 		}
 
-		ray get_ray(float u, float v)
+		ray get_ray(double u, double v)
 		{
 			return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
 		}
@@ -31,10 +31,10 @@ class camera {
 
 class pinhole_camera {
 	public:
-		pinhole_camera(vec3 lookfrom, vec3 lookat, vec3 vup, float aspect, float d)
+		pinhole_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d)
 		{
-			float half_height = 0.5;
-			float half_width = aspect * half_height;
+			double half_height = 0.5;
+			double half_width = aspect * half_height;
 			this->d = d;
 			origin = lookfrom;
 			vec3 w = unit_vector(lookfrom - lookat);
@@ -46,7 +46,7 @@ class pinhole_camera {
 			vertical = 2 * half_height * v;
 		}
 
-		ray get_ray(float u, float v)
+		ray get_ray(double u, double v)
 		{
 			return ray(origin, origin-(film_lower_left_corner + u*horizontal + v*vertical));
 		}
@@ -56,16 +56,16 @@ class pinhole_camera {
 		vec3 pinhole;
 		vec3 horizontal;
 		vec3 vertical;
-		float d;
+		double d;
 };
 
 
 class lens_camera {
 	public:
-		lens_camera(vec3 lookfrom, vec3 lookat, vec3 vup, float aspect, float d, float focal_length, float aperture)
+		lens_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d, double focal_length, double aperture)
 		{
-			float half_height = 0.5;
-			float half_width = aspect * half_height;
+			double half_height = 0.5;
+			double half_width = aspect * half_height;
 			this->d = d;
 			this->focal_length = focal_length;
 			this->aperture = aperture;
@@ -91,7 +91,7 @@ class lens_camera {
 			return p*(aperture/2.0);
 		}
 
-		ray get_ray(float u, float v)
+		ray get_ray(double u, double v)
 		{
 			//vec3 target = (-a/d * (film_lower_left_corner + u*horizontal + v*vertical - origin));
 			vec3 target = ((-a/d) * (film_lower_left_corner + u*horizontal + v*vertical - origin));
@@ -108,10 +108,10 @@ class lens_camera {
 		vec3 pinhole;
 		vec3 horizontal;
 		vec3 vertical;
-		float d;
-		float focal_length;
-		float aperture;
-		float a;
+		double d;
+		double focal_length;
+		double aperture;
+		double a;
 };
 
 #endif

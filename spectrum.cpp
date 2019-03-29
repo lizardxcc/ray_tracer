@@ -2,13 +2,13 @@
 #include "spectrum.h"
 
 
-float Spectrum::integrate(float min_wl, float max_wl) const
+double Spectrum::integrate(double min_wl, double max_wl) const
 {
-	float sum = 0.0;
+	double sum = 0.0;
 	size_t min_i = (size_t)std::ceil((min_wl-400) / SAMPLE_SIZE);
-	float mod_min = std::fmod(min_wl-400, RANGE / data.size());
+	double mod_min = std::fmod(min_wl-400, RANGE / data.size());
 	size_t max_i = (size_t)std::floor((max_wl-400) / SAMPLE_SIZE);
-	float mod_max = std::fmod(max_wl-400, RANGE / data.size());
+	double mod_max = std::fmod(max_wl-400, RANGE / data.size());
 	if (min_i >= 1) {
 		//sum += data[min_i-1] * (SAMPLE_SIZE * min_i - min_wl);
 		sum += data[min_i-1] * mod_min;
@@ -24,7 +24,7 @@ float Spectrum::integrate(float min_wl, float max_wl) const
 	return sum;
 }
 
-void Spectrum::add(float value, float min_wl, float max_wl)
+void Spectrum::add(double value, double min_wl, double max_wl)
 {
 	size_t min_i = (size_t)std::ceil((min_wl-400) / SAMPLE_SIZE);
 	size_t max_i = (size_t)std::floor((max_wl-400) / SAMPLE_SIZE);
@@ -34,7 +34,7 @@ void Spectrum::add(float value, float min_wl, float max_wl)
 }
 
 
-float Spectrum::get(float wavelength) const
+double Spectrum::get(double wavelength) const
 {
 	size_t i = (size_t)std::floor((wavelength - 400) / SAMPLE_SIZE);
 	return data[i];

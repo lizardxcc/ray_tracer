@@ -14,7 +14,7 @@ class Spectrum {
 		{
 			data.resize(N_SAMPLE);
 		}
-		Spectrum(float v)
+		Spectrum(double v)
 		{
 			data.resize(N_SAMPLE);
 			for (auto& d : data) {
@@ -22,23 +22,23 @@ class Spectrum {
 			}
 		}
 
-		inline Spectrum& operator*=(const float);
-		inline Spectrum& operator/=(const float);
+		inline Spectrum& operator*=(const double);
+		inline Spectrum& operator/=(const double);
 
-		float integrate(float min_wl, float max_wl) const;
-		void add(float value, float min_wl, float max_wl);
-		float get(float wavelength) const;
-		std::vector<float> data;
+		double integrate(double min_wl, double max_wl) const;
+		void add(double value, double min_wl, double max_wl);
+		double get(double wavelength) const;
+		std::vector<double> data;
 };
 
-inline Spectrum& Spectrum::operator*=(const float t)
+inline Spectrum& Spectrum::operator*=(const double t)
 {
 	for (auto& d : data) {
 		d *= t;
 	}
 	return *this;
 }
-inline Spectrum& Spectrum::operator/=(const float t)
+inline Spectrum& Spectrum::operator/=(const double t)
 {
 	for (auto& d : data) {
 		d /= t;
@@ -79,7 +79,7 @@ inline Spectrum operator/(const Spectrum &s1, const Spectrum &s2)
 	return s;
 }
 
-inline Spectrum operator*(float t, const Spectrum &s1)
+inline Spectrum operator*(double t, const Spectrum &s1)
 {
 	Spectrum s;
 	for (size_t i = 0; i < s1.data.size(); i++) {
@@ -87,7 +87,7 @@ inline Spectrum operator*(float t, const Spectrum &s1)
 	}
 	return s;
 }
-inline Spectrum operator*(const Spectrum &s1, float t)
+inline Spectrum operator*(const Spectrum &s1, double t)
 {
 	Spectrum s;
 	for (size_t i = 0; i < s1.data.size(); i++) {
@@ -95,7 +95,7 @@ inline Spectrum operator*(const Spectrum &s1, float t)
 	}
 	return s;
 }
-inline Spectrum operator/(const Spectrum &s1, float t)
+inline Spectrum operator/(const Spectrum &s1, double t)
 {
 	Spectrum s;
 	for (size_t i = 0; i < s1.data.size(); i++) {

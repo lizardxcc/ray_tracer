@@ -13,7 +13,7 @@ vec3 onb::w() const
 	return axis[2];
 }
 
-vec3 onb::local(float a, float b, float c) const
+vec3 onb::local(double a, double b, double c) const
 {
 	return a*u() + b*v() + c*w();
 }

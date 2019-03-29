@@ -9,7 +9,7 @@ class material;
 class pdf;
 
 struct hit_record {
-	float t;
+	double t;
 	vec3 p;
 	vec3 normal;
 	material *mat_ptr;
@@ -18,7 +18,7 @@ struct hit_record {
 
 class hitable {
 	public:
-		virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
 		virtual pdf *generate_pdf_object(const vec3& o);
 		virtual bool bounding_box(aabb& box) const = 0;
 };

@@ -8,42 +8,42 @@
 class vec3 {
 public:
 
-	float e[3];
+	double e[3];
 	vec3()
 	{
 	}
 
-	vec3(float e0, float e1, float e2)
+	vec3(double e0, double e1, double e2)
 	{
 		e[0] = e0;
 		e[1] = e1;
 		e[2] = e2;
 	}
-	inline float x() const { return e[0]; }
-	inline float y() const { return e[1]; }
-	inline float z() const { return e[2]; }
-	inline float r() const { return e[0]; }
-	inline float g() const { return e[1]; }
-	inline float b() const { return e[2]; }
+	inline double x() const { return e[0]; }
+	inline double y() const { return e[1]; }
+	inline double z() const { return e[2]; }
+	inline double r() const { return e[0]; }
+	inline double g() const { return e[1]; }
+	inline double b() const { return e[2]; }
 
 	inline const vec3& operator+() const { return *this; }
 	inline vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
-	inline float operator[](int i) const { return e[i]; }
-	inline float& operator[](int i) { return e[i]; }
+	inline double operator[](int i) const { return e[i]; }
+	inline double& operator[](int i) { return e[i]; }
 
 	inline vec3& operator+=(const vec3 &v2);
 	inline vec3& operator-=(const vec3 &v2);
 	inline vec3& operator*=(const vec3 &v2);
 	inline vec3& operator/=(const vec3 &v2);
-	inline vec3& operator*=(const float);
-	inline vec3& operator/=(const float);
+	inline vec3& operator*=(const double);
+	inline vec3& operator/=(const double);
 
-	inline float length() const
+	inline double length() const
 	{
 		return sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
 	}
 
-	inline float squared_length() const
+	inline double squared_length() const
 	{
 		return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
 	}
@@ -67,7 +67,7 @@ inline std::ostream& operator<<(std::ostream &os, const vec3 &t)
 
 inline void vec3::make_unit_vector()
 {
-	float k = 1.0 / sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
+	double k = 1.0 / sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
 	e[0] *= k;
 	e[1] *= k;
 	e[2] *= k;
@@ -90,21 +90,21 @@ inline vec3 operator/(const vec3 &v1, const vec3 &v2)
 	return vec3(v1.e[0] / v2.e[0], v1.e[1] / v2.e[1], v1.e[2] / v2.e[2]);
 }
 
-inline vec3 operator*(float t, const vec3 &v)
+inline vec3 operator*(double t, const vec3 &v)
 {
 	return vec3(t * v.e[0], t * v.e[1], t * v.e[2]);
 }
-inline vec3 operator*(const vec3 &v, float t)
+inline vec3 operator*(const vec3 &v, double t)
 {
 	return vec3(t * v.e[0], t * v.e[1], t * v.e[2]);
 }
-inline vec3 operator/(const vec3 &v, float t)
+inline vec3 operator/(const vec3 &v, double t)
 {
 	return vec3(v.e[0] / t, v.e[1] / t, v.e[2] / t);
 }
 
 
-inline float dot(const vec3 &v1, const vec3 &v2)
+inline double dot(const vec3 &v1, const vec3 &v2)
 {
 	return v1.e[0]*v2.e[0] + v1.e[1]*v2.e[1] + v1.e[2]*v2.e[2];
 }
@@ -145,16 +145,16 @@ inline vec3& vec3::operator/=(const vec3 &v)
 	e[2] /= v.e[2];
 	return *this;
 }
-inline vec3& vec3::operator*=(const float t)
+inline vec3& vec3::operator*=(const double t)
 {
 	e[0] *= t;
 	e[1] *= t;
 	e[2] *= t;
 	return *this;
 }
-inline vec3& vec3::operator/=(const float t)
+inline vec3& vec3::operator/=(const double t)
 {
-	float k = 1.0/t;
+	double k = 1.0/t;
 	e[0] *= k;
 	e[1] *= k;
 	e[2] *= k;
@@ -170,17 +170,17 @@ inline vec3 unit_vector(vec3 v)
 
 inline vec3 complementary_rgb(vec3 rgb)
 {
-	float max = std::max({rgb[0], rgb[1], rgb[2]});
-	float min = std::min({rgb[0], rgb[1], rgb[2]});
+	double max = std::max({rgb[0], rgb[1], rgb[2]});
+	double min = std::min({rgb[0], rgb[1], rgb[2]});
 	return vec3(max+min, max+min, max+min) - rgb;
 }
 
 
 inline vec3 RGBtoHSV(const vec3& rgb)
 {
-	float max = std::max({rgb[0], rgb[1], rgb[2]});
-	float min = std::min({rgb[0], rgb[1], rgb[2]});
-	float h = 0.0, s, v;
+	double max = std::max({rgb[0], rgb[1], rgb[2]});
+	double min = std::min({rgb[0], rgb[1], rgb[2]});
+	double h = 0.0, s, v;
 	if (min == max) {
 	} else if (min == rgb[2]) {
 		h = 60.0 * (rgb[1] - rgb[0]) / (max-min) + 60.0;
@@ -197,9 +197,9 @@ inline vec3 RGBtoHSV(const vec3& rgb)
 
 inline vec3 HSVtoRGB(const vec3& hsv)
 {
-	float c = hsv[1];
-	float h_p = hsv[0] / 60.0;
-	float x = c * (1 - abs(fmod(h_p, 2.0) - 1));
+	double c = hsv[1];
+	double h_p = hsv[0] / 60.0;
+	double x = c * (1 - abs(fmod(h_p, 2.0) - 1));
 	vec3 rgb = (hsv[2]-c) * vec3(1, 1, 1);
 	std::cout << x << " " << c << std::endl;
 	if (h_p >= 0 && h_p < 1) {
