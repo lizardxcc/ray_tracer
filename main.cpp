@@ -18,22 +18,23 @@
 float sample(ray& r, const hitable *world, int count)
 {
 	hit_record rec;
-	if (count > 20) {
-		return 0.0;
-	}
+	//if (count > 20) {
+	//	return 0.0;
+	//}
 	if (world->hit(r, 0.001, std::numeric_limits<float>::max(), rec)) {
 		ray scattered;
 		float bxdf, pdf;
 		float value = rec.mat_ptr->emitted(0, 0, r, rec);
-		if (value != 0.0) {
-			return value;
+		float prr = 0.8;
+		if (drand48() < prr) {
+			if (rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf)) {
+				value += bxdf * sample(scattered, world, count+1) *
+					abs(dot(rec.normal, unit_vector(scattered.direction()))) / pdf / prr;
+			} else {
+				value += 0.0;
+			}
 		}
-		if (rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf)) {
-			return bxdf * sample(scattered, world, count+1) *
-				abs(dot(rec.normal, unit_vector(scattered.direction()))) / pdf;
-		} else {
-			return 0.0;
-		}
+		return value;
 		//r.radiance *= (bxdf * abs(dot(rec.normal, unit_vector(scattered.direction()))) / pdf);
 	} else {
 		return 0.0;
@@ -82,7 +83,7 @@ hitable *room(void)
 	quad->mat_ptr = new lambertian(albedo);
 	list.push_back(quad);
 
-	list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new dielectric(Spectrum(1), 1.72, 0.41342)));
+	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new dielectric(Spectrum(1), 1.72, 0.41342)));
 
 	float size = 1.0;
 	hitable *light;
@@ -259,14 +260,14 @@ hitable *moon_room(void)
 hitable *obj_room(void)
 {
 	std::vector<hitable *> list;
-	list.push_back(new objmodel("prism.obj"));
-	float size = 5.0;
-	hitable *light;
-	lambertian mat(Spectrum(0));
-	Spectrum light_s(0.01);
-	light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(light_s));
-	//list.push_back(light);
-	//mat.lights.push_back(light);
+	list.push_back(new objmodel("test.obj"));
+	//float size = 5.0;
+	//hitable *light;
+	//lambertian mat(Spectrum(0));
+	//Spectrum light_s(0.01);
+	//light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(light_s));
+	////list.push_back(light);
+	////mat.lights.push_back(light);
 
 
 	return new hitable_list(list);
@@ -300,13 +301,17 @@ int main(int argc, char **argv)
 
 	hitable *world = obj_room();
 	//camera cam(vec3(-1.0, 2.0, 6.4), vec3(0.0, 4.2, 0.0), vec3(0, 1, 0), 90.0, 1.0);
-	camera cam(vec3(0.0, 5.0, 0.1), vec3(0.0, 0.3, 0.0), vec3(0, 1, 0), 60.0, 1.0);
+	//camera cam(vec3(0.0, 3.0, 3.0), vec3(0.0, 1.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
+	//pinhole_camera cam(vec3(0.0, 3.0, 12.0), vec3(0.0, 0.0, -10.0), vec3(0, 1, 0), 1.0, 1.0);
+	//lens_camera cam(vec3(0.0, 3.0, 12.0), vec3(0.0, 0.0, -10.0), vec3(0, 1, 0), 1.0, 0.85, 0.8, 1.0);
+	//camera cam(vec3(-2.0, 3.0, -3.0), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
+	camera cam(vec3(0.0, 0.0, 1.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
 
 	size_t count = 0;
 
 int i, j, s;
 #ifdef _OPENMP
-#pragma omp parallel for private(j, s)
+#pragma omp parallel for private(j, s) schedule(dynamic)
 #endif
 	for (i = 0; i < nx; i++) {
 		for (j = 0; j < ny; j++) {
@@ -328,8 +333,13 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						float rad = sample(r, world, 0);
-						radiance.add(rad, min_wl, max_wl);
+						double rad = sample(r, world, 0);
+						//if (rad > std::numeric_limits<float>::max()) {
+						//	std::cout << "ALARM" << std::endl;
+						//}
+						if (!std::isnan(rad)) {
+							radiance.add((float)(rad/(double)ns), min_wl, max_wl);
+						}
 						break;
 					}
 				}
@@ -349,12 +359,26 @@ int i, j, s;
 
 	for (int j = ny-1; j >= 0; j--) {
 		for (int i = 0; i < nx; i++) {
-			spectrum_array[i][j] /= float(ns);
-			spectrum_array[i][j] *= 1.0;
+	//for (int j = 0; j < ny; j++) {
+	//	for (int i = nx-1; i >= 0; i--) {
+			//spectrum_array[i][j] /= float(ns);
+			//spectrum_array[i][j] *= 1.0;
 			//array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
 			vec3 rgb_col = rgb(spectrum_array[i][j]);
+			if (rgb_col[0] < 0.0) {
+				std::cout << "R";
+			}
+			if (rgb_col[1] < 0.0) {
+				std::cout << "G";
+			}
+			if (rgb_col[2] < 0.0) {
+				std::cout << "B";
+			}
 			for (size_t i = 0; i < 3; i++) {
-				rgb_col.e[i] = pow(rgb_col[i], 1.0/2.2);
+				if (rgb_col[i] >= 0.0) {
+					rgb_col.e[i] = pow(rgb_col[i], 1.0/2.2);
+					//rgb_col.e[i] = pow(rgb_col[i], 4.0);
+				}
 			}
 
 			int ir = std::min(std::max(int(255.99*rgb_col[0]), 0), 255);

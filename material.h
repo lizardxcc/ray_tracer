@@ -50,15 +50,17 @@ class metal : public material {
 
 class dielectric : public material {
 	public:
-		dielectric(float ref_B, float ref_C) : ref_B(ref_B), ref_C(ref_C) {
-			albedo = Spectrum(1.0);
-			//R0 = pow((1.0-ref_idx)/(1.0+ref_idx), 2);
-		}
-		dielectric(const Spectrum& albedo, float ref_B, float ref_C) : albedo(albedo), ref_B(ref_B), ref_C(ref_C) {}
+		//dielectric(float ref_B, float ref_C) : ref_B(ref_B), ref_C(ref_C) {
+		//	albedo = Spectrum(1.0);
+		//	//R0 = pow((1.0-ref_idx)/(1.0+ref_idx), 2);
+		//}
+		//dielectric(const Spectrum& albedo, float ref_B, float ref_C) : albedo(albedo), ref_B(ref_B), ref_C(ref_C) {}
+		dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k), ref_C(ref_C) {}
 		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, float& CxDF, float& pdf_val) const;
 
 		float ref_B, ref_C;
 		Spectrum albedo;
+		Spectrum n, k;
 		//float R0;
 };
 

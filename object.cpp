@@ -285,18 +285,44 @@ objmodel::objmodel(const char *filename)
 		float Tr = 1.0 - mtl->d;
 		bool light_flag = false;
 		if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
-			//mat = new diffuse_light(mtl->Ke);
-			Spectrum l(0.1);
+			mat = new diffuse_light(RGBtoSpectrum(mtl->Ke));
+			//mat = new straight_light(RGBtoSpectrum(mtl->Ke));
+			//Spectrum l(0.2);
 			//l.data[0] = 0.1;
 			//l.data[5] = 0.1;
 			//l.data[9] = 0.1;
-			mat = new straight_light(l);
+			//mat = new straight_light(l);
 			light_flag = true;
 		} else if (Tr != 0.0) {
-			//mat = new dielectric(mtl->Kd, mtl->Ni);
-			mat = new dielectric(Spectrum(1), 1.728, 0.01342);
+			Spectrum n, k(0);
+			//vec3 hsv = RGBtoHSV(mtl->Kd);
+			//float wl = 620 - 170.0 /270.0 * hsv[0];
+			//for (int i = 0; i < N_SAMPLES; i++) {
+			//}
+			//std::cout << wl << std::endl;
+
+			//vec3 rgb = HSVtoRGB(hsv);
+			//k = RGBtoSpectrum(rgb);
+			//std::cout << complementary_rgb(mtl->Kd) << std::endl;
+			//k = RGBtoSpectrum(complementary_rgb(mtl->Kd));
+
+			float b = mtl->Ni;
+			//float c = 0.11342;
+			float c = 0.00342;
+			for (size_t i = 0; i < 10; i++) {
+				float wl = 415 + 30 * i;
+				n.data[i] = b + c/pow(wl/1000, 2.0);
+				std::cout << n.data[i] << std::endl;
+				//k.data[i] = 0;
+			}
+			k.data[5] = 0.01;
+			k.data[6] = 0.01;
+			k.data[7] = 0.01;
+			k.data[8] = 0.01;
+			k.data[9] = 0.01;
+			mat = new dielectric(n, k);
 		} else {
-			mat = new lambertian(Spectrum(1.0));
+			mat = new lambertian(RGBtoSpectrum(mtl->Kd));
 		}
 
 		for (size_t j = 0; j < o.objects[i]->f.size(); j++) {

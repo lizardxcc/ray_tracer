@@ -124,7 +124,13 @@ float shlick(float theta, float n1, float n2)
 bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, float& BxDF, float& pdf_val) const
 {
 
-	float ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
+	//float ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
+	float ref_idx = n.get(r_in.central_wl);
+	float alpha = 4.0 * M_PI * k.get(r_in.central_wl) / (r_in.central_wl * pow(10, -9));
+	//alpha *= 0.000002;
+	//alpha = 0.05;
+	alpha *= rec.t;
+
 	//vec3 v = unit_vector(r_in.direction());
 	vec3 vo = -unit_vector(r_in.direction());
 	vec3 normal = unit_vector(rec.normal);
@@ -135,11 +141,14 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 	if (cos_o >= 0.0) {
 		n_in = ref_idx;
 		n_out = n_vacuum;
+		alpha = 0.0;
 	} else {
 		n_in = n_vacuum;
 		n_out = ref_idx;
 		cos_o = abs(cos_o);
 		normal = -normal;
+		//std::cout << rec.t << std::endl;
+		//std::cout << alpha << std::endl;
 	}
 	float sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
 	float sin_t = n_out/n_in * sin_o;
@@ -175,6 +184,7 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 		pdf_val = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
+	BxDF *= exp(-alpha);
 	scattered.min_wl = r_in.min_wl;
 	scattered.max_wl = r_in.max_wl;
 	scattered.central_wl = r_in.central_wl;
