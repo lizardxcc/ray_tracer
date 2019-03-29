@@ -28,8 +28,8 @@ RELEASE_FLAGS = -O3
 CXXFLAGS = -Wall -Wextra -std=c++14
 CXXFLAGS += -MMD -MP
 
-CXXFLAGS += -I/usr/local/Cellar/boost/1.68.0_1/include
-LDFLAGS = -L/usr/local/Cellar/boost/1.68.0_1/lib
+CXXFLAGS += -I/usr/local/Cellar/boost/1.69.0/include
+LDFLAGS = -L/usr/local/Cellar/boost/1.69.0/lib
 LDLIBS =
 OPENMPFLAGS = -fopenmp
 
