@@ -25,13 +25,18 @@ double sample(ray& r, const hitable *world, int count)
 		ray scattered;
 		double bxdf, pdf;
 		double value = rec.mat_ptr->emitted(0, 0, r, rec);
-		double prr = 0.8;
+		bool respawn = rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf);
+		double prr;
+		if (respawn) {
+			prr = std::min(1.0, 0.1+bxdf);
+		} else {
+			prr = 0.0;
+		}
+
 		if (drand48() < prr) {
-			if (rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf)) {
+			if (respawn) {
 				value += bxdf * sample(scattered, world, count+1) *
 					abs(dot(rec.normal, unit_vector(scattered.direction()))) / pdf / prr;
-			} else {
-				value += 0.0;
 			}
 		}
 		return value;
