@@ -321,6 +321,8 @@ objmodel::objmodel(const char *filename)
 			k.data[8] = 0.01;
 			k.data[9] = 0.01;
 			mat = new dielectric(n, k);
+			//mat = new lambertian(RGBtoSpectrum(mtl->Kd));
+			//mat = new metal(RGBtoSpectrum(mtl->Kd));
 		} else {
 			mat = new lambertian(RGBtoSpectrum(mtl->Kd));
 		}

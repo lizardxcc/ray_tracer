@@ -13,14 +13,19 @@ vec3 onb::w() const
 	return axis[2];
 }
 
-vec3 onb::local(double a, double b, double c) const
+vec3 onb::localtoworld(double a, double b, double c) const
 {
 	return a*u() + b*v() + c*w();
 }
 
-vec3 onb::local(const vec3& a) const
+vec3 onb::localtoworld(const vec3& a) const
 {
 	return a.x()*u() + a.y()*v() + a.z()*w();
+}
+
+vec3 onb::worldtolocal(const vec3& a) const
+{
+	return vec3(dot(u(), a), dot(v(), a), dot(w(), a));
 }
 
 void onb::build_from_w(const vec3& n)

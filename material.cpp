@@ -32,47 +32,54 @@ vec3 refract(vec3 v, vec3 normal, double n_in, double n_out)
 	return v1_p + v2_p;
 }
 
-double lambertian::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
+double lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
-	//double rho = 0.5;
-	double cosine = dot(rec.normal, unit_vector(scattered.direction()));
-	if (cosine < 0)
-		return 0;
+	if (vi.z() < 0.0)
+		return 0.0;
 
-	//return rho / M_PI;
-	return albedo.get(r_in.central_wl)/M_PI;
+	return albedo.get(wli)/M_PI;
 }
 
-bool lambertian::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const
+bool lambertian::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
-	vec3 generated_direction;
-
-	uniform_pdf uni_pdf(rec.normal);
 	std::vector<pdf *> pdf_list(lights.size()+1);
-	pdf_list[0] = &uni_pdf;
+	pdf_list[0] = new uniform_pdf(rec.normal);
 	for (size_t i = 1; i < pdf_list.size(); i++) {
 		pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
 	}
 	mixture_pdf pdf(pdf_list);
 
-	generated_direction = pdf.generate();
+	vec3 generated_direction = pdf.generate();
 	pdf_val = pdf.pdf_val(generated_direction);
-
-	scattered = ray(rec.p, unit_vector(generated_direction));
-	scattered.min_wl = r_in.min_wl;
-	scattered.max_wl = r_in.max_wl;
-	scattered.central_wl = r_in.central_wl;
-	//attenuation = albedo;
-
-	for (size_t i = 1; i < pdf_list.size(); i++) {
+	for (size_t i = 0; i < pdf_list.size(); i++) {
 		delete pdf_list[i];
 	}
+	vi = uvw.worldtolocal(generated_direction);
 
-	BxDF = this->BxDF(r_in, rec, scattered);
+	wli = wlo;
+	BxDF = this->BxDF(vi, wli, vo, wlo);
 	return true;
 }
 
 
+double metal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	if (vi.z() < 0.0)
+		return 0.0;
+
+	return albedo.get(wli) / abs(vi.z());
+}
+bool metal::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+{
+	vi[0] = -vo[0];
+	vi[1] = -vo[1];
+	vi[2] = vo[2];
+	wli = wlo;
+	BxDF = this->BxDF(vi, wli, vo, wlo);
+	pdf_val = 1;
+	return true;
+}
+/*
 double metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
 {
 	double cosine = dot(rec.normal, unit_vector(scattered.direction()));
@@ -100,6 +107,7 @@ bool metal::sample(const ray& r_in, const hit_record& rec, ray& scattered, doubl
 	pdf = 1;
 	return true;
 }
+*/
 
 /*
 bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, double& pdf) const
@@ -121,34 +129,31 @@ double shlick(double theta, double n1, double n2)
 }
 
 
-bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const
+bool dielectric::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 
 	//double ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
-	double ref_idx = n.get(r_in.central_wl);
-	double alpha = 4.0 * M_PI * k.get(r_in.central_wl) / (r_in.central_wl * pow(10, -9));
-	//alpha *= 0.000002;
-	//alpha = 0.05;
+	double ref_idx = n.get(wlo);
+	double alpha = 4.0 * M_PI * k.get(wlo) / (wlo * pow(10, -9));
 	alpha *= rec.t;
 
-	//vec3 v = unit_vector(r_in.direction());
-	vec3 vo = -unit_vector(r_in.direction());
-	vec3 normal = unit_vector(rec.normal);
-	double cos_o = dot(vo, normal);
+	double cos_o = vo.z();
 	double n_vacuum = 1.0;
 	double n_in, n_out;
 	double fresnel;
+	vec3 normal;
 	if (cos_o >= 0.0) {
+		// from outside to inside of object
 		n_in = ref_idx;
 		n_out = n_vacuum;
 		alpha = 0.0;
+		normal = vec3(0, 0, 1);
 	} else {
+		// from inside to outside of object
 		n_in = n_vacuum;
 		n_out = ref_idx;
 		cos_o = abs(cos_o);
-		normal = -normal;
-		//std::cout << rec.t << std::endl;
-		//std::cout << alpha << std::endl;
+		normal = vec3(0, 0, -1);
 	}
 	double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
 	double sin_t = n_out/n_in * sin_o;
@@ -157,7 +162,6 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 	if (sin_t >= 1.0) { // total internal reflection
 		fresnel = 1.0;
 		total_internal_reflection = true;
-		//std::cout << "total internal reflection" << std::endl;
 	} else {
 		cos_t = sqrt(std::max(0.0, 1.0-sin_t*sin_t));
 		double r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
@@ -170,63 +174,29 @@ bool dielectric::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 	double rand = drand48();
 	// mutiple importance sampling
 	if (rand <= fresnel || total_internal_reflection) { // reflection (includes total internal reflection)
-		vec3 v_in = unit_vector(r_in.direction());
-		vec3 v = v_in+2*cos_o*normal;
-		scattered = ray(rec.p, unit_vector(v));
+		vi[0] = -vo[0];
+		vi[1] = -vo[1];
+		vi[2] = vo[2];
 		pdf_val = fresnel;
 		BxDF = fresnel/cos_o;
 	} else { // refraction
-		vec3 v_in = unit_vector(r_in.direction());
-		vec3 v_para = unit_vector(v_in + cos_o * normal);
-		vec3 v_1 = (-cos_t) * normal;
-		vec3 v_2 = sin_t * v_para;
-		scattered = ray(rec.p, v_1+v_2);
+		vi = (-cos_t) * normal - sin_t * unit_vector(vec3(vo[0], vo[1], 0));
 		pdf_val = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
 	BxDF *= exp(-alpha);
-	scattered.min_wl = r_in.min_wl;
-	scattered.max_wl = r_in.max_wl;
-	scattered.central_wl = r_in.central_wl;
-	//attenuation = albedo;
+	wli = wlo;
 
 	return true;
 }
 
-
-bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const
+double oren_nayar::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
-	vec3 generated_direction;
-
-	uniform_pdf uni_pdf(rec.normal);
-	std::vector<pdf *> pdf_list(lights.size()+1);
-	pdf_list[0] = &uni_pdf;
-	for (size_t i = 1; i < pdf_list.size(); i++) {
-		pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
-	}
-	mixture_pdf pdf(pdf_list);
-
-	generated_direction = pdf.generate();
-	pdf_val = pdf.pdf_val(generated_direction);
-
-	scattered = ray(rec.p, unit_vector(generated_direction));
-	scattered.min_wl = r_in.min_wl;
-	scattered.max_wl = r_in.max_wl;
-	scattered.central_wl = r_in.central_wl;
-	//attenuation = albedo;
-
-	for (size_t i = 1; i < pdf_list.size(); i++) {
-		delete pdf_list[i];
-	}
-
-	vec3 vo = -unit_vector(r_in.direction());
-	vec3 normal = unit_vector(rec.normal);
-	double cos_theta_i = dot(generated_direction, normal);
+	double cos_theta_i = vi.z();
 	if (cos_theta_i < 0) {
-		BxDF = 0;
-		return true;
+		return 0.0;
 	}
-	double cos_theta_o = dot(vo, normal);
+	double cos_theta_o = vo.z();
 	double cos_alpha = std::min(cos_theta_i, cos_theta_o);
 	double cos_beta = std::max(cos_theta_i, cos_theta_o);
 	double sin_alpha = sqrt(1.0-cos_alpha*cos_alpha);
@@ -235,33 +205,41 @@ bool oren_nayar::sample(const ray& r_in, const hit_record& rec, ray& scattered, 
 	double A = 1 - sigma*sigma/(2*(sigma*sigma + 0.33));
 	double B = 0.45 * sigma * sigma / (sigma*sigma+0.09);
 
-	vec3 hori_vo = vo - cos_theta_o * normal;
-	vec3 hori_scattered = generated_direction - cos_theta_i * normal;
+	vec3 hori_vo = vec3(vo[0], vo[1], 0);
+	vec3 hori_scattered = vec3(vi[0], vi[1], 0);
 	double tmp = std::max(0.0, dot(hori_vo, hori_scattered));
 
-	BxDF = 1.0/M_PI * (A + B * tmp * sin_alpha * tan_beta);
+	return albedo.get(wli)/M_PI * (A + B * tmp * sin_alpha * tan_beta);
+}
 
-	//BxDF = this->BxDF(r_in, rec, scattered);
+bool oren_nayar::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+{
+	std::vector<pdf *> pdf_list(lights.size()+1);
+	pdf_list[0] = new uniform_pdf(rec.normal);
+	for (size_t i = 1; i < pdf_list.size(); i++) {
+		pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
+	}
+	mixture_pdf pdf(pdf_list);
+
+	vec3 generated_direction = pdf.generate();
+	pdf_val = pdf.pdf_val(generated_direction);
+	for (size_t i = 0; i < pdf_list.size(); i++) {
+		delete pdf_list[i];
+	}
+	vi = uvw.worldtolocal(generated_direction);
+
+	wli = wlo;
+	BxDF = this->BxDF(vi, wli, vo, wlo);
+
 	return true;
 }
 
-bool diffuse_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf) const
+double diffuse_light::emitted(const ray& r, const hit_record& rec) const
 {
-	return false;
+	return light_color.integrate(r.min_wl, r.max_wl);
 }
 
-double diffuse_light::emitted(double u, double v, const ray& r_in, const hit_record& rec) const
-{
-	//return vec3(1.0, 1.0, 1.0);
-	return light_color.integrate(r_in.min_wl, r_in.max_wl);
-	//return 10.0;
-}
-
-bool straight_light::sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf) const
-{
-	return false;
-}
-
+/*
 double straight_light::emitted(double u, double v, const ray& r_in, const hit_record& rec) const
 {
 	//return light_color*pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 20.0);
@@ -272,3 +250,4 @@ double straight_light::emitted(double u, double v, const ray& r_in, const hit_re
 		t = 1.0;
 	return light_color.integrate(r_in.min_wl, r_in.max_wl) * t;
 }
+*/

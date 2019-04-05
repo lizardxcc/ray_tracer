@@ -35,7 +35,7 @@ vec3 random_on_unit_hemisphere(double theta_max)
 
 vec3 uniform_pdf::generate() const
 {
-	return uvw.local(random_on_unit_hemisphere());
+	return uvw.localtoworld(random_on_unit_hemisphere());
 }
 
 
@@ -53,7 +53,7 @@ double uniform_pdf::pdf_val(const vec3& direction) const
 
 vec3 toward_object_pdf::generate() const
 {
-	return uvw.local(random_on_unit_hemisphere(theta_max));
+	return uvw.localtoworld(random_on_unit_hemisphere(theta_max));
 }
 
 double toward_object_pdf::pdf_val(const vec3& direction) const

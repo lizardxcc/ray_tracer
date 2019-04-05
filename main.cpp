@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <random>
 #include "vec3.h"
+#include "onb.h"
 #include "ray.h"
 #include "camera.h"
 #include "hitablelist.h"
@@ -18,14 +19,14 @@
 double sample(ray& r, const hitable *world, int count)
 {
 	hit_record rec;
-	//if (count > 20) {
-	//	return 0.0;
-	//}
 	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
-		ray scattered;
 		double bxdf, pdf;
-		double value = rec.mat_ptr->emitted(0, 0, r, rec);
-		bool respawn = rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf);
+		double value = rec.mat_ptr->emitted(r, rec);
+		onb uvw;
+		uvw.build_from_w(rec.normal);
+		vec3 generated_vi;
+		double wli;
+		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 		double prr;
 		if (respawn) {
 			prr = std::min(1.0, 0.1+bxdf);
@@ -35,12 +36,15 @@ double sample(ray& r, const hitable *world, int count)
 
 		if (drand48() < prr) {
 			if (respawn) {
+				ray scattered(rec.p, uvw.localtoworld(generated_vi));
+				scattered.central_wl = wli;
+				scattered.min_wl = r.min_wl;
+				scattered.max_wl = r.max_wl;
 				value += bxdf * sample(scattered, world, count+1) *
-					abs(dot(rec.normal, unit_vector(scattered.direction()))) / pdf / prr;
+					abs(generated_vi.z()) / pdf / prr;
 			}
 		}
 		return value;
-		//r.radiance *= (bxdf * abs(dot(rec.normal, unit_vector(scattered.direction()))) / pdf);
 	} else {
 		return 0.0;
 	}
@@ -266,6 +270,7 @@ hitable *obj_room(void)
 {
 	std::vector<hitable *> list;
 	list.push_back(new objmodel("test.obj"));
+	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new metal(RGBtoSpectrum(vec3(0.8, 0.5, 0.1)))));
 	//double size = 5.0;
 	//hitable *light;
 	//lambertian mat(Spectrum(0));

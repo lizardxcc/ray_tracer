@@ -17,8 +17,9 @@ class onb
 		vec3 v() const;
 		vec3 w() const;
 
-		vec3 local(double a, double b, double c) const;
-		vec3 local(const vec3& a) const;
+		vec3 localtoworld(double a, double b, double c) const;
+		vec3 localtoworld(const vec3& a) const;
+		vec3 worldtolocal(const vec3& a) const;
 		void build_from_w(const vec3&);
 
 		vec3 axis[3];

@@ -3,17 +3,20 @@
 
 #include <vector>
 #include "vec3.h"
+#include "onb.h"
 #include "ray.h"
 #include "hitable.h"
 #include "spectrum.h"
 
 class material {
 	public:
-		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const = 0;
-		virtual double BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const {
+			return false;
+		}
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const {
 			return 0.0;
 		}
-		virtual double emitted(double u, double v, const ray& r_in, const hit_record& rec) const {
+		virtual double emitted(const ray& r, const hit_record& rec) const {
 			return 0.0;
 		}
 		static std::vector<hitable *> lights;
@@ -22,8 +25,8 @@ class material {
 class lambertian : public material {
 	public:
 		lambertian(const Spectrum& a) : albedo(a) {}
-		virtual double BxDF(const ray& r_in, const hit_record& rec, const ray& scatterd) const;
-		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const;
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
 
 		Spectrum albedo;
@@ -32,16 +35,9 @@ class lambertian : public material {
 
 class metal : public material {
 	public:
-		metal(const Spectrum& a, double f) : albedo(a)
-		{
-			if (f < 1.0)
-				fuzz = f;
-			else
-				fuzz = 1.0;
-		}
-		virtual double BxDF(const ray& r_in, const hit_record& rec, const ray& scatterd) const;
-		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const;
-
+		metal(const Spectrum& a) : albedo(a) {}
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
 		Spectrum albedo;
 		double fuzz;
@@ -56,7 +52,7 @@ class dielectric : public material {
 		//}
 		//dielectric(const Spectrum& albedo, double ref_B, double ref_C) : albedo(albedo), ref_B(ref_B), ref_C(ref_C) {}
 		dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k), ref_C(ref_C) {}
-		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, double& CxDF, double& pdf_val) const;
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
 
 		double ref_B, ref_C;
 		Spectrum albedo;
@@ -67,20 +63,21 @@ class dielectric : public material {
 
 class oren_nayar : public material {
 	public:
-		oren_nayar(const vec3& albedo, double sigma) : albedo(albedo), sigma(sigma) {}
-		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const;
-		vec3 albedo;
+		oren_nayar(const Spectrum& albedo, double sigma) : albedo(albedo), sigma(sigma) {}
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		Spectrum albedo;
 		double sigma;
 };
 
 class diffuse_light : public material {
 	public:
 		diffuse_light(Spectrum color) : light_color(color) {}
-		virtual bool sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf_val) const;
-		virtual double emitted(double u, double v, const ray& r_in, const hit_record& rec) const;
+		virtual double emitted(const ray& r, const hit_record& rec) const;
 		Spectrum light_color;
 };
 
+/*
 class straight_light : public material {
 	public:
 		straight_light(Spectrum color) : light_color(color) {}
@@ -88,5 +85,6 @@ class straight_light : public material {
 		virtual double emitted(double u, double v, const ray& r_in, const hit_record& rec) const;
 		Spectrum light_color;
 };
+*/
 
 #endif
