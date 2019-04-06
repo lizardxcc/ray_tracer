@@ -16,12 +16,12 @@
 
 
 
-double sample(ray& r, const hitable *world, int count)
+double get_radiance(ray& r, const hitable *world, int count)
 {
 	hit_record rec;
 	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
 		double bxdf, pdf;
-		double value = rec.mat_ptr->emitted(r, rec);
+		double radiance = rec.mat_ptr->emitted(r, rec);
 		onb uvw;
 		uvw.build_from_w(rec.normal);
 		vec3 generated_vi;
@@ -40,11 +40,11 @@ double sample(ray& r, const hitable *world, int count)
 				scattered.central_wl = wli;
 				scattered.min_wl = r.min_wl;
 				scattered.max_wl = r.max_wl;
-				value += bxdf * sample(scattered, world, count+1) *
+				radiance += bxdf * get_radiance(scattered, world, count+1) *
 					abs(generated_vi.z()) / pdf / prr;
 			}
 		}
-		return value;
+		return radiance;
 	} else {
 		return 0.0;
 	}
@@ -167,7 +167,7 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						double rad = sample(r, world, 0);
+						double rad = get_radiance(r, world, 0);
 						//if (rad > std::numeric_limits<double>::max()) {
 						//	std::cout << "ALARM" << std::endl;
 						//}
