@@ -51,32 +51,6 @@ double sample(ray& r, const hitable *world, int count)
 }
 
 
-/*
-vec3 color(const ray& r, hitable *world, int count)
-{
-	hit_record rec;
-	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
-		ray scatterd;
-		//vec3 attenuation;
-		//vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-		double bxdf;
-		double pdf;
-		rec.mat_ptr->emitted(0, 0, r, rec);
-		rec.mat_ptr->sample(r, rec, scattered, bxdf, pdf);
-
-		//if (count < 20 && rec.mat_ptr->sample(r, rec, scatterd, bxdf, pdf)) {
-		//	//return emitted + attenuation*color(scatterd, world, count+1);
-		//	return emitted + bxdf*color(scatterd, world, count+1) * abs(dot(rec.normal, unit_vector(scatterd.direction())))/ pdf;
-		//} else {
-		//	return emitted;
-		//}
-	} else {
-		return vec3(0.0, 0.0, 0.0);
-	}
-}
-*/
-
-
 
 hitable *room(void)
 {
