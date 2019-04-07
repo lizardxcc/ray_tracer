@@ -14,7 +14,15 @@
 #include <omp.h>
 #endif
 
+#include <boost/python/module.hpp>
+#include <boost/python/def.hpp>
 
+camera *cam;
+
+void set_camera(double lx, double ly, double lz, double rax, double ray, double raz, double rot_theta, double vfov, double aspect)
+{
+	cam = new camera(vec3(lx, ly, lz), vec3(rax, ray, raz), rot_theta, vfov, aspect);
+}
 
 double get_radiance(ray& r, const hitable *world, int count)
 {
@@ -107,18 +115,8 @@ hitable *obj_room(void)
 	return new hitable_list(list);
 }
 
-int main(int argc, char **argv)
+void execute(int nx, int ny, int ns, const char *filename)
 {
-
-	if (argc < 5) {
-		std::cout << "wrong number of arguments" << std::endl;
-		exit(-1);
-	}
-	int nx = atoi(argv[2]);
-	int ny = atoi(argv[3]);
-
-	int ns = atoi(argv[4]);
-
 	Spectrum **spectrum_array = new Spectrum*[nx];
 	vec3 **rgb_array = new vec3*[nx];
 	for (int i = 0; i < nx; i++) {
@@ -128,7 +126,7 @@ int main(int argc, char **argv)
 
 
 	std::ofstream ofs;
-	ofs.open(argv[1]);
+	ofs.open(filename);
 
 	ofs << "P3\n" << nx << " " << ny << "\n255\n";
 	//ofs << "P3\n" << nx << " " << ny << "\n65535\n";
@@ -139,7 +137,7 @@ int main(int argc, char **argv)
 	//pinhole_camera cam(vec3(0.0, 3.0, 12.0), vec3(0.0, 0.0, -10.0), vec3(0, 1, 0), 1.0, 1.0);
 	//lens_camera cam(vec3(0.0, 3.0, 12.0), vec3(0.0, 0.0, -10.0), vec3(0, 1, 0), 1.0, 0.85, 0.8, 1.0);
 	//camera cam(vec3(-2.0, 3.0, -3.0), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
-	camera cam(vec3(0.0, 0.0, 1.5), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
+	//camera cam(vec3(0.0, 10.0, 10.0), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, (double)nx/(double)ny);
 
 	size_t count = 0;
 
@@ -154,7 +152,7 @@ int i, j, s;
 			for (s = 0; s < ns; s++) {
 				double u = double(i + drand48()) / double(nx);
 				double v = double(j + drand48()) / double(ny);
-				ray r = cam.get_ray(u, v);
+				ray r = cam->get_ray(u, v);
 
 				double rand = drand48();
 				const size_t num = 10;
@@ -216,5 +214,11 @@ int i, j, s;
 			ofs << ir << " " << ig << " " << ib << "\n";
 		}
 	}
-	return 0;
+}
+
+
+BOOST_PYTHON_MODULE(renderer)
+{
+	boost::python::def("execute", execute);
+	boost::python::def("set_camera", set_camera);
 }

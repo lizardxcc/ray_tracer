@@ -219,4 +219,14 @@ inline vec3 HSVtoRGB(const vec3& hsv)
 	return rgb;
 }
 
+inline vec3 rodrigues(const vec3& v, const vec3& axis, double theta)
+{
+	double c = cos(theta);
+	double s = sin(theta);
+	vec3 r0 = vec3(c+axis.x()*axis.x()*(1-c), axis.x()*axis.y()*(1-c) - axis.z()*s, axis.x()*axis.z()*(1-c)+axis.y()*s);
+	vec3 r1 = vec3(axis.y()*axis.x()*(1-c)+axis.z()*s, c+axis.y()*axis.y()*(1-c), axis.y()*axis.z()*(1-c)-axis.x()*s);
+	vec3 r2 = vec3(axis.z()*axis.x()*(1-c)-axis.y()*s, axis.z()*axis.y()*(1-c)+axis.x()*s, c+axis.z()*axis.z()*(1-c));
+	return vec3(dot(r0, v), dot(r1, v), dot(r2, v));
+}
+
 #endif

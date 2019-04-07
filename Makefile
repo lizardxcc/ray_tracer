@@ -1,6 +1,6 @@
 CXX = g++-8
 
-TARGET = renderer
+TARGET = renderer.so
 SRCS = $(wildcard *.cpp)
 
 BIN_DIR = ./bin
@@ -29,8 +29,12 @@ CXXFLAGS = -Wall -Wextra -std=c++14
 CXXFLAGS += -MMD -MP
 
 CXXFLAGS += -I/usr/local/Cellar/boost/1.69.0/include
+CXXFLAGS += `python3-config --cflags`
+CXXFLAGS += -fPIC
 LDFLAGS = -L/usr/local/Cellar/boost/1.69.0/lib
-LDLIBS =
+LDFLAGS += -L/usr/local/Cellar/boost-python3/1.69.0/lib
+LDLIBS += `python3-config --ldflags`
+LDLIBS += -lboost_python37
 OPENMPFLAGS = -fopenmp
 
 
@@ -46,10 +50,10 @@ release: $(RELEASE_TARGET)
 debug: $(DEBUG_TARGET)
 	
 $(RELEASE_TARGET) : $(RELEASE_BIN_DIR) $(RELEASE_OBJS) Makefile
-	$(CXX) $(LDLIBS) $(OPENMPFLAGS) -o $@ $(RELEASE_OBJS)
+	$(CXX) -shared $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) -o $@ $(RELEASE_OBJS)
 
 $(DEBUG_TARGET) : $(DEBUG_BIN_DIR) $(DEBUG_OBJS) Makefile
-	$(CXX) $(LDLIBS) -o $@ $(DEBUG_OBJS)
+	$(CXX) -shared $(LDFLAGS) $(LDLIBS) -o $@ $(DEBUG_OBJS)
 
 $(DEBUG_BIN_DIR):
 	mkdir -p $@

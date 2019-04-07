@@ -3,6 +3,23 @@
 
 class camera {
 	public:
+		camera(vec3 lookfrom, vec3 axis, double rot_theta, double vfov, double aspect)
+		{
+			vec3 forward = vec3(0, -1, 0);
+			vec3 up = vec3(0, 0, -1);
+			forward = rodrigues(forward, axis, rot_theta);
+			up = rodrigues(up, axis, rot_theta);
+			double theta = vfov*M_PI/180;
+			double half_height = tan(theta/2);
+			double half_width = aspect * half_height;
+			origin = lookfrom;
+			vec3 w = unit_vector(-forward);
+			vec3 u = unit_vector(cross(up, w));
+			vec3 v = cross(w, u);
+			lower_left_corner = origin - half_width * u - half_height * v - w;
+			horizontal = 2 * half_width * u;
+			vertical = 2 * half_height * v;
+		}
 		camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
 		{
 			double theta = vfov*M_PI/180;
