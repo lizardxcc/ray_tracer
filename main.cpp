@@ -14,9 +14,6 @@
 #include <omp.h>
 #endif
 
-#include <boost/python/module.hpp>
-#include <boost/python/def.hpp>
-
 camera *cam;
 
 void set_camera(double lx, double ly, double lz, double rax, double ray, double raz, double rot_theta, double vfov, double aspect)
@@ -216,9 +213,8 @@ int i, j, s;
 	}
 }
 
-
-BOOST_PYTHON_MODULE(renderer)
+int main(void)
 {
-	boost::python::def("execute", execute);
-	boost::python::def("set_camera", set_camera);
+	set_camera(0, 0, 2, 1, 0, 0, 90, 60, 1.0);
+	execute(500, 500, 10, "test.pnm");
 }
