@@ -1,6 +1,6 @@
 CXX = g++-8
 
-TARGET = renderer.so
+TARGET = renderer
 SRCS = $(wildcard *.cpp)
 
 BIN_DIR = ./bin
@@ -49,11 +49,11 @@ release: $(RELEASE_TARGET)
 
 debug: $(DEBUG_TARGET)
 	
-$(RELEASE_TARGET) : $(RELEASE_BIN_DIR) $(RELEASE_OBJS) Makefile
-	$(CXX) -shared $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) -o $@ $(RELEASE_OBJS)
+$(RELEASE_TARGET) : $(RELEASE_OBJS) Makefile | $(RELEASE_BIN_DIR)
+	$(CXX) $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) -o $@ $(RELEASE_OBJS)
 
-$(DEBUG_TARGET) : $(DEBUG_BIN_DIR) $(DEBUG_OBJS) Makefile
-	$(CXX) -shared $(LDFLAGS) $(LDLIBS) -o $@ $(DEBUG_OBJS)
+$(DEBUG_TARGET) : $(DEBUG_OBJS) Makefile | $(DEBUG_BIN_DIR)
+	$(CXX) $(LDFLAGS) $(LDLIBS) -o $@ $(DEBUG_OBJS)
 
 $(DEBUG_BIN_DIR):
 	mkdir -p $@
@@ -66,10 +66,10 @@ $(RELEASE_OBJS_DIR):
 $(DEPS_DIR):
 	mkdir -p $@
 
-$(RELEASE_OBJS_DIR)/%.o: %.cpp $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR) Makefile
+$(RELEASE_OBJS_DIR)/%.o: %.cpp Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
 
-$(DEBUG_OBJS_DIR)/%.o: %.cpp $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR) Makefile
+$(DEBUG_OBJS_DIR)/%.o: %.cpp Makefile | $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
 
 -include $(RELEASE_DEPS)
