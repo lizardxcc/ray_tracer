@@ -18,7 +18,7 @@ bool obj::Load(const char *filename)
 			std::string s;
 			iss >> s;
 			iss >> s;
-			mtl_file.push_back(s.c_str());
+			mtl_file.push_back(s);
 		} else if (line.find("o") == 0) {
 			file.seekg(oldpos);
 			LoadObject();

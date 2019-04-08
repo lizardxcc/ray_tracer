@@ -272,7 +272,7 @@ objmodel::objmodel(const char *filename)
 {
 	o.Load(filename);
 	for (const auto& s : o.mtl_file) {
-		mtl_loader.Load(s);
+		mtl_loader.Load(s.c_str());
 	}
 	models.resize(o.objects.size());
 	for (size_t i = 0; i < o.objects.size(); i++) {

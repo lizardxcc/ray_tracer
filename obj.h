@@ -26,7 +26,7 @@ class obj {
 		void PrintDebug(void);
 
 		std::ifstream file;
-		std::vector<const char *> mtl_file;
+		std::vector<std::string> mtl_file;
 		std::vector<objobject *> objects;
 
 	private:
