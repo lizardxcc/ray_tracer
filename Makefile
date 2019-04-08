@@ -29,12 +29,7 @@ CXXFLAGS = -Wall -Wextra -std=c++14
 CXXFLAGS += -MMD -MP
 
 CXXFLAGS += -I/usr/local/Cellar/boost/1.69.0/include
-CXXFLAGS += `python3-config --cflags`
-CXXFLAGS += -fPIC
 LDFLAGS = -L/usr/local/Cellar/boost/1.69.0/lib
-LDFLAGS += -L/usr/local/Cellar/boost-python3/1.69.0/lib
-LDLIBS += `python3-config --ldflags`
-LDLIBS += -lboost_python37
 OPENMPFLAGS = -fopenmp
 
 
