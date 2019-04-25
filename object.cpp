@@ -315,12 +315,12 @@ objmodel::objmodel(const char *filename)
 				std::cout << n.data[i] << std::endl;
 				//k.data[i] = 0;
 			}
-			k.data[5] = 0.01;
-			k.data[6] = 0.01;
-			k.data[7] = 0.01;
-			k.data[8] = 0.01;
-			k.data[9] = 0.01;
-			mat = new dielectric(n, k);
+			//k.data[5] = 0.01;
+			//k.data[6] = 0.01;
+			//k.data[7] = 0.01;
+			//k.data[8] = 0.01;
+			//k.data[9] = 0.01;
+			mat = new mix_material(new lambertian(RGBtoSpectrum(mtl->Kd)), new dielectric(n, k), 0.7);;
 			//mat = new lambertian(RGBtoSpectrum(mtl->Kd));
 			//mat = new metal(RGBtoSpectrum(mtl->Kd));
 		} else {

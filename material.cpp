@@ -239,6 +239,32 @@ double diffuse_light::emitted(const ray& r, const hit_record& rec) const
 	return light_color.integrate(r.min_wl, r.max_wl);
 }
 
+double mix_material::emitted(const ray& r, const hit_record& rec) const
+{
+	if (drand48() < fac) {
+		return mat2->emitted(r, rec);
+	} else {
+		return mat1->emitted(r, rec);
+	}
+}
+
+bool mix_material::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+{
+	if (drand48() < fac) {
+		return mat2->sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdf_val);
+	} else {
+		return mat1->sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdf_val);
+	}
+}
+
+double mix_material::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	if (drand48() < fac) {
+		return mat2->BxDF(vi, wli, vo, wlo);
+	} else {
+		return mat1->BxDF(vi, wli, vo, wlo);
+	}
+}
 /*
 double straight_light::emitted(double u, double v, const ray& r_in, const hit_record& rec) const
 {

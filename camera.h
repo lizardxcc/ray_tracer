@@ -3,6 +3,7 @@
 
 class camera {
 	public:
+		camera(){}
 		camera(vec3 lookfrom, vec3 axis, double rot_theta, double vfov, double aspect)
 		{
 			vec3 forward = vec3(0, -1, 0);
@@ -20,7 +21,7 @@ class camera {
 			horizontal = 2 * half_width * u;
 			vertical = 2 * half_height * v;
 		}
-		camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
+		void set_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
 		{
 			double theta = vfov*M_PI/180;
 			double half_height = tan(theta/2);
@@ -79,7 +80,8 @@ class pinhole_camera {
 
 class lens_camera {
 	public:
-		lens_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d, double focal_length, double aperture)
+		lens_camera() {}
+		void set_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d, double focal_length, double aperture)
 		{
 			double half_height = 0.5;
 			double half_width = aspect * half_height;

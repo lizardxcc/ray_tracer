@@ -41,6 +41,8 @@ bool MtlLoader::LoadMtl(void)
 	iss >> s;
 	iss >> s;
 
+	std::cout << "aaa!!!" << std::endl;
+	std::cout << "material " << s << " added" << std::endl;
 	mtls[s] = mtl;
 
 

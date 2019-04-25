@@ -77,6 +77,22 @@ class diffuse_light : public material {
 		Spectrum light_color;
 };
 
+
+class mix_material : public material {
+	public:
+		mix_material(const material *mat1, const material *mat2, double fac)
+		{
+			this->mat1 = mat1;
+			this->mat2 = mat2;
+			this->fac = fac;
+		}
+		virtual double emitted(const ray& r, const hit_record& rec) const;
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		const material *mat1, *mat2;
+		double fac;
+};
+
 /*
 class straight_light : public material {
 	public:
