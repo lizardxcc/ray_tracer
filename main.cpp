@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <random>
+#include <cstring>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
