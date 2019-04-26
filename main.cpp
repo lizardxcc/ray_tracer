@@ -134,7 +134,7 @@ hitable *obj_room(void)
 }
 
 
-unsigned char *img = nullptr;
+GLubyte *img = nullptr;
 int img_width = 500;
 int img_height = 500;
 bool img_loaded = false;
@@ -169,7 +169,7 @@ void execute(int nx, int ny, int ns, const char *filename)
 
 int i, j, s;
 #ifdef _OPENMP
-#pragma omp parallel for private(j, s) schedule(dynamic)
+#pragma omp parallel for private(j, s) schedule(static)
 #endif
 	for (i = 0; i < nx; i++) {
 		for (j = 0; j < ny; j++) {
@@ -203,6 +203,11 @@ int i, j, s;
 				}
 			}
 			vec3 rgb_col = rgb(radiance);
+			for (size_t i = 0; i < 3; i++) {
+				if (rgb_col[i] >= 0.0) {
+					rgb_col.e[i] = pow(rgb_col[i], 1.0/2.2);
+				}
+			}
 			int ir = std::min(std::max(int(255.99*rgb_col[0]), 0), 255);
 			int ig = std::min(std::max(int(255.99*rgb_col[1]), 0), 255);
 			int ib = std::min(std::max(int(255.99*rgb_col[2]), 0), 255);
@@ -212,10 +217,6 @@ int i, j, s;
 			img[((ny-j_-1)*nx+i_)*4+1] = ig;
 			img[((ny-j_-1)*nx+i_)*4+2] = ib;
 			img[((ny-j_-1)*nx+i_)*4+3] = 255;
-			//img[((ny-j-1)*nx+i)*4] = ir;
-			//img[((ny-j-1)*nx+i)*4+1] = ig;
-			//img[((ny-j-1)*nx+i)*4+2] = ib;
-			//img[((ny-j-1)*nx+i)*4+3] = 255;
 
 			count++;
 			spectrum_array[i][j] = radiance;
@@ -234,23 +235,12 @@ int i, j, s;
 	//	for (int i = 0; i < nx; i++) {
 	for (int j = 0; j < ny; j++) {
 		for (int i = nx-1; i >= 0; i--) {
-			//spectrum_array[i][j] /= double(ns);
-			//spectrum_array[i][j] *= 1.0;
-			//array[i][j] = vec3(sqrt(array[i][j][0]), sqrt(array[i][j][1]), sqrt(array[i][j][2]));
-			vec3 rgb_col = rgb(spectrum_array[i][j]);
-			for (size_t i = 0; i < 3; i++) {
-				if (rgb_col[i] >= 0.0) {
-					rgb_col.e[i] = pow(rgb_col[i], 1.0/2.2);
-					//rgb_col.e[i] = pow(rgb_col[i], 4.0);
-				}
-			}
 
-			int ir = std::min(std::max(int(255.99*rgb_col[0]), 0), 255);
-			int ig = std::min(std::max(int(255.99*rgb_col[1]), 0), 255);
-			int ib = std::min(std::max(int(255.99*rgb_col[2]), 0), 255);
-			//int ir = std::min(std::max(int(65535.99*array[i][j][0]), 0), 65535);
-			//int ig = std::min(std::max(int(65535.99*array[i][j][1]), 0), 65535);
-			//int ib = std::min(std::max(int(65535.99*array[i][j][2]), 0), 65535);
+			size_t i_ = nx-i-1;
+			size_t j_ = ny-j-1;
+			int ir = img[((ny-j_-1)*nx+i_)*4];
+			int ig = img[((ny-j_-1)*nx+i_)*4+1];
+			int ib = img[((ny-j_-1)*nx+i_)*4+2];
 
 			ofs << ir << " " << ig << " " << ib << "\n";
 		}
@@ -386,8 +376,10 @@ int main(void)
 					img_width = slider_img_width;
 					img_height = slider_img_height;
 					std::cout << img_width << " " << img_height << std::endl;
-					img = new unsigned char[img_width*img_height*4];
-					std::memset(img, 255, img_width*img_height*4);
+					img = new GLubyte[img_width*img_height*4];
+					for (int i = 0; i < img_width*img_height*4; i++)
+						img[i] = 255;
+					//std::memset(img, 255, img_width*img_height*4);
 					img_updated = true;
 					//set_camera(0, 0, 3, 1, 0, 0, M_PI/2.0, 60, (double)img_width/img_height);
 					vec3 cameraPos = vec3(scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
@@ -409,8 +401,8 @@ int main(void)
 			if (img_updated) {
 				glGenTextures(1, &my_opengl_texture);
 				glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
 				img_updated = false;
