@@ -14,12 +14,14 @@ class aabb {
 		{
 			minp = a;
 			maxp = b;
+			center = (a+b)/2.0;
 		}
 
 		bool hit(const ray& r, double t_min, double t_max) const;
 
 		vec3 minp;
 		vec3 maxp;
+		vec3 center;
 };
 
 

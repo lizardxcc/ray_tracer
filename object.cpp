@@ -170,20 +170,17 @@ bool zx_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 
 bool xy_rect::bounding_box(aabb& box) const
 {
-	box.minp = vec3(x0, y0, k - 0.001);
-	box.maxp = vec3(x1, y1, k + 0.001);
+	box = aabb(vec3(x0, y0, k - 0.001), vec3(x1, y1, k + 0.001));
 	return true;
 }
 bool yz_rect::bounding_box(aabb& box) const
 {
-	box.minp = vec3(k - 0.001, y0, z0);
-	box.maxp = vec3(k + 0.001, y1, z1);
+	box = aabb(vec3(k - 0.001, y0, z0), vec3(k + 0.001, y1, z1));
 	return true;
 }
 bool zx_rect::bounding_box(aabb& box) const
 {
-	box.minp = vec3(x0, k - 0.001, z0);
-	box.maxp = vec3(x1, k + 0.001, z1);
+	box = aabb(vec3(x0, k - 0.001, z0), vec3(x1, k + 0.001, z1));
 	return true;
 }
 //double zx_rect::generate_pdf_dir(const vec3& o, vec3& direction)
@@ -241,8 +238,7 @@ bool box::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 
 bool box::bounding_box(aabb& box) const
 {
-	box.minp = pmin;
-	box.maxp = pmax;
+	box = aabb(pmin, pmax);
 	return true;
 }
 
@@ -261,6 +257,7 @@ bool translate::bounding_box(aabb& box) const
 	if (ptr->bounding_box(box)) {
 		box.minp += offset;
 		box.maxp += offset;
+		box.center += offset;
 		return true;
 	} else {
 		return false;
@@ -502,23 +499,24 @@ bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 
 bool triangle::bounding_box(aabb& box) const
 {
-	box.minp = vec3(
+	vec3 minp = vec3(
 	std::min(v[0].x(), std::min(v[1].x(), v[2].x())),
 	std::min(v[0].y(), std::min(v[1].y(), v[2].y())),
 	std::min(v[0].z(), std::min(v[1].z(), v[2].z()))
 	);
-	box.maxp = vec3(
+	vec3 maxp = vec3(
 	std::max(v[0].x(), std::max(v[1].x(), v[2].x())),
 	std::max(v[0].y(), std::max(v[1].y(), v[2].y())),
 	std::max(v[0].z(), std::max(v[1].z(), v[2].z()))
 	);
 
 	for (size_t i = 0; i < 3; i++) {
-		if (box.minp.e[i] == box.maxp.e[i]) {
-			box.minp.e[i] -= 0.0001;
-			box.maxp.e[i] += 0.0001;
+		if (minp.e[i] == maxp.e[i]) {
+			minp.e[i] -= 0.0001;
+			maxp.e[i] += 0.0001;
 		}
 	}
+	box = aabb(minp, maxp);
 	return true;
 }
 
@@ -563,23 +561,25 @@ bool quadrilateral::hit(const ray& r, double t_min, double t_max, hit_record& re
 
 bool quadrilateral::bounding_box(aabb& box) const
 {
-	box.minp = vec3(
+	vec3 minp = vec3(
 	std::min({v[0].x(), v[1].x(), v[2].x(), v[3].x()}),
 	std::min({v[0].y(), v[1].y(), v[2].y(), v[3].y()}),
 	std::min({v[0].z(), v[1].z(), v[2].z(), v[3].z()})
 	);
-	box.maxp = vec3(
+	vec3 maxp = vec3(
 	std::max({v[0].x(), v[1].x(), v[2].x(), v[3].x()}),
 	std::max({v[0].y(), v[1].y(), v[2].y(), v[3].y()}),
 	std::max({v[0].z(), v[1].z(), v[2].z(), v[3].z()})
 	);
 
 	for (size_t i = 0; i < 3; i++) {
-		if (box.minp.e[i] == box.maxp.e[i]) {
-			box.minp.e[i] -= 0.0001;
-			box.maxp.e[i] += 0.0001;
+		if (minp.e[i] == maxp.e[i]) {
+			minp.e[i] -= 0.0001;
+			maxp.e[i] += 0.0001;
 		}
 	}
+
+	box = aabb(minp, maxp);
 	return true;
 }
 

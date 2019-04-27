@@ -12,7 +12,7 @@ bool box_x_compare(const hitable * a, const hitable* b)
 		std::cerr << "no bounding box in box_x_compare()" << std::endl;
 	}
 
-	return (box_left.minp.x() < box_right.minp.x());
+	return (box_left.center.x() < box_right.center.x());
 }
 bool box_y_compare(const hitable* a, const hitable* b)
 {
@@ -21,7 +21,7 @@ bool box_y_compare(const hitable* a, const hitable* b)
 		std::cerr << "no bounding box in box_x_compare()" << std::endl;
 	}
 
-	return (box_left.minp.y() < box_right.minp.y());
+	return (box_left.center.y() < box_right.center.y());
 }
 bool box_z_compare(const hitable* a, const hitable* b)
 {
@@ -30,7 +30,7 @@ bool box_z_compare(const hitable* a, const hitable* b)
 		std::cerr << "no bounding box in box_x_compare()" << std::endl;
 	}
 
-	return (box_left.minp.z() < box_right.minp.z());
+	return (box_left.center.z() < box_right.center.z());
 }
 
 bvh_node::bvh_node(std::vector<hitable *>& l)
