@@ -334,14 +334,11 @@ objmodel::objmodel(const char *filename)
 			hitable *tmp_model;
 			if (l == 3) {
 				triangle *tri = new triangle();
-				tri->normal = vec3(0, 0, 0);
 				for (size_t k = 0; k < l; k++) {
 					tri->v[k] = object->v[*f[k][0]];
-					tri->normal += object->vn[*f[k][2]];
+					tri->normal[k] = object->vn[*f[k][2]];
 				}
-				//tri->normal.make_unit_vector();
-				//tri->normal = object->vn[*f[0][2]];
-				tri->normal = unit_vector(cross(tri->v[1] - tri->v[0], tri->v[2] - tri->v[1]));
+				tri->face_normal = unit_vector(cross(tri->v[1] - tri->v[0], tri->v[2] - tri->v[1]));
 				tri->mat_ptr = mat;
 				tmp_model = tri;
 			} else if (l == 4) {
@@ -415,7 +412,7 @@ plymodel::plymodel(const char *filename, material *mat)
 			for (size_t j = 0; j < l; j++) {
 				tri->v[j] = p.vertices[p.faces[i][j]][0];
 			}
-			tri->normal = p.vertices[p.faces[i][0]][1];
+			//tri->normal = p.vertices[p.faces[i][0]][1];
 			tri->mat_ptr = mat;
 			tmp_polygon = tri;
 		}
@@ -478,16 +475,17 @@ bool plymodel::bounding_box(aabb& box) const
 
 bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
+	double t = dot(v[0] - r.origin(), face_normal) / dot(r.direction(), face_normal);
 	if (t >= t_min && t <= t_max) {
 		vec3 p = r.point_at_parameter(t);
+		double tri_area = cross(v[1]-v[0], v[2]-v[1]).length();
 		vec3 result0 = cross(v[1]-v[0], p-v[1]);
 		vec3 result1 = cross(v[2]-v[1], p-v[2]);
 		vec3 result2 = cross(v[0]-v[2], p-v[0]);
 		if (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0) {
 			rec.t = t;
 			rec.p = p;
-			rec.normal = normal;
+			rec.normal = (result1.length()*normal[0]+result2.length()*normal[1]+result0.length()*normal[2])/tri_area;
 			rec.mat_ptr = mat_ptr;
 			return true;
 		}

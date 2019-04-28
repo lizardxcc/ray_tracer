@@ -147,7 +147,8 @@ class triangle : public hitable {
 		virtual pdf *generate_pdf_object(const vec3& o);
 		material *mat_ptr;
 		vec3 v[3];
-		vec3 normal;
+		vec3 normal[3];
+		vec3 face_normal;
 };
 
 class quadrilateral : public hitable {
