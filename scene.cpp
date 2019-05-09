@@ -92,12 +92,12 @@ Scene::Scene(void)
 				//std::cout << x << " " << y << " " << z << std::endl;
 			}
 		}
-		material *mat = material_loader.materials[obj_loader.objects[o]->material_name];
+		std::shared_ptr<material> mat = material_loader.materials[obj_loader.objects[o]->material_name];
 		if (typeid(*mat) == typeid(lambertian)) {
-			vec3 col = r_rgb(dynamic_cast<lambertian *>(mat)->albedo);
+			vec3 col = r_rgb(std::dynamic_pointer_cast<lambertian>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
 		} else if (typeid(*mat) == typeid(diffuse_light)) {
-			vec3 col = unit_vector(r_rgb(dynamic_cast<diffuse_light *>(mat)->light_color));
+			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<diffuse_light>(mat)->light_color));
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
 		} else {
 			colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
@@ -311,7 +311,7 @@ void Scene::RenderImage(int nx, int ny, int ns, const char *filename)
 {
 	material::lights.clear();
 	for (int i = 0; i < world->models.size(); i++) {
-		world->models[i]->set_material(materials[i]);
+		world->models[i]->set_material(std::shared_ptr<material>(materials[i]));
 		if (materials[i]->light_flag) {
 			material::lights.push_back(world->models[i]);
 		}
@@ -429,7 +429,7 @@ void Scene::Load(const char *filename)
 	material_loader.Load("test.material");
 	for (int i = 0; i < obj_loader.objects.size(); i++) {
 		std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
-		material *mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
+		std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
 		materials.push_back(mat);
 	}
 	world = new objmodel(obj_loader);
@@ -514,10 +514,10 @@ void Scene::RenderMaterialEditorWindow(void)
 	}
 
 	if (cur_item != -1) {
-		material *mat = material_loader.materials[items[cur_item]];
+		std::shared_ptr<material> mat = material_loader.materials[items[cur_item]];
 		auto& id = typeid(*mat);
 		if (id == typeid(lambertian)) {
-			lambertian *mat_ptr = dynamic_cast<lambertian *>(mat);
+			std::shared_ptr<lambertian> mat_ptr = std::dynamic_pointer_cast<lambertian>(mat);
 			ImGui::Text("Lambertian");
 			const ImVec2 slider_size(18, 160);
 			static float a[N_SAMPLE];
@@ -541,7 +541,7 @@ void Scene::RenderMaterialEditorWindow(void)
 			colors[objecti][2] = col[2];
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (id == typeid(diffuse_light)) {
-			diffuse_light *mat_ptr = dynamic_cast<diffuse_light *>(mat);
+			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);
 			ImGui::Text("Light");
 			const ImVec2 slider_size(18, 160);
 			static float a[N_SAMPLE];

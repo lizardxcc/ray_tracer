@@ -155,7 +155,7 @@ bool MaterialLoader::LoadMaterial(void)
 			return false;
 		}
 	}
-	materials[material_name] = mtl;
+	materials[material_name] = std::shared_ptr<material>(mtl);
 	return true;
 }
 
@@ -169,18 +169,18 @@ void MaterialLoader::Write(const char *filename)
 	}
 }
 
-void MaterialLoader::WriteMaterial(material *mat)
+void MaterialLoader::WriteMaterial(std::shared_ptr<material> mat)
 {
 		auto& id = typeid(*mat);
 		if (id == typeid(lambertian)) {
-			lambertian *mat_ptr = dynamic_cast<lambertian *>(mat);
+			std::shared_ptr<lambertian> mat_ptr = std::dynamic_pointer_cast<lambertian>(mat);
 			ofile << "lambertian" << std::endl;
 			for (const auto& d : mat_ptr->albedo.data) {
 				ofile << d << std::endl;
 			}
 			ofile << std::endl;
 		} else if (id == typeid(diffuse_light)) {
-			diffuse_light *mat_ptr = dynamic_cast<diffuse_light *>(mat);
+			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);
 			ofile << "light" << std::endl;
 			for (const auto& d : mat_ptr->light_color.data) {
 				ofile << d << std::endl;

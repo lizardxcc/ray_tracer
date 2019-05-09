@@ -1,6 +1,7 @@
 #ifndef PDF_H
 #define PDF_H
 
+#include <memory>
 #include <vector>
 #include <algorithm>
 #include "vec3.h"
@@ -11,7 +12,6 @@ class hitable;
 
 class pdf {
 	public:
-		virtual ~pdf(){}
 		virtual vec3 generate() const = 0;
 		virtual double pdf_val(const vec3& direction) const = 0;
 };
@@ -51,17 +51,13 @@ class hitable_pdf : public pdf {
 			o = origin;
 			pdf_ptr = p->generate_pdf_object(origin);
 		}
-		~hitable_pdf()
-		{
-			delete pdf_ptr;
-		}
 		virtual vec3 generate() const;
 		virtual double pdf_val(const vec3& direction) const;
 
 		vec3 o;
 		hitable *ptr;
 
-		pdf *pdf_ptr;
+		std::unique_ptr<pdf> pdf_ptr;
 };
 
 

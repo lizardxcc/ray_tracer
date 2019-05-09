@@ -65,10 +65,10 @@ class MaterialLoader {
 		void Write(const char *filename);
 		std::ifstream file;
 		std::ofstream ofile;
-		std::unordered_map<std::string, material *> materials;
+		std::unordered_map<std::string, std::shared_ptr<material>> materials;
 	private:
 		bool LoadMaterial(void);
-		void WriteMaterial(material *mat);
+		void WriteMaterial(std::shared_ptr<material> mat);
 };
 
 #endif

@@ -24,7 +24,7 @@ class Scene {
 		obj obj_loader;
 		MaterialLoader material_loader;
 		objmodel *world;
-		std::vector<material *> materials;
+		std::vector<std::shared_ptr<material> > materials;
 		lens_camera cam;
 		glm::vec3 cameraPos;
 		glm::vec3 cameraFront;

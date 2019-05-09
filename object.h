@@ -13,11 +13,11 @@ class sphere: public hitable {
 	public:
 		sphere() { }
 		sphere(vec3 center, double r, material *mat_ptr) : center(center), radius(r) {
-			this->mat_ptr = mat_ptr;
+			this->mat_ptr = std::shared_ptr<material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double tmin, double tmux, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		virtual pdf *generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
 		vec3 center;
 		double radius;
 };
@@ -26,7 +26,7 @@ class plane: public hitable {
 	public:
 		plane() { }
 		plane(vec3 somewhere, vec3 normal, material *mat_ptr) : somewhere(somewhere), normal(normal) {
-			this->mat_ptr = mat_ptr;
+			this->mat_ptr = std::shared_ptr<material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double tmin, double tmux, hit_record& rec) const;
 		vec3 somewhere;
@@ -37,10 +37,10 @@ class rectangle : public hitable {
 	public:
 		rectangle() { }
 		rectangle(vec3 center, vec3 normal, vec3 width_dir, double width, double height, material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height) {
-			this->mat_ptr = mat_ptr;
+			this->mat_ptr = std::shared_ptr<material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-		virtual pdf *generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
 		virtual bool bounding_box(aabb& box) const;
 		vec3 center;
 		vec3 normal;
@@ -54,7 +54,7 @@ class xy_rect : public hitable {
 		xy_rect() { }
 		xy_rect(double x0, double y0, double x1, double y1, double k, material *mat) :
 		x0(x0), x1(x1), y0(y0), y1(y1), k(k) {
-			mat_ptr = mat;
+			mat_ptr = std::shared_ptr<material>(mat);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -67,7 +67,7 @@ class yz_rect : public hitable {
 		yz_rect() { }
 		yz_rect(double y0, double z0, double y1, double z1, double k, material *mat) :
 		y0(y0), y1(y1), z0(z0), z1(z1), k(k) {
-			mat_ptr = mat;
+			mat_ptr = std::shared_ptr<material>(mat);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -80,7 +80,7 @@ class zx_rect : public hitable {
 		zx_rect() { }
 		zx_rect(double z0, double x0, double z1, double x1, double k, material *mat) :
 		z0(z0), z1(z1), x0(x0), x1(x1), k(k) {
-			mat_ptr = mat;
+			mat_ptr = std::shared_ptr<material>(mat);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -147,7 +147,7 @@ class triangle : public hitable {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		virtual pdf *generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
 		vec3 v[3];
 		vec3 normal[3];
 		vec3 face_normal;
@@ -157,7 +157,7 @@ class quadrilateral : public hitable {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		virtual pdf *generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
 		vec3 v[4];
 		vec3 normal;
 };

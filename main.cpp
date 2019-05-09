@@ -47,7 +47,7 @@ hitable *room(void)
 	quad->v[2] = vec3(10.0, -1, -10.0);
 	quad->v[3] = vec3(-10.0, -1, -10.0);
 	quad->normal = vec3(0.0, 1.0, 0.0);
-	quad->mat_ptr = new lambertian(albedo);
+	quad->mat_ptr = std::shared_ptr<material>(new lambertian(albedo));
 	list.push_back(quad);
 
 	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new dielectric(Spectrum(1), 1.72, 0.41342)));
