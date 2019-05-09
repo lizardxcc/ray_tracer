@@ -21,6 +21,8 @@ class hitable {
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
 		virtual pdf *generate_pdf_object(const vec3& o);
 		virtual bool bounding_box(aabb& box) const = 0;
+		virtual void set_material(material *mat);
+		material *mat_ptr;
 };
 
 #endif

@@ -18,6 +18,7 @@ class bvh_node : public hitable {
 		bvh_node(std::vector<hitable *>& l);
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
+		virtual void set_material(material *mat);
 		hitable *left;
 		hitable *right;
 		aabb box;

@@ -42,18 +42,19 @@ double lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 
 bool lambertian::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
-	std::vector<pdf *> pdf_list(lights.size()+1);
-	pdf_list[0] = new uniform_pdf(rec.normal);
-	for (size_t i = 1; i < pdf_list.size(); i++) {
-		pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
-	}
-	mixture_pdf pdf(pdf_list);
+	//std::vector<pdf *> pdf_list(lights.size()+1);
+	//pdf_list[0] = new uniform_pdf(rec.normal);
+	//for (size_t i = 1; i < pdf_list.size(); i++) {
+	//	pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
+	//}
+	//mixture_pdf pdf(pdf_list);
+	hitable_pdf pdf(lights[0], rec.p);
 
 	vec3 generated_direction = pdf.generate();
 	pdf_val = pdf.pdf_val(generated_direction);
-	for (size_t i = 0; i < pdf_list.size(); i++) {
-		delete pdf_list[i];
-	}
+	//for (size_t i = 0; i < pdf_list.size(); i++) {
+	//	delete pdf_list[i];
+	//}
 	vi = uvw.worldtolocal(generated_direction);
 
 	wli = wlo;
@@ -164,11 +165,11 @@ bool dielectric::sample(const hit_record& rec, const onb& uvw, const vec3& vo, d
 		total_internal_reflection = true;
 	} else {
 		cos_t = sqrt(std::max(0.0, 1.0-sin_t*sin_t));
-		double r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
-		double r_s = (n_out*cos_o - n_in*cos_t)/(n_out*cos_o + n_in*cos_t);
-		fresnel = (r_p*r_p + r_s*r_s)/2.0;
-		//double R0 = pow((n_out-n_in)/(n_out+n_in), 2);
-		//fresnel = R0 + (1-R0) * pow(1-cos_t, 5);
+		//double r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
+		//double r_s = (n_out*cos_o - n_in*cos_t)/(n_out*cos_o + n_in*cos_t);
+		//fresnel = (r_p*r_p + r_s*r_s)/2.0;
+		double R0 = pow((n_out-n_in)/(n_out+n_in), 2);
+		fresnel = R0 + (1-R0) * pow(1-cos_t, 5);
 	}
 
 	double rand = drand48();

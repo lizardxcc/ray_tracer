@@ -1,19 +1,45 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include <vector>
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <glm/glm.hpp>
 #include "obj.h"
+#include "object.h"
+#include "camera.h"
+#include "materialfile.h"
 
 class Scene {
 	public:
 		Scene(void);
-		void Render(void);
+		double GetRadiance(ray& r, int count);
+		void RenderImage(int nx, int ny, int ns, const char *filename);
+		void Load(const char *filename);
+
+		void RenderSceneWindow(void);
+		void RenderResultWindow(void);
+		void RenderMaterialEditorWindow(void);
+
+	private:
+		obj obj_loader;
+		MaterialLoader material_loader;
+		objmodel *world;
+		std::vector<material *> materials;
+		lens_camera cam;
 		glm::vec3 cameraPos;
 		glm::vec3 cameraFront;
 		glm::vec3 cameraUp;
 		float d, focal_length, aperture;
-	private:
+		unsigned int activeObjectIndex = 0;
+		GLubyte *img = nullptr;
+		int img_width = 500;
+		int img_height = 500;
+		int img_samples = 100;
+		bool img_loaded = false;
+		bool img_updated = false;
+		GLuint my_opengl_texture;
+
+
 		std::vector<GLuint> VAOs;
 		std::vector<float *>vertices_array;
 		std::vector<int> vertices_num;
@@ -54,9 +80,7 @@ class Scene {
 			"	FragColor = vec4((ambient + diffuse) * objectColor, 1.0f);"
 			"}\n\0";
 
-		obj obj_loader;
 		float pitch = 0.0f, yaw = -90.0f;
-		unsigned int activeObjectIndex = 0;
 
 };
 

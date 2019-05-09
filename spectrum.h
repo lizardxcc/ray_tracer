@@ -5,7 +5,7 @@
 #include "vec3.h"
 
 #define RANGE (700 - 400)
-#define N_SAMPLE (10)
+#define N_SAMPLE (30)
 #define SAMPLE_SIZE (RANGE/N_SAMPLE)
 
 class Spectrum {
@@ -19,6 +19,13 @@ class Spectrum {
 			data.resize(N_SAMPLE);
 			for (auto& d : data) {
 				d = v;
+			}
+		}
+		Spectrum(const double d[N_SAMPLE])
+		{
+			data.resize(N_SAMPLE);
+			for (int i = 0; i < N_SAMPLE; i++) {
+				data[i] = d[i];
 			}
 		}
 
@@ -105,6 +112,8 @@ inline Spectrum operator/(const Spectrum &s1, double t)
 }
 vec3 xyz(const Spectrum &s);
 vec3 rgb(const Spectrum &s);
+vec3 r_xyz(const Spectrum &s);
+vec3 r_rgb(const Spectrum &s);
 Spectrum RGBtoSpectrum(const vec3& rgb);
 
 #endif

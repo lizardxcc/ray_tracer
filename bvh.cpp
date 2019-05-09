@@ -101,3 +101,10 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 }
 
 
+void bvh_node::set_material(material *mat)
+{
+	if (left != nullptr)
+		left->set_material(mat);
+	if (right != nullptr)
+		right->set_material(mat);
+}

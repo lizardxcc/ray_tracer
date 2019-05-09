@@ -20,6 +20,7 @@ class material {
 			return 0.0;
 		}
 		static std::vector<hitable *> lights;
+		bool light_flag = false;
 };
 
 class lambertian : public material {
@@ -51,7 +52,7 @@ class dielectric : public material {
 		//	//R0 = pow((1.0-ref_idx)/(1.0+ref_idx), 2);
 		//}
 		//dielectric(const Spectrum& albedo, double ref_B, double ref_C) : albedo(albedo), ref_B(ref_B), ref_C(ref_C) {}
-		dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k), ref_C(ref_C) {}
+		dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {}
 		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
 
 		double ref_B, ref_C;

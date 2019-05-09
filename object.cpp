@@ -13,6 +13,12 @@ pdf *hitable::generate_pdf_object(const vec3& o)
 }
 
 
+void hitable::set_material(material *mat)
+{
+	mat_ptr = mat;
+}
+
+
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
 	double a = pow(r.B.length(), 2.0);
@@ -264,65 +270,71 @@ bool translate::bounding_box(aabb& box) const
 	}
 }
 
+//objmodel::set_material(int index)
+//{
+//	set_material_(models[index]);
+//}
+//
+//objmodel::set_material_(const bvh_node *h)
+//{
+//	if (
+//}
 
-objmodel::objmodel(const char *filename)
+objmodel::objmodel(obj& o)
 {
-	o.Load(filename);
-	for (const auto& s : o.mtl_file) {
-		mtl_loader.Load(s.c_str());
-	}
 	models.resize(o.objects.size());
 	for (size_t i = 0; i < o.objects.size(); i++) {
-		auto& object = o.objects[i];
+		const auto& object = o.objects[i];
 		std::vector<hitable *> model;
 		model.resize(object->f.size());
 		std::cout << "f: " << object->f.size() << std::endl;
-		material *mat;
-		Mtl *mtl = mtl_loader.mtls[object->material_name];
-		double Tr = 1.0 - mtl->d;
-		bool light_flag = false;
-		if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
-			mat = new diffuse_light(RGBtoSpectrum(mtl->Ke));
-			//mat = new straight_light(RGBtoSpectrum(mtl->Ke));
-			//Spectrum l(0.2);
-			//l.data[0] = 0.1;
-			//l.data[5] = 0.1;
-			//l.data[9] = 0.1;
-			//mat = new straight_light(l);
-			light_flag = true;
-		} else if (Tr != 0.0) {
-			Spectrum n, k(0);
-			//vec3 hsv = RGBtoHSV(mtl->Kd);
-			//double wl = 620 - 170.0 /270.0 * hsv[0];
-			//for (int i = 0; i < N_SAMPLES; i++) {
-			//}
-			//std::cout << wl << std::endl;
+		//material *mat;
+		//const Mtl *mtl = mtl_loader.mtls[object->material_name];
+		//double Tr = 1.0 - mtl->d;
+		//bool light_flag = false;
+		//if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
+		//	mat = new diffuse_light(RGBtoSpectrum(mtl->Ke));
+		//	//mat = new straight_light(RGBtoSpectrum(mtl->Ke));
+		//	//Spectrum l(0.2);
+		//	//l.data[0] = 0.1;
+		//	//l.data[5] = 0.1;
+		//	//l.data[9] = 0.1;
+		//	//mat = new straight_light(l);
+		//	light_flag = true;
+		//} else if (Tr != 0.0) {
+		//	Spectrum n, k(0.0);
+		//	//vec3 hsv = RGBtoHSV(mtl->Kd);
+		//	//double wl = 620 - 170.0 /270.0 * hsv[0];
+		//	//for (int i = 0; i < N_SAMPLES; i++) {
+		//	//}
+		//	//std::cout << wl << std::endl;
 
-			//vec3 rgb = HSVtoRGB(hsv);
-			//k = RGBtoSpectrum(rgb);
-			//std::cout << complementary_rgb(mtl->Kd) << std::endl;
-			//k = RGBtoSpectrum(complementary_rgb(mtl->Kd));
+		//	//vec3 rgb = HSVtoRGB(hsv);
+		//	//k = RGBtoSpectrum(rgb);
+		//	//std::cout << complementary_rgb(mtl->Kd) << std::endl;
+		//	//k = RGBtoSpectrum(complementary_rgb(mtl->Kd));
 
-			double b = mtl->Ni;
-			//double c = 0.11342;
-			double c = 0.00342;
-			for (size_t i = 0; i < 10; i++) {
-				double wl = 415 + 30 * i;
-				n.data[i] = b + c/pow(wl/1000, 2.0);
-				std::cout << n.data[i] << std::endl;
-				//k.data[i] = 0;
-			}
-			//k.data[5] = 0.01;
-			//k.data[6] = 0.01;
-			//k.data[7] = 0.01;
-			//k.data[8] = 0.01;
-			//k.data[9] = 0.01;
-			mat = new mix_material(new lambertian(RGBtoSpectrum(mtl->Kd)), new dielectric(n, k), 0.7);;
-			//mat = new lambertian(RGBtoSpectrum(mtl->Kd));
-			//mat = new metal(RGBtoSpectrum(mtl->Kd));
-		} else {
-			mat = new lambertian(RGBtoSpectrum(mtl->Kd));
-		}
+		//	double b = mtl->Ni;
+		//	//double c = 0.11342;
+		//	double c = 0.00342;
+		//	for (size_t i = 0; i < 10; i++) {
+		//		double wl = 415 + 30 * i;
+		//		n.data[i] = b + c/pow(wl/1000, 2.0);
+		//		std::cout << n.data[i] << std::endl;
+		//		//k.data[i] = 0;
+		//	}
+		//	//k.data[5] = 0.01;
+		//	//k.data[6] = 0.01;
+		//	//k.data[7] = 0.01;
+		//	//k.data[8] = 0.01;
+		//	//k.data[9] = 0.01;
+		//	//mat = new mix_material(new lambertian(RGBtoSpectrum(mtl->Kd)), new dielectric(n, k), 0.7);;
+		//	mat = new dielectric(n, k);
+		//	//mat = new lambertian(RGBtoSpectrum(mtl->Kd));
+		//	//mat = new metal(RGBtoSpectrum(mtl->Kd));
+		//} else {
+		//	mat = new lambertian(RGBtoSpectrum(mtl->Kd));
+		//}
 
 		for (size_t j = 0; j < o.objects[i]->f.size(); j++) {
 			auto& f = o.objects[i]->f[j];
@@ -339,7 +351,7 @@ objmodel::objmodel(const char *filename)
 					tri->normal[k] = object->vn[*f[k][2]];
 				}
 				tri->face_normal = unit_vector(cross(tri->v[1] - tri->v[0], tri->v[2] - tri->v[1]));
-				tri->mat_ptr = mat;
+				tri->mat_ptr = nullptr;
 				tmp_model = tri;
 			} else if (l == 4) {
 				quadrilateral *quad = new quadrilateral();
@@ -350,13 +362,14 @@ objmodel::objmodel(const char *filename)
 				}
 				//quad->normal.make_unit_vector();
 				quad->normal = unit_vector(cross(quad->v[1] - quad->v[0], quad->v[2] - quad->v[1]));
-				quad->mat_ptr = mat;
+				quad->mat_ptr = nullptr;
 				tmp_model = quad;
 			}
 			model[j] = tmp_model;
 		}
 		bvh_node *b = new bvh_node(model);
 		models[i] = b;
+		/*
 		if (light_flag) {
 			aabb box = b->box;
 			hitable *sphere = new ::sphere((box.minp+box.maxp)/2.0, (box.maxp-box.minp).length()/2.0, nullptr);
@@ -367,6 +380,7 @@ objmodel::objmodel(const char *filename)
 
 			//mat->lights.push_back(tmp_model);
 		}
+		*/
 	}
 
 	//bvh = new bvh_node(models);
