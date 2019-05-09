@@ -15,12 +15,12 @@
 class bvh_node : public hitable {
 	public:
 		bvh_node() {}
-		bvh_node(std::vector<hitable *>& l);
+		bvh_node(std::vector<std::shared_ptr<hitable> >& l);
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		virtual void set_material(std::shared_ptr<material> mat);
-		hitable *left;
-		hitable *right;
+		std::shared_ptr<hitable> left;
+		std::shared_ptr<hitable> right;
 		aabb box;
 };
 

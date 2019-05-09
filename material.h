@@ -19,7 +19,7 @@ class material {
 		virtual double emitted(const ray& r, const hit_record& rec) const {
 			return 0.0;
 		}
-		static std::vector<hitable *> lights;
+		static std::vector<std::shared_ptr<hitable> > lights;
 		bool light_flag = false;
 };
 

@@ -45,7 +45,7 @@ class toward_object_pdf : public pdf {
 
 class hitable_pdf : public pdf {
 	public:
-		hitable_pdf(hitable *p, const vec3& origin)
+		hitable_pdf(std::shared_ptr<hitable> p, const vec3& origin)
 		{
 			ptr = p;
 			o = origin;
@@ -55,7 +55,7 @@ class hitable_pdf : public pdf {
 		virtual double pdf_val(const vec3& direction) const;
 
 		vec3 o;
-		hitable *ptr;
+		std::shared_ptr<hitable> ptr;
 
 		std::unique_ptr<pdf> pdf_ptr;
 };

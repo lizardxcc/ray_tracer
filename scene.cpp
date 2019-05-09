@@ -316,12 +316,6 @@ void Scene::RenderImage(int nx, int ny, int ns, const char *filename)
 			material::lights.push_back(world->models[i]);
 		}
 	}
-	Spectrum **spectrum_array = new Spectrum*[nx];
-	//vec3 **rgb_array = new vec3*[nx];
-	for (int i = 0; i < nx; i++) {
-		spectrum_array[i] = new Spectrum[ny];
-		//rgb_array[i] = new vec3[ny];
-	}
 
 
 	std::ofstream ofs;
@@ -391,7 +385,6 @@ int i, j, s;
 			img[((ny-j_-1)*nx+i_)*4+3] = 255;
 
 			count++;
-			spectrum_array[i][j] = radiance;
 			if (count % 5000 == 0) {
 #ifdef _OPENMP
 				std::cout << "thread: " << omp_get_thread_num() << "  ";
@@ -446,6 +439,8 @@ void Scene::RenderResultWindow(void)
 		if (ImGui::BeginMenu("Render")) {
 			if (ImGui::MenuItem("Render Image")) {
 				std::cout << img_width << " " << img_height << std::endl;
+				if (img != nullptr)
+					delete[] img;
 				img = new GLubyte[img_width*img_height*4];
 				for (int i = 0; i < img_width*img_height*4; i++)
 					img[i] = 255;

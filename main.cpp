@@ -38,22 +38,22 @@ static void glfw_error_callback(int error, const char* description)
 
 hitable *room(void)
 {
-	std::vector<hitable *> list;
+	std::vector<std::shared_ptr<hitable> > list;
 	Spectrum albedo(1.0);
 	//albedo.data[5] = 1.0;
-	quadrilateral *quad = new quadrilateral();
+	std::shared_ptr<quadrilateral> quad(new quadrilateral());
 	quad->v[0] = vec3(-10.0, -1, 10.0);
 	quad->v[1] = vec3(10.0, -1, 10.0);
 	quad->v[2] = vec3(10.0, -1, -10.0);
 	quad->v[3] = vec3(-10.0, -1, -10.0);
 	quad->normal = vec3(0.0, 1.0, 0.0);
-	quad->mat_ptr = std::shared_ptr<material>(new lambertian(albedo));
+	quad->mat_ptr = std::make_shared<lambertian>(albedo);
 	list.push_back(quad);
 
 	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new dielectric(Spectrum(1), 1.72, 0.41342)));
 
 	double size = 1.0;
-	hitable *light;
+	std::shared_ptr<hitable> light;
 	Spectrum light_s;
 	light_s.data[0] = 0.030;
 	light_s.data[1] = 0.030;
@@ -65,7 +65,7 @@ hitable *room(void)
 	light_s.data[7] = 0.030;
 	light_s.data[8] = 0.030;
 	light_s.data[9] = 0.030;
-	light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(light_s));
+	light = std::make_shared<rectangle>(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(light_s));
 	list.push_back(light);
 	material::lights.push_back(light);
 
@@ -75,7 +75,7 @@ hitable *room(void)
 
 hitable *obj_room(void)
 {
-	std::vector<hitable *> list;
+	std::vector<std::shared_ptr<hitable> > list;
 	//list.push_back(new objmodel("test.obj"));
 	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new metal(RGBtoSpectrum(vec3(0.8, 0.5, 0.1)))));
 	//double size = 5.0;

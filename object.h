@@ -129,7 +129,7 @@ class objmodel : public hitable {
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		//std::vector<std::vector<hitable *>> models;
-		std::vector<hitable *> models;
+		std::vector<std::shared_ptr<hitable> > models;
 		bvh_node *bvh;
 };
 
@@ -139,7 +139,7 @@ class plymodel : public hitable {
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		ply p;
-		std::vector<hitable *> polygon;
+		std::vector<std::shared_ptr<hitable> > polygon;
 		bvh_node *pol;
 };
 

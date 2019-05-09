@@ -222,13 +222,13 @@ box::box(const vec3& p0, const vec3& p1, material *ptr)
 	pmin = p0;
 	pmax = p1;
 
-	std::vector<hitable*> list;
-	list.push_back(new xy_rect(p0.x(), p0.y(), p1.x(), p1.y(), p1.z(), ptr));
-	list.push_back(new flip_normals(new xy_rect(p0.x(), p0.y(), p1.x(), p1.y(), p0.z(), ptr)));
-	list.push_back(new zx_rect(p0.z(), p0.x(), p1.z(), p1.x(), p1.y(), ptr));
-	list.push_back(new flip_normals(new zx_rect(p0.z(), p0.x(), p1.z(), p1.x(), p0.y(), ptr)));
-	list.push_back(new yz_rect(p0.y(), p0.z(), p1.y(), p1.z(), p1.x(), ptr));
-	list.push_back(new flip_normals(new yz_rect(p0.y(), p0.z(), p1.y(), p1.z(), p0.x(), ptr)));
+	std::vector<std::shared_ptr<hitable> > list;
+	list.push_back(std::make_shared<xy_rect>(p0.x(), p0.y(), p1.x(), p1.y(), p1.z(), ptr));
+	list.push_back(std::make_shared<flip_normals>(new xy_rect(p0.x(), p0.y(), p1.x(), p1.y(), p0.z(), ptr)));
+	list.push_back(std::make_shared<zx_rect>(p0.z(), p0.x(), p1.z(), p1.x(), p1.y(), ptr));
+	list.push_back(std::make_shared<flip_normals>(new zx_rect(p0.z(), p0.x(), p1.z(), p1.x(), p0.y(), ptr)));
+	list.push_back(std::make_shared<yz_rect>(p0.y(), p0.z(), p1.y(), p1.z(), p1.x(), ptr));
+	list.push_back(std::make_shared<flip_normals>(new yz_rect(p0.y(), p0.z(), p1.y(), p1.z(), p0.x(), ptr)));
 
 	list_ptr = new hitable_list(list);
 }
@@ -282,7 +282,7 @@ objmodel::objmodel(obj& o)
 	models.resize(o.objects.size());
 	for (size_t i = 0; i < o.objects.size(); i++) {
 		const auto& object = o.objects[i];
-		std::vector<hitable *> model;
+		std::vector<std::shared_ptr<hitable> > model;
 		model.resize(object->f.size());
 		std::cout << "f: " << object->f.size() << std::endl;
 		//material *mat;
@@ -340,9 +340,9 @@ objmodel::objmodel(obj& o)
 				std::cerr << "Error: " << l << " sided polygon is unsupported" << std::endl;
 				return;
 			}
-			hitable *tmp_model;
+			std::shared_ptr<hitable> tmp_model;
 			if (l == 3) {
-				triangle *tri = new triangle();
+				std::shared_ptr<triangle> tri = std::make_shared<triangle>();
 				for (size_t k = 0; k < l; k++) {
 					tri->v[k] = object->v[*f[k][0]];
 					tri->normal[k] = object->vn[*f[k][2]];
@@ -351,7 +351,7 @@ objmodel::objmodel(obj& o)
 				tri->mat_ptr = nullptr;
 				tmp_model = tri;
 			} else if (l == 4) {
-				quadrilateral *quad = new quadrilateral();
+				std::shared_ptr<quadrilateral> quad = std::make_shared<quadrilateral>();
 				quad->normal = vec3(0, 0, 0);
 				for (size_t k = 0; k < l; k++) {
 					quad->v[k] = object->v[*f[k][0]];
@@ -364,7 +364,7 @@ objmodel::objmodel(obj& o)
 			}
 			model[j] = tmp_model;
 		}
-		bvh_node *b = new bvh_node(model);
+		std::shared_ptr<hitable> b = std::make_shared<bvh_node>(model);
 		models[i] = b;
 		/*
 		if (light_flag) {
@@ -417,9 +417,9 @@ plymodel::plymodel(const char *filename, material *mat)
 			return;
 
 		}
-		hitable *tmp_polygon;
+		std::shared_ptr<hitable> tmp_polygon;
 		if (l == 3) {
-			triangle *tri = new triangle();
+			std::shared_ptr<triangle> tri(new triangle());
 			for (size_t j = 0; j < l; j++) {
 				tri->v[j] = p.vertices[p.faces[i][j]][0];
 			}
@@ -428,7 +428,7 @@ plymodel::plymodel(const char *filename, material *mat)
 			tmp_polygon = tri;
 		}
 		else if (l == 4) {
-			quadrilateral *quad= new quadrilateral();
+			std::shared_ptr<quadrilateral> quad(new quadrilateral());
 			for (size_t j = 0; j < l; j++) {
 				quad->v[j] = p.vertices[p.faces[i][j]][0];
 			}

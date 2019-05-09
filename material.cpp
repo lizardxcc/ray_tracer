@@ -3,7 +3,7 @@
 #include "pdf.h"
 #include "object.h"
 
-std::vector<hitable *> material::lights;
+std::vector<std::shared_ptr<hitable> > material::lights;
 
 vec3 random_in_unit_sphere(void)
 {
