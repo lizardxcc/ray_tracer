@@ -124,7 +124,7 @@ bool MaterialLoader::LoadMaterial(void)
 	//std::streampos oldpos = file.tellg();
 	std::string line;
 
-	material *mtl;
+	std::shared_ptr<material> mtl;
 
 	getline(file, line);
 	std::istringstream iss(line);
@@ -140,7 +140,7 @@ bool MaterialLoader::LoadMaterial(void)
 					albedo.data[i] = stod(line);
 				}
 			}
-			mtl = new lambertian(albedo);
+			mtl = std::shared_ptr<material>(new lambertian(albedo));
 		} else if (line == "light") {
 			Spectrum light;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -148,14 +148,14 @@ bool MaterialLoader::LoadMaterial(void)
 					light.data[i] = stod(line);
 				}
 			}
-			mtl = new diffuse_light(light);
+			mtl = std::shared_ptr<material>(new diffuse_light(light));
 			mtl->light_flag = true;
 		} else {
 			std::cout << "material " << line << " is not implemented" << std::endl;
 			return false;
 		}
 	}
-	materials[material_name] = std::shared_ptr<material>(mtl);
+	materials[material_name] = mtl;
 	return true;
 }
 
