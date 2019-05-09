@@ -348,16 +348,16 @@ int i, j, s;
 			//vec3 col(0, 0, 0);
 			Spectrum radiance(0.0);
 			for (s = 0; s < ns; s++) {
-				double u = double(i + drand48()) / double(nx);
-				double v = double(j + drand48()) / double(ny);
+				double u = (i + drand48()) / nx;
+				double v = (j + drand48()) / ny;
 				ray r = cam.get_ray(u, v);
 
 				double rand = drand48();
 				const size_t num = N_SAMPLE; // 調整
 				for (size_t k = 0; k < num; k++) {
-					if (rand <= ((double)(k+1)/ (double)num)) {
-						double min_wl = 400 + 300.0/(double)num*(double)k;
-						double max_wl = min_wl + 300.0/(double)num - 0.00001;
+					if (rand <= (static_cast<double>(k+1)/ num)) {
+						double min_wl = 400.0 + 300.0/num*k;
+						double max_wl = min_wl + 300.0/num - 0.00001;
 						//double max_wl = min_wl + SAMPLE_SIZE - 0.00001;
 						//double max_wl = 400 + 300.0/(double)num*(double)(k+1) - 0.00001;
 						r.min_wl = min_wl;
@@ -368,7 +368,7 @@ int i, j, s;
 						//	std::cout << "ALARM" << std::endl;
 						//}
 						if (!std::isnan(rad)) {
-							radiance.add((double)(rad/(double)ns), min_wl, max_wl);
+							radiance.add(rad/ns, min_wl, max_wl);
 						}
 						break;
 					}
@@ -396,7 +396,7 @@ int i, j, s;
 #ifdef _OPENMP
 				std::cout << "thread: " << omp_get_thread_num() << "  ";
 #endif
-				std::cout << 100.0 * (double)count / (double)(nx*ny) << "%" << std::endl;
+				std::cout << 100.0 * static_cast<double>(count) / (nx*ny) << "%" << std::endl;
 				img_updated = true;
 			}
 
@@ -457,7 +457,7 @@ void Scene::RenderResultWindow(void)
 				glm::vec3 lookat = cameraPos + cameraFront;
 				vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
 				//cam.set_camera(cameraPos, vlookat, cameraUp, 60, (double)img_width/img_height);
-				cam.set_camera(veccameraPos, vlookat, veccameraUp, (double)img_width/img_height, d, focal_length, aperture);
+				cam.set_camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
 				std::thread t(&Scene::RenderImage, this, img_width, img_height, img_samples, "test.pnm");
 				t.detach();
 			}
