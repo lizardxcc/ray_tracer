@@ -1,7 +1,7 @@
 #include <cmath>
 #include "spectrum.h"
 
-const double cie_x[N_SAMPLE] = {
+static const double cie_x[N_SAMPLE] = {
 	4.742986E-02,
 	1.446214E-01,
 	2.488523E-01,
@@ -34,7 +34,7 @@ const double cie_x[N_SAMPLE] = {
 	1.575417E-02
 };
 
-const double cie_y[N_SAMPLE] = {
+static const double cie_y[N_SAMPLE] = {
 	4.971717E-03,
 	1.429377E-02,
 	2.612106E-02,
@@ -67,7 +67,7 @@ const double cie_y[N_SAMPLE] = {
 	6.027677E-03
 };
 
-const double cie_z[N_SAMPLE] = {
+static const double cie_z[N_SAMPLE] = {
 	2.369246E-01,
 	7.378822E-01,
 	1.305008E+00,
@@ -99,9 +99,28 @@ const double cie_z[N_SAMPLE] = {
 	0E+00,
 	0E+00
 };
-const Spectrum X(cie_x);
-const Spectrum Y(cie_y);
-const Spectrum Z(cie_z);
+static const Spectrum X(cie_x);
+static const Spectrum Y(cie_y);
+static const Spectrum Z(cie_z);
+
+Spectrum::Spectrum(void)
+{
+	data.resize(N_SAMPLE);
+}
+Spectrum::Spectrum(double v)
+{
+	data.resize(N_SAMPLE);
+	for (auto& d : data) {
+		d = v;
+	}
+}
+Spectrum::Spectrum(const double d[N_SAMPLE])
+{
+	data.resize(N_SAMPLE);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		data[i] = d[i];
+	}
+}
 
 
 double Spectrum::integrate(double min_wl, double max_wl) const

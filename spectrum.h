@@ -4,31 +4,15 @@
 #include <vector>
 #include "vec3.h"
 
-#define RANGE (700 - 400)
-#define N_SAMPLE (30)
-#define SAMPLE_SIZE (RANGE/N_SAMPLE)
+constexpr int RANGE = 700 - 400;
+constexpr int N_SAMPLE = 30;
+constexpr int SAMPLE_SIZE = RANGE/N_SAMPLE;
 
 class Spectrum {
 	public:
-		Spectrum(void)
-		{
-			data.resize(N_SAMPLE);
-		}
-		Spectrum(double v)
-		{
-			data.resize(N_SAMPLE);
-			for (auto& d : data) {
-				d = v;
-			}
-		}
-		Spectrum(const double d[N_SAMPLE])
-		{
-			data.resize(N_SAMPLE);
-			for (int i = 0; i < N_SAMPLE; i++) {
-				data[i] = d[i];
-			}
-		}
-
+		explicit Spectrum(void);
+		explicit Spectrum(double v);
+		explicit Spectrum(const double d[N_SAMPLE]);
 		inline Spectrum& operator*=(const double);
 		inline Spectrum& operator/=(const double);
 
