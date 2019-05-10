@@ -380,24 +380,13 @@ objmodel::objmodel(obj& o)
 		*/
 	}
 
-	//bvh = new bvh_node(models);
+	auto v(models);
+	bvh = std::make_shared<bvh_node>(v);
 }
 
 bool objmodel::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	hit_record temp_rec;
-	bool hit_anything = false;
-	for (const auto& b : models) {
-		if (b->hit(r, t_min, t_max, temp_rec)) {
-			if (temp_rec.t < t_max || !hit_anything) {
-				t_max = temp_rec.t;
-				rec = temp_rec;
-				hit_anything = true;
-			}
-		}
-	}
-	return hit_anything;
-	//return bvh->hit(r, t_min, t_max, rec);
+	return bvh->hit(r, t_min, t_max, rec);
 }
 bool objmodel::bounding_box(aabb& box) const
 {

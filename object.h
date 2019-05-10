@@ -130,7 +130,7 @@ class objmodel : public hitable {
 		virtual bool bounding_box(aabb& box) const;
 		//std::vector<std::vector<hitable *>> models;
 		std::vector<std::shared_ptr<hitable> > models;
-		bvh_node *bvh;
+		std::shared_ptr<bvh_node> bvh;
 };
 
 class plymodel : public hitable {
