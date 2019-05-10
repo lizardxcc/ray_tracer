@@ -8,7 +8,7 @@
 
 std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
 {
-	return std::unique_ptr<pdf>(new uniform_pdf(vec3(0.0, 0.0, 1.0)));
+	return std::make_unique<uniform_pdf>(vec3(0.0, 0.0, 1.0));
 }
 
 
@@ -61,7 +61,7 @@ std::unique_ptr<pdf> sphere::generate_pdf_object(const vec3& o)
 {
 	vec3 v = center - o;
 	double r = radius;
-	return std::unique_ptr<pdf>(new toward_object_pdf(unit_vector(v), atan2(r, v.length())));
+	return std::make_unique<toward_object_pdf>(unit_vector(v), atan2(r, v.length()));
 }
 
 
@@ -107,7 +107,7 @@ std::unique_ptr<pdf> rectangle::generate_pdf_object(const vec3& o)
 {
 	vec3 v = center - o;
 	double r = 0.5 * sqrt(width*width + height*height);
-	std::unique_ptr<pdf>(new toward_object_pdf(unit_vector(v), atan2(r, v.length())));
+	return std::make_unique<toward_object_pdf>(unit_vector(v), atan2(r, v.length()));
 }
 
 bool rectangle::bounding_box(aabb& box) const
@@ -536,7 +536,7 @@ std::unique_ptr<pdf> triangle::generate_pdf_object(const vec3& o)
 	vec3 c = (v[0]+v[1]+v[2])/3.0;
 	vec3 vec = c - o;
 	double r = ((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length())/3.0;
-	return std::unique_ptr<pdf>(new toward_object_pdf(unit_vector(vec), atan2(r, vec.length())));
+	return std::make_unique<toward_object_pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
 
 bool quadrilateral::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
@@ -597,5 +597,5 @@ std::unique_ptr<pdf> quadrilateral::generate_pdf_object(const vec3& o)
 	vec3 c = 0.25 * (v[0]+v[1]+v[2]+v[3]);
 	vec3 vec = c - o;
 	double r = 0.25*((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length()+(v[3]-c).length());
-	return std::unique_ptr<pdf>(new toward_object_pdf(unit_vector(vec), atan2(r, vec.length())));
+	return std::make_unique<toward_object_pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
