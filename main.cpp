@@ -30,68 +30,6 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 
-//void set_camera(double lx, double ly, double lz, double rax, double ray, double raz, double rot_theta, double vfov, double aspect)
-//{
-//	cam = new camera(vec3(lx, ly, lz), vec3(rax, ray, raz), rot_theta, vfov, aspect);
-//}
-
-
-hitable *room(void)
-{
-	std::vector<std::shared_ptr<hitable> > list;
-	Spectrum albedo(1.0);
-	//albedo.data[5] = 1.0;
-	std::shared_ptr<quadrilateral> quad(new quadrilateral());
-	quad->v[0] = vec3(-10.0, -1, 10.0);
-	quad->v[1] = vec3(10.0, -1, 10.0);
-	quad->v[2] = vec3(10.0, -1, -10.0);
-	quad->v[3] = vec3(-10.0, -1, -10.0);
-	quad->normal = vec3(0.0, 1.0, 0.0);
-	quad->mat_ptr = std::make_shared<lambertian>(albedo);
-	list.push_back(quad);
-
-	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new dielectric(Spectrum(1), 1.72, 0.41342)));
-
-	double size = 1.0;
-	std::shared_ptr<hitable> light;
-	Spectrum light_s;
-	light_s.data[0] = 0.030;
-	light_s.data[1] = 0.030;
-	light_s.data[2] = 0.030;
-	light_s.data[3] = 0.030;
-	light_s.data[4] = 0.030;
-	light_s.data[5] = 0.030;
-	light_s.data[6] = 0.030;
-	light_s.data[7] = 0.030;
-	light_s.data[8] = 0.030;
-	light_s.data[9] = 0.030;
-	light = std::make_shared<rectangle>(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(light_s));
-	list.push_back(light);
-	material::lights.push_back(light);
-
-	return new hitable_list(list);
-}
-
-
-hitable *obj_room(void)
-{
-	std::vector<std::shared_ptr<hitable> > list;
-	//list.push_back(new objmodel("test.obj"));
-	//list.push_back(new sphere(vec3(-0.5, -0.0, -0.5), 0.3, new metal(RGBtoSpectrum(vec3(0.8, 0.5, 0.1)))));
-	//double size = 5.0;
-	//hitable *light;
-	//lambertian mat(Spectrum(0));
-	//Spectrum light_s(0.01);
-	//light = new rectangle(vec3(0, size-0.01, 0), vec3(0, -1, 0), vec3(-1, 0, 0), 0.5, 0.5, new diffuse_light(light_s));
-	////list.push_back(light);
-	////mat.lights.push_back(light);
-
-
-	return new hitable_list(list);
-}
-
-
-
 int main(void)
 {
 	// Setup window
