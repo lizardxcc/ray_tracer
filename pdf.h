@@ -63,9 +63,8 @@ class hitable_pdf : public pdf {
 
 class mixture_pdf : public pdf {
 	public:
-		mixture_pdf(std::vector<std::unique_ptr<pdf> > pdf_list)
+		mixture_pdf(std::vector<std::unique_ptr<pdf> > pdf_list) : pdf_list(std::move(pdf_list))
 		{
-			this->pdf_list = std::move(pdf_list);
 		}
 
 		virtual vec3 generate() const;

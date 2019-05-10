@@ -140,7 +140,7 @@ bool MaterialLoader::LoadMaterial(void)
 					albedo.data[i] = stod(line);
 				}
 			}
-			mtl = std::shared_ptr<material>(new lambertian(albedo));
+			mtl = std::make_shared<lambertian>(albedo);
 		} else if (line == "light") {
 			Spectrum light;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -148,7 +148,7 @@ bool MaterialLoader::LoadMaterial(void)
 					light.data[i] = stod(line);
 				}
 			}
-			mtl = std::shared_ptr<material>(new diffuse_light(light));
+			mtl = std::make_shared<diffuse_light>(light);
 			mtl->light_flag = true;
 		} else {
 			std::cout << "material " << line << " is not implemented" << std::endl;
