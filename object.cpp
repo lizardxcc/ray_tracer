@@ -267,15 +267,6 @@ bool translate::bounding_box(aabb& box) const
 	}
 }
 
-//objmodel::set_material(int index)
-//{
-//	set_material_(models[index]);
-//}
-//
-//objmodel::set_material_(const bvh_node *h)
-//{
-//	if (
-//}
 
 objmodel::objmodel(obj& o)
 {
@@ -285,53 +276,6 @@ objmodel::objmodel(obj& o)
 		std::vector<std::shared_ptr<hitable> > model;
 		model.resize(object->f.size());
 		std::cout << "f: " << object->f.size() << std::endl;
-		//material *mat;
-		//const Mtl *mtl = mtl_loader.mtls[object->material_name];
-		//double Tr = 1.0 - mtl->d;
-		//bool light_flag = false;
-		//if (mtl->Ke.x() != 0 || mtl->Ke.y() != 0 || mtl->Ke.z() != 0) {
-		//	mat = new diffuse_light(RGBtoSpectrum(mtl->Ke));
-		//	//mat = new straight_light(RGBtoSpectrum(mtl->Ke));
-		//	//Spectrum l(0.2);
-		//	//l.data[0] = 0.1;
-		//	//l.data[5] = 0.1;
-		//	//l.data[9] = 0.1;
-		//	//mat = new straight_light(l);
-		//	light_flag = true;
-		//} else if (Tr != 0.0) {
-		//	Spectrum n, k(0.0);
-		//	//vec3 hsv = RGBtoHSV(mtl->Kd);
-		//	//double wl = 620 - 170.0 /270.0 * hsv[0];
-		//	//for (int i = 0; i < N_SAMPLES; i++) {
-		//	//}
-		//	//std::cout << wl << std::endl;
-
-		//	//vec3 rgb = HSVtoRGB(hsv);
-		//	//k = RGBtoSpectrum(rgb);
-		//	//std::cout << complementary_rgb(mtl->Kd) << std::endl;
-		//	//k = RGBtoSpectrum(complementary_rgb(mtl->Kd));
-
-		//	double b = mtl->Ni;
-		//	//double c = 0.11342;
-		//	double c = 0.00342;
-		//	for (size_t i = 0; i < 10; i++) {
-		//		double wl = 415 + 30 * i;
-		//		n.data[i] = b + c/pow(wl/1000, 2.0);
-		//		std::cout << n.data[i] << std::endl;
-		//		//k.data[i] = 0;
-		//	}
-		//	//k.data[5] = 0.01;
-		//	//k.data[6] = 0.01;
-		//	//k.data[7] = 0.01;
-		//	//k.data[8] = 0.01;
-		//	//k.data[9] = 0.01;
-		//	//mat = new mix_material(new lambertian(RGBtoSpectrum(mtl->Kd)), new dielectric(n, k), 0.7);;
-		//	mat = new dielectric(n, k);
-		//	//mat = new lambertian(RGBtoSpectrum(mtl->Kd));
-		//	//mat = new metal(RGBtoSpectrum(mtl->Kd));
-		//} else {
-		//	mat = new lambertian(RGBtoSpectrum(mtl->Kd));
-		//}
 
 		for (size_t j = 0; j < o.objects[i]->f.size(); j++) {
 			auto& f = o.objects[i]->f[j];
@@ -366,18 +310,6 @@ objmodel::objmodel(obj& o)
 		}
 		std::shared_ptr<hitable> b = std::make_shared<bvh_node>(model);
 		models[i] = b;
-		/*
-		if (light_flag) {
-			aabb box = b->box;
-			hitable *sphere = new ::sphere((box.minp+box.maxp)/2.0, (box.maxp-box.minp).length()/2.0, nullptr);
-			std::cout << (box.maxp-box.minp).length()/2.0 << std::endl;
-			//material *mat = new lambertian(vec3(1.0, 1.0, 1.0));
-			material *mat = new lambertian(Spectrum(1.0));
-			mat->lights.push_back(sphere);
-
-			//mat->lights.push_back(tmp_model);
-		}
-		*/
 	}
 
 	auto v(models);
