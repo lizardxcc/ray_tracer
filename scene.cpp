@@ -425,7 +425,7 @@ void Scene::Load(const char *filename)
 		std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
 		materials.push_back(mat);
 	}
-	world = new objmodel(obj_loader);
+	world = std::make_unique<objmodel>(obj_loader);
 }
 
 

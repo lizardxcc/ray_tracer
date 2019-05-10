@@ -63,16 +63,15 @@ class hitable_pdf : public pdf {
 
 class mixture_pdf : public pdf {
 	public:
-		mixture_pdf(const std::vector<pdf *>& pdf_list)
+		mixture_pdf(std::vector<std::unique_ptr<pdf> > pdf_list)
 		{
-			this->pdf_list.resize(pdf_list.size());
-			std::copy(pdf_list.begin(), pdf_list.end(), this->pdf_list.begin());
+			this->pdf_list = std::move(pdf_list);
 		}
 
 		virtual vec3 generate() const;
 		virtual double pdf_val(const vec3& direction) const;
 
-		std::vector<pdf *> pdf_list;
+		std::vector<std::unique_ptr<pdf> > pdf_list;
 };
 
 #endif

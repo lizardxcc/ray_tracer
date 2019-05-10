@@ -23,7 +23,7 @@ class Scene {
 	private:
 		obj obj_loader;
 		MaterialLoader material_loader;
-		objmodel *world;
+		std::unique_ptr<objmodel> world;
 		std::vector<std::shared_ptr<material> > materials;
 		lens_camera cam;
 		glm::vec3 cameraPos;
