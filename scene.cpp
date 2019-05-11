@@ -309,8 +309,10 @@ void Scene::RenderImage(int nx, int ny, int ns, const char *filename)
 {
 	material::lights.clear();
 	for (int i = 0; i < world->models.size(); i++) {
-		world->models[i]->set_material(std::shared_ptr<material>(materials[i]));
-		if (materials[i]->light_flag) {
+		//world->models[i]->set_material(std::shared_ptr<material>(materials[i]));
+		auto mat = material_loader.materials[obj_loader.objects[i]->material_name];
+		world->models[i]->set_material(mat);
+		if (mat->light_flag) {
 			material::lights.push_back(world->models[i]);
 		}
 	}
@@ -420,8 +422,8 @@ void Scene::Load(const char *filename)
 	material_loader.Load("test.material");
 	for (int i = 0; i < obj_loader.objects.size(); i++) {
 		std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
-		std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
-		materials.push_back(mat);
+		//std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
+		//materials.push_back(mat);
 	}
 	world = std::make_unique<objmodel>(obj_loader);
 }
@@ -502,19 +504,44 @@ void Scene::RenderMaterialEditorWindow(void)
 		i++;
 	}
 	ImGui::Combo("select material", &cur_item, items, material_loader.materials.size());
-	if (objecti == last_objecti) {
+	if (objecti == last_objecti && cur_item != last_item) {
 		obj_loader.objects[objecti]->material_name = std::string(items[cur_item]);
 	}
 
+	auto it = material_loader.materials.find(items[cur_item]);
+	char str[32] = "";
+	if (ImGui::InputText("Press Enter to add new material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		material_loader.materials[std::string(str)] = std::make_shared<lambertian>(Spectrum(1));
+		it = material_loader.materials.find(str);
+		cur_item = std::distance(material_loader.materials.begin(), it);
+		obj_loader.objects[objecti]->material_name = std::string(str);
+	}
+
 	if (cur_item != -1) {
-		std::shared_ptr<material> mat = material_loader.materials[items[cur_item]];
+		const char *model_items[2] = {"Lambertian", "light"};
+		static int cur_model_item = -1;
+		static int last_model_item = -1;
+		if (cur_item != last_item)
+			last_model_item = -1;
+
+		std::shared_ptr<material> mat = it->second;
 		auto& id = typeid(*mat);
-		if (id == typeid(lambertian)) {
+		if (id == typeid(lambertian))
+			cur_model_item = 0;
+		else if (id == typeid(diffuse_light))
+			cur_model_item = 1;
+
+		ImGui::Combo("select model", &cur_model_item, model_items, 2);
+		if (cur_model_item == 0) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
+				mat = std::make_shared<lambertian>(Spectrum(1));
+				it->second = mat;
+			}
 			std::shared_ptr<lambertian> mat_ptr = std::dynamic_pointer_cast<lambertian>(mat);
 			ImGui::Text("Lambertian");
 			const ImVec2 slider_size(18, 160);
 			static float a[N_SAMPLE];
-			if (last_item != cur_item) {
+			if (last_item != cur_item || last_model_item != cur_model_item) {
 				for (int i = 0; i < N_SAMPLE; i++) {
 					a[i] = mat_ptr->albedo.data[i];
 				}
@@ -533,12 +560,16 @@ void Scene::RenderMaterialEditorWindow(void)
 			colors[objecti][1] = col[1];
 			colors[objecti][2] = col[2];
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
-		} else if (id == typeid(diffuse_light)) {
+		} else if (cur_model_item == 1) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
+				mat = std::make_shared<diffuse_light>(Spectrum(0.05));
+				it->second = mat;
+			}
 			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);
 			ImGui::Text("Light");
 			const ImVec2 slider_size(18, 160);
 			static float a[N_SAMPLE];
-			if (last_item != cur_item) {
+			if (last_item != cur_item || last_model_item != cur_model_item) {
 				for (int i = 0; i < N_SAMPLE; i++) {
 					a[i] = mat_ptr->light_color.data[i];
 				}
@@ -559,6 +590,8 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Light color", color, ImGuiColorEditFlags_DisplayRGB);
 		} else {
 		}
+
+		last_model_item = cur_model_item;
 		if (ImGui::Button("Save material")) {
 			material_loader.Write("test.material");
 		}
