@@ -2,7 +2,7 @@
 #define MATERIALFILE_H
 
 #include <fstream>
-#include <unordered_map>
+#include <map>
 #include "spectrum.h"
 #include "material.h"
 
@@ -65,7 +65,7 @@ class MaterialLoader {
 		void Write(const char *filename);
 		std::ifstream file;
 		std::ofstream ofile;
-		std::unordered_map<std::string, std::shared_ptr<material>> materials;
+		std::map<std::string, std::shared_ptr<material>> materials;
 	private:
 		bool LoadMaterial(void);
 		void WriteMaterial(std::shared_ptr<material> mat);
