@@ -243,14 +243,12 @@ void Scene::RenderSceneWindow(void)
 			glReadPixels(x, 480-y-1, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
 			activeObjectIndex = index;
 			if (index != 0) {
-				glm::vec3 v(vertices_array[index-1][0], vertices_array[index-1][1], vertices_array[index-1][2]);
-				std::cout << v[0] << std::endl;
-				std::cout << v[1] << std::endl;
-				std::cout << v[2] << std::endl;
-				float a = glm::length(v-cameraPos);
-				std::cout << "a: " << a << std::endl;
-				d = 1.0/(1.0/focal_length-1.0/a);
-				std::cout << "d: " << d << std::endl;
+				aabb box;
+				if (world->models[index-1]->bounding_box(box)) {
+					glm::vec3 v(box.center[0], box.center[1], box.center[2]);
+					float a = glm::length(v-cameraPos);
+					d = 1.0/(1.0/focal_length-1.0/a);
+				}
 			}
 		}
 	}
