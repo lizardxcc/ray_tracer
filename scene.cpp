@@ -98,6 +98,8 @@ Scene::Scene(void)
 		if (typeid(*mat) == typeid(lambertian)) {
 			vec3 col = r_rgb(std::dynamic_pointer_cast<lambertian>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
+		} else if (typeid(*mat) == typeid(dielectric)) {
+			colors.push_back(std::array<float, 3>({1.0f, 1.0f, 1.0f}));
 		} else if (typeid(*mat) == typeid(diffuse_light)) {
 			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<diffuse_light>(mat)->light_color));
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
@@ -272,7 +274,6 @@ double Scene::NaivePathTracing(const ray& r)
 	hit_record rec;
 	ray _ray = r;
 	double radiance = 0.0;
-	int scatter_count = 0;
 	double beta = 1.0;
 	int bounce = 0;
 	while (1) {
@@ -312,11 +313,9 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 	hit_record rec;
 	ray _ray = r;
 	double radiance = 0.0;
-	int scatter_count = 0;
 	double beta = 1.0;
 	int bounce = 0;
-	bool specularBounce = false;
-	onb uvw;
+	bool IsLastBounceSpecular = false;
 	while (1) {
 		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
@@ -324,18 +323,21 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 			break;
 			
 
-		if (bounce == 0 || specularBounce)
+		if (bounce == 0 || IsLastBounceSpecular)
 			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
 
 		// calculate direct lighting
-		if (!specularBounce) {
+		if (rec.mat_ptr->specular_flag == false) {
 			if (!enableNEE) {
 				vec3 generated_vi;
 				double wli;
 				onb uvw_;
 				uvw_.build_from_w(rec.normal);
-				double bxdf, pdf;
-				bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+				uniform_pdf pdf(rec.normal);
+				vec3 generated_direction = pdf.generate();
+				//bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
+				generated_vi = uvw_.worldtolocal(generated_direction);
+				bool respawn = true;
 				if (respawn) {
 					ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
 					hit_record tmp_rec;
@@ -345,13 +347,18 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 
 					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 					if (hit) {
-						radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf);
+						double bxdf, pdf_val;
+						pdf_val = pdf.pdf_val(generated_direction);
+						bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
+						radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
 					}
 				}
 			} else {
 				if (rec.mat_ptr->light_flag == false) {
 					std::random_device rnd;
 					int selectedLight = rnd() % material::lights.size();
+					onb uvw_;
+					uvw_.build_from_w(rec.normal);
 					hitable_pdf pdf(material::lights[selectedLight], rec.p);
 					vec3 generated_direction = pdf.generate();
 
@@ -363,8 +370,8 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 					if (hit) {
 						double pdf_val = pdf.pdf_val(generated_direction);
-						vec3 vi = uvw.worldtolocal(generated_direction);
-						vec3 vo = uvw.worldtolocal(-_ray.direction());
+						vec3 vi = uvw_.worldtolocal(generated_direction);
+						vec3 vo = uvw_.worldtolocal(-_ray.direction());
 						double wlo = _ray.central_wl;
 						double wli = wlo;
 						double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
@@ -383,19 +390,27 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 		vec3 generated_vi;
 		double wli;
 		bool respawn;
+		double bxdf, pdf;
+		onb uvw;
 		uvw.build_from_w(rec.normal);
 		{
-			double bxdf, pdf;
 			respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-			if (respawn)
+			if (respawn) {
 				beta *= (bxdf * abs(generated_vi.z()) / pdf);
+				//if (rec.mat_ptr->specular_flag)
+				//	std::cout << bxdf *abs(generated_vi.z())/pdf<< std::endl;
+			}
 		}
 
-		double prr = 0.5;
+		//double prr = std::max(0.8, 1.0-(0.5 + bxdf/2.0));
+		//double prr = std::max(0.5, 1.0 + bxdf/2.0);
+		double prr = 1.0 - std::min(0.7, 0.5+bxdf/2.0);
+		if (bounce > 6)
+			prr = 0.8;
 		double d = drand48();
 		if (d < prr)
 			break;
-		beta /= (1-prr);
+		beta /= (1.0-prr);
 
 		if (!respawn)
 			break;
@@ -406,10 +421,7 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 
 		bounce++;
 
-		if (rec.mat_ptr->specular_flag)
-			specularBounce = true;
-		else
-			specularBounce = false;
+		IsLastBounceSpecular = rec.mat_ptr->specular_flag;
 	}
 
 	return radiance;
@@ -417,34 +429,22 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 }
 
 
-double Scene::GetRadiance(ray& r)
+double Scene::GetRadiance(ray& r, int count)
 {
 	hit_record rec;
 	double radiance = 0.0;
-	int scatter_count = 0;
-	bool beta = 1.0;
-	while (1) {
-		bool hit = world->hit(r, 0.001, std::numeric_limits<double>::max(), rec);
-
-		if (scatter_count == 0) { // specular
-			radiance += rec.mat_ptr->emitted(r, rec);
-		}
+	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
+		radiance += rec.mat_ptr->emitted(r, rec);
 		double bxdf, pdf;
+
 		onb uvw;
 		uvw.build_from_w(rec.normal);
 		vec3 generated_vi;
 		double wli;
 		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-		beta *= (bxdf * abs(generated_vi.z()) / pdf);
-		double prr = 0.5;
-		double d = drand48();
-		if (d < prr)
-			break;
-		beta /= (1-prr);
-	}
-	//if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
-	/*
-		double radiance = rec.mat_ptr->emitted(r, rec);
+		double prr;
+		//if (respawn)
+		//	beta *= (bxdf * abs(generated_vi.z()) / pdf);
 		if (respawn) {
 			if (count > 10) {
 				prr = 0.01;
@@ -469,7 +469,6 @@ double Scene::GetRadiance(ray& r)
 	} else {
 		return 0.0;
 	}
-	*/
 	return radiance;
 }
 
@@ -526,7 +525,6 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						//double rad = NaivePathTracing(r);
 						double rad = NEEPathTracing(r, true);
 						//if (rad > std::numeric_limits<double>::max()) {
 						//	std::cout << "ALARM" << std::endl;
@@ -688,7 +686,7 @@ void Scene::RenderMaterialEditorWindow(void)
 	}
 
 	if (cur_item != -1) {
-		const char *model_items[2] = {"Lambertian", "light"};
+		const char *model_items[4] = {"Lambertian", "Dielectric", "Metal", "Light"};
 		static int cur_model_item = -1;
 		static int last_model_item = -1;
 		if (cur_item != last_item)
@@ -698,10 +696,14 @@ void Scene::RenderMaterialEditorWindow(void)
 		auto& id = typeid(*mat);
 		if (id == typeid(lambertian))
 			cur_model_item = 0;
-		else if (id == typeid(diffuse_light))
+		else if (id == typeid(dielectric))
 			cur_model_item = 1;
+		else if (id == typeid(metal))
+			cur_model_item = 2;
+		else if (id == typeid(diffuse_light))
+			cur_model_item = 3;
 
-		ImGui::Combo("select model", &cur_model_item, model_items, 2);
+		ImGui::Combo("select model", &cur_model_item, model_items, sizeof(model_items)/sizeof(const char *));
 		if (cur_model_item == 0) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
 				mat = std::make_shared<lambertian>(Spectrum(1));
@@ -731,6 +733,59 @@ void Scene::RenderMaterialEditorWindow(void)
 			colors[objecti][2] = col[2];
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 1) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
+				mat = std::make_shared<dielectric>(Spectrum(1.33333));
+				it->second = mat;
+			}
+			std::shared_ptr<dielectric> mat_ptr = std::dynamic_pointer_cast<dielectric>(mat);
+			ImGui::Text("Dielectric");
+			const ImVec2 slider_size(18, 160);
+			static float a[N_SAMPLE];
+			if (last_item != cur_item || last_model_item != cur_model_item) {
+				for (int i = 0; i < N_SAMPLE; i++) {
+					a[i] = mat_ptr->n.data[i];
+				}
+			}
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (i > 0)
+					ImGui::SameLine();
+				ImGui::PushID(i);
+				ImGui::VSliderFloat("##v", slider_size, &a[i], 1.0f, 5.0f, "");
+				ImGui::PopID();
+				mat_ptr->n.data[i] = a[i];
+			}
+			colors[objecti][0] = 1.0;
+			colors[objecti][1] = 1.0;
+			colors[objecti][2] = 1.0;
+		} else if (cur_model_item == 2) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
+				mat = std::make_shared<metal>(Spectrum(1));
+				it->second = mat;
+			}
+			std::shared_ptr<metal> mat_ptr = std::dynamic_pointer_cast<metal>(mat);
+			ImGui::Text("Metal");
+			const ImVec2 slider_size(18, 160);
+			static float a[N_SAMPLE];
+			if (last_item != cur_item || last_model_item != cur_model_item) {
+				for (int i = 0; i < N_SAMPLE; i++) {
+					a[i] = mat_ptr->albedo.data[i];
+				}
+			}
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (i > 0)
+					ImGui::SameLine();
+				ImGui::PushID(i);
+				ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
+				ImGui::PopID();
+				mat_ptr->albedo.data[i] = a[i];
+			}
+			vec3 col = r_rgb(mat_ptr->albedo);
+			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
+			colors[objecti][0] = col[0];
+			colors[objecti][1] = col[1];
+			colors[objecti][2] = col[2];
+			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
+		} else if (cur_model_item == 3) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
 				mat = std::make_shared<diffuse_light>(Spectrum(0.05));
 				it->second = mat;
