@@ -28,6 +28,18 @@ class uniform_pdf : public pdf {
 		onb uvw;
 };
 
+class cosine_pdf : public pdf {
+	public:
+		cosine_pdf(const vec3& w)
+		{
+			uvw.build_from_w(w);
+		}
+		virtual vec3 generate() const;
+		virtual double pdf_val(const vec3& direction) const;
+
+		onb uvw;
+};
+
 class toward_object_pdf : public pdf {
 	public:
 		toward_object_pdf(const vec3& w, double _theta_max)

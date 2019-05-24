@@ -33,6 +33,19 @@ vec3 random_on_unit_hemisphere(double theta_max)
 }
 
 
+vec3 cosine_weighted_random_on_unit_hemisphere(void)
+{
+	double r1 = drand48();
+	double r2 = drand48();
+	double phi = 2 * M_PI * r1;
+	double sin_theta = sqrt(r2);
+	double x = sin_theta * cos(phi);
+	double y = sin_theta * sin(phi);
+	double z = 1-r2;
+	return vec3(x, y, z);
+}
+
+
 vec3 uniform_pdf::generate() const
 {
 	return uvw.localtoworld(random_on_unit_hemisphere());
@@ -48,6 +61,22 @@ double uniform_pdf::pdf_val(const vec3& direction) const
 	}
 }
 
+
+vec3 cosine_pdf::generate() const
+{
+	return uvw.localtoworld(cosine_weighted_random_on_unit_hemisphere());
+}
+
+
+double cosine_pdf::pdf_val(const vec3& direction) const
+{
+	double cos_theta = dot(direction, uvw.w());
+	if (cos_theta >= 0.0) {
+		return cos_theta/M_PI;
+	} else {
+		return 0.0;
+	}
+}
 
 
 

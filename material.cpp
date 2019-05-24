@@ -42,7 +42,7 @@ double lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 
 bool lambertian::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
-	uniform_pdf pdf(rec.normal);
+	cosine_pdf pdf(rec.normal);
 
 	vec3 generated_direction = pdf.generate();
 	pdf_val = pdf.pdf_val(generated_direction);
