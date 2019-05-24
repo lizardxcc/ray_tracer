@@ -42,21 +42,10 @@ double lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 
 bool lambertian::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
-	//std::vector<pdf *> pdf_list(lights.size()+1);
-	//std::vector<std::shared_ptr<pdf>> pdf_list(lights.size()+1);
-	//pdf_list[0] = std::make_shared<uniform_pdf>(rec.normal);
-	//for (size_t i = 1; i < pdf_list.size(); i++) {
-	//	pdf_list[i] = std::make_shared<hitable_pdf>(lights[i-1], rec.p);
-	//}
-	//mixture_pdf pdf(pdf_list);
-	//hitable_pdf pdf(lights[0], rec.p);
 	uniform_pdf pdf(rec.normal);
 
 	vec3 generated_direction = pdf.generate();
 	pdf_val = pdf.pdf_val(generated_direction);
-	//for (size_t i = 0; i < pdf_list.size(); i++) {
-	//	delete pdf_list[i];
-	//}
 	vi = uvw.worldtolocal(generated_direction);
 
 	wli = wlo;
