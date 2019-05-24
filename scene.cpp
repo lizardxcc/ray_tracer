@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -9,6 +10,7 @@
 #include <thread>
 #include "scene.h"
 #include "vec3.h"
+#include "pdf.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -265,19 +267,184 @@ void Scene::RenderSceneWindow(void)
 }
 
 
-
-double Scene::GetRadiance(ray& r, int count)
+double Scene::NaivePathTracing(const ray& r)
 {
 	hit_record rec;
-	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
+	ray _ray = r;
+	double radiance = 0.0;
+	int scatter_count = 0;
+	double beta = 1.0;
+	int bounce = 0;
+	while (1) {
+		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+
+		if (hit) {
+			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
+		} else
+			break;
+
 		double bxdf, pdf;
-		double radiance = rec.mat_ptr->emitted(r, rec);
+		onb uvw;
+		uvw.build_from_w(rec.normal);
+		vec3 generated_vi;
+		double wli;
+		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+		if (respawn)
+			beta *= (bxdf * abs(generated_vi.z()) / pdf);
+		double prr = 0.5;
+		double d = drand48();
+		if (d < prr)
+			break;
+		beta /= (1-prr);
+
+		ray scattered = ray(rec.p, uvw.localtoworld(generated_vi));
+		_ray.A = scattered.A;
+		_ray.B = scattered.B;
+	}
+
+	return radiance;
+
+}
+
+
+double Scene::NEEPathTracing(const ray& r, bool enableNEE)
+{
+	hit_record rec;
+	ray _ray = r;
+	double radiance = 0.0;
+	int scatter_count = 0;
+	double beta = 1.0;
+	int bounce = 0;
+	bool specularBounce = false;
+	onb uvw;
+	while (1) {
+		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+
+		if (!hit)
+			break;
+			
+
+		if (bounce == 0 || specularBounce)
+			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
+
+		// calculate direct lighting
+		if (!specularBounce) {
+			if (!enableNEE) {
+				vec3 generated_vi;
+				double wli;
+				onb uvw_;
+				uvw_.build_from_w(rec.normal);
+				double bxdf, pdf;
+				bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+				if (respawn) {
+					ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
+					hit_record tmp_rec;
+					scattered.central_wl = _ray.central_wl;
+					scattered.min_wl = _ray.min_wl;
+					scattered.max_wl = _ray.max_wl;
+
+					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
+					if (hit) {
+						radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf);
+					}
+				}
+			} else {
+				if (rec.mat_ptr->light_flag == false) {
+					std::random_device rnd;
+					int selectedLight = rnd() % material::lights.size();
+					hitable_pdf pdf(material::lights[selectedLight], rec.p);
+					vec3 generated_direction = pdf.generate();
+
+					hit_record light_rec;
+					ray scattered = ray(rec.p, generated_direction);
+					scattered.central_wl = _ray.central_wl;
+					scattered.min_wl = _ray.min_wl;
+					scattered.max_wl = _ray.max_wl;
+					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
+					if (hit) {
+						double pdf_val = pdf.pdf_val(generated_direction);
+						vec3 vi = uvw.worldtolocal(generated_direction);
+						vec3 vo = uvw.worldtolocal(-_ray.direction());
+						double wlo = _ray.central_wl;
+						double wli = wlo;
+						double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
+						radiance += material::lights.size() * BxDF * (beta * light_rec.mat_ptr->emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
+					}
+
+
+
+				}
+			}
+		}
+
+
+		if (rec.mat_ptr->light_flag)
+			break;
+		vec3 generated_vi;
+		double wli;
+		bool respawn;
+		uvw.build_from_w(rec.normal);
+		{
+			double bxdf, pdf;
+			respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+			if (respawn)
+				beta *= (bxdf * abs(generated_vi.z()) / pdf);
+		}
+
+		double prr = 0.5;
+		double d = drand48();
+		if (d < prr)
+			break;
+		beta /= (1-prr);
+
+		if (!respawn)
+			break;
+
+		ray scattered = ray(rec.p, uvw.localtoworld(generated_vi));
+		_ray.A = scattered.A;
+		_ray.B = scattered.B;
+
+		bounce++;
+
+		if (rec.mat_ptr->specular_flag)
+			specularBounce = true;
+		else
+			specularBounce = false;
+	}
+
+	return radiance;
+
+}
+
+
+double Scene::GetRadiance(ray& r)
+{
+	hit_record rec;
+	double radiance = 0.0;
+	int scatter_count = 0;
+	bool beta = 1.0;
+	while (1) {
+		bool hit = world->hit(r, 0.001, std::numeric_limits<double>::max(), rec);
+
+		if (scatter_count == 0) { // specular
+			radiance += rec.mat_ptr->emitted(r, rec);
+		}
+		double bxdf, pdf;
 		onb uvw;
 		uvw.build_from_w(rec.normal);
 		vec3 generated_vi;
 		double wli;
 		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-		double prr;
+		beta *= (bxdf * abs(generated_vi.z()) / pdf);
+		double prr = 0.5;
+		double d = drand48();
+		if (d < prr)
+			break;
+		beta /= (1-prr);
+	}
+	//if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
+	/*
+		double radiance = rec.mat_ptr->emitted(r, rec);
 		if (respawn) {
 			if (count > 10) {
 				prr = 0.01;
@@ -302,6 +469,8 @@ double Scene::GetRadiance(ray& r, int count)
 	} else {
 		return 0.0;
 	}
+	*/
+	return radiance;
 }
 
 
@@ -357,7 +526,8 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						double rad = GetRadiance(r, 0);
+						//double rad = NaivePathTracing(r);
+						double rad = NEEPathTracing(r, true);
 						//if (rad > std::numeric_limits<double>::max()) {
 						//	std::cout << "ALARM" << std::endl;
 						//}

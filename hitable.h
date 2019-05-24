@@ -8,16 +8,18 @@
 
 class material;
 class pdf;
+class hitable;
 
 struct hit_record {
 	double t;
 	vec3 p;
 	vec3 normal;
 	std::shared_ptr<material> mat_ptr;
+	std::shared_ptr<const hitable> hit_object;
 };
 
 
-class hitable {
+class hitable: public std::enable_shared_from_this<hitable> {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
 		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);

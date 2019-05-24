@@ -48,7 +48,8 @@ bool lambertian::sample(const hit_record& rec, const onb& uvw, const vec3& vo, d
 	//	pdf_list[i] = new hitable_pdf(lights[i-1], rec.p);
 	//}
 	//mixture_pdf pdf(pdf_list);
-	hitable_pdf pdf(lights[0], rec.p);
+	//hitable_pdf pdf(lights[0], rec.p);
+	uniform_pdf pdf(rec.normal);
 
 	vec3 generated_direction = pdf.generate();
 	pdf_val = pdf.pdf_val(generated_direction);

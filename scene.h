@@ -12,7 +12,9 @@
 class Scene {
 	public:
 		Scene(void);
-		double GetRadiance(ray& r, int count);
+		double GetRadiance(ray& r);
+		double NaivePathTracing(const ray& r);
+		double NEEPathTracing(const ray& r, bool enableNEE);
 		void RenderImage(int nx, int ny, int ns, const char *filename);
 		void Load(const char *filename);
 

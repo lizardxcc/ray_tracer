@@ -6,9 +6,21 @@
 #include "pdf.h"
 
 
+//std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
+//{
+//	std::cout << "Warning generate_pdf_object" << std::endl;
+//	return std::make_unique<uniform_pdf>(vec3(0.0, 0.0, 1.0));
+//}
 std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
 {
-	return std::make_unique<uniform_pdf>(vec3(0.0, 0.0, 1.0));
+	aabb box;
+	if (bounding_box(box)) {
+		vec3 v = box.center - o;
+		double r = (box.center-box.minp).length();
+		return std::make_unique<toward_object_pdf>(unit_vector(v), atan2(r, v.length()));
+	} else {
+		std::cout << "Warning generate_pdf_object" << std::endl;
+	}
 }
 
 
@@ -34,6 +46,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = unit_vector(rec.p - center);
 		rec.mat_ptr = mat_ptr;
+		rec.hit_object = shared_from_this();
 		return true;
 	}
 	double t2 = (-b_prime + sqrt(discriminant_prime)) / a;
@@ -42,6 +55,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = unit_vector(rec.p - center);
 		rec.mat_ptr = mat_ptr;
+		rec.hit_object = shared_from_this();
 		return true;
 	}
 
@@ -73,6 +87,7 @@ bool plane::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = normal;
 		rec.mat_ptr = mat_ptr;
+		rec.hit_object = shared_from_this();
 
 		return true;
 	}
@@ -95,6 +110,7 @@ bool rectangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
 
 		rec.normal = normal;
 		rec.mat_ptr = mat_ptr;
+		rec.hit_object = shared_from_this();
 
 		return true;
 	}
@@ -130,6 +146,7 @@ bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 	rec.mat_ptr = mat_ptr;
 	rec.p = r.point_at_parameter(t);
 	rec.normal = vec3(0, 0, 1);
+	rec.hit_object = shared_from_this();
 
 	return true;
 }
@@ -148,6 +165,7 @@ bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 	rec.mat_ptr = mat_ptr;
 	rec.p = r.point_at_parameter(t);
 	rec.normal = vec3(1, 0, 0);
+	rec.hit_object = shared_from_this();
 
 	return true;
 }
@@ -166,6 +184,7 @@ bool zx_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 	rec.mat_ptr = mat_ptr;
 	rec.p = r.point_at_parameter(t);
 	rec.normal = vec3(0, 1, 0);
+	rec.hit_object = shared_from_this();
 
 	return true;
 }
@@ -419,6 +438,7 @@ bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 			rec.p = p;
 			rec.normal = (result1.length()*normal[0]+result2.length()*normal[1]+result0.length()*normal[2])/tri_area;
 			rec.mat_ptr = mat_ptr;
+			rec.hit_object = shared_from_this();
 			return true;
 		}
 	}
@@ -480,6 +500,7 @@ bool quadrilateral::hit(const ray& r, double t_min, double t_max, hit_record& re
 			rec.p = p;
 			rec.normal = normal;
 			rec.mat_ptr = mat_ptr;
+			rec.hit_object = shared_from_this();
 			return true;
 		}
 	}

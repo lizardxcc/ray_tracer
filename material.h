@@ -21,6 +21,7 @@ class material {
 		}
 		static std::vector<std::shared_ptr<hitable> > lights;
 		bool light_flag = false;
+		bool specular_flag = false;
 };
 
 class lambertian : public material {
@@ -36,7 +37,9 @@ class lambertian : public material {
 
 class metal : public material {
 	public:
-		metal(const Spectrum& a) : albedo(a) {}
+		metal(const Spectrum& a) : albedo(a) {
+			specular_flag = true;
+		}
 		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
@@ -52,7 +55,9 @@ class dielectric : public material {
 		//	//R0 = pow((1.0-ref_idx)/(1.0+ref_idx), 2);
 		//}
 		//dielectric(const Spectrum& albedo, double ref_B, double ref_C) : albedo(albedo), ref_B(ref_B), ref_C(ref_C) {}
-		dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {}
+		dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
+			specular_flag = true;
+		}
 		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
 
 		double ref_B, ref_C;
