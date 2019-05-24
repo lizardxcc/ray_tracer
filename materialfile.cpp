@@ -141,6 +141,24 @@ bool MaterialLoader::LoadMaterial(void)
 				}
 			}
 			mtl = std::make_shared<lambertian>(albedo);
+		} else if (line == "dielectric") {
+			Spectrum n;
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (getline(file, line)) {
+					n.data[i] = stod(line);
+				}
+			}
+			mtl = std::make_shared<dielectric>(n);
+			mtl->specular_flag = true;
+		} else if (line == "metal") {
+			Spectrum albedo;
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (getline(file, line)) {
+					albedo.data[i] = stod(line);
+				}
+			}
+			mtl = std::make_shared<metal>(albedo);
+			mtl->specular_flag = true;
 		} else if (line == "light") {
 			Spectrum light;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -175,6 +193,20 @@ void MaterialLoader::WriteMaterial(std::shared_ptr<material> mat)
 		if (id == typeid(lambertian)) {
 			std::shared_ptr<lambertian> mat_ptr = std::dynamic_pointer_cast<lambertian>(mat);
 			ofile << "lambertian" << std::endl;
+			for (const auto& d : mat_ptr->albedo.data) {
+				ofile << d << std::endl;
+			}
+			ofile << std::endl;
+		} else if (id == typeid(dielectric)) {
+			std::shared_ptr<dielectric> mat_ptr = std::dynamic_pointer_cast<dielectric>(mat);
+			ofile << "dielectric" << std::endl;
+			for (const auto& d : mat_ptr->n.data) {
+				ofile << d << std::endl;
+			}
+			ofile << std::endl;
+		} else if (id == typeid(metal)) {
+			std::shared_ptr<metal> mat_ptr = std::dynamic_pointer_cast<metal>(mat);
+			ofile << "metal" << std::endl;
 			for (const auto& d : mat_ptr->albedo.data) {
 				ofile << d << std::endl;
 			}
