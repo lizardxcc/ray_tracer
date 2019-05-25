@@ -81,6 +81,19 @@ class oren_nayar : public material {
 		double sigma;
 };
 
+
+class torrance_sparrow : public material {
+	public:
+		torrance_sparrow(const Spectrum& albedo, double alpha) : albedo(albedo), alpha(alpha) {
+			specular_flag = true;
+		}
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		double lambda(const vec3& v) const;
+		Spectrum albedo;
+		double alpha;
+};
+
 class diffuse_light : public material {
 	public:
 		diffuse_light(Spectrum color) : light_color(color) {}

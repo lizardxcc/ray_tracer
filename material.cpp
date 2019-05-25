@@ -223,6 +223,54 @@ bool oren_nayar::sample(const hit_record& rec, const onb& uvw, const vec3& vo, d
 	return true;
 }
 
+
+double torrance_sparrow::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	double cos_theta_i = vi.z();
+	if (cos_theta_i < 0) {
+		return 0.0;
+	}
+
+	vec3 vh = (vi+vo)/2.0;
+
+	double cos_theta_h_squared = vh.z() * vh.z();
+	double tan_theta_h_squared = 1.0/cos_theta_h_squared - 1.0;
+	// beckman spizzichino
+	double d = exp(-tan_theta_h_squared/(alpha*alpha)) / (M_PI * alpha * alpha * cos_theta_h_squared * cos_theta_h_squared);
+
+	double g = 1 / (1.0 + lambda(vi) + lambda(vo));
+
+	double fresnel = 1.0;
+
+
+
+	return albedo.get(wli) * d * g * fresnel / (4.0 * vo.z() * vi.z());
+}
+
+double torrance_sparrow::lambda(const vec3& v) const
+{
+	double cos_theta_squared = v.z()*v.z();
+	double tan_theta = sqrt(1.0/cos_theta_squared - 1.0);
+	double a = 1.0 / alpha / tan_theta;
+	return 0.5 * (std::erf(a) - 1.0 + exp(a*a) / (a * sqrt(M_PI)));
+}
+
+bool torrance_sparrow::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+{
+	cosine_pdf pdf(rec.normal);
+
+	vec3 generated_direction = pdf.generate();
+	pdf_val = pdf.pdf_val(generated_direction);
+	vi = uvw.worldtolocal(generated_direction);
+
+	wli = wlo;
+	BxDF = this->BxDF(vi, wli, vo, wlo);
+
+	return true;
+}
+
+
+
 double diffuse_light::emitted(const ray& r, const hit_record& rec) const
 {
 	return light_color.integrate(r.min_wl, r.max_wl);

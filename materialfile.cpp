@@ -159,6 +159,18 @@ bool MaterialLoader::LoadMaterial(void)
 			}
 			mtl = std::make_shared<metal>(albedo);
 			mtl->specular_flag = true;
+		} else if (line == "microfacet") {
+			Spectrum albedo;
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (getline(file, line)) {
+					albedo.data[i] = stod(line);
+				}
+			}
+			double alpha;
+			if (getline(file, line)) {
+				alpha = stod(line);
+			}
+			mtl = std::make_shared<torrance_sparrow>(albedo, alpha);
 		} else if (line == "light") {
 			Spectrum light;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -210,6 +222,14 @@ void MaterialLoader::WriteMaterial(std::shared_ptr<material> mat)
 			for (const auto& d : mat_ptr->albedo.data) {
 				ofile << d << std::endl;
 			}
+			ofile << std::endl;
+		} else if (id == typeid(torrance_sparrow)) {
+			std::shared_ptr<torrance_sparrow> mat_ptr = std::dynamic_pointer_cast<torrance_sparrow>(mat);
+			ofile << "microfacet" << std::endl;
+			for (const auto& d : mat_ptr->albedo.data) {
+				ofile << d << std::endl;
+			}
+			ofile << mat_ptr->alpha << std::endl;
 			ofile << std::endl;
 		} else if (id == typeid(diffuse_light)) {
 			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);

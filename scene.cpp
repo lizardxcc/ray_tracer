@@ -404,9 +404,9 @@ double Scene::NEEPathTracing(const ray& r, bool enableNEE)
 
 		//double prr = std::max(0.8, 1.0-(0.5 + bxdf/2.0));
 		//double prr = std::max(0.5, 1.0 + bxdf/2.0);
-		double prr = 1.0 - std::min(0.7, 0.5+bxdf/2.0);
+		double prr = 1.0 - std::min(0.7, 0.2+bxdf/2.0);
 		if (bounce > 6)
-			prr = 0.8;
+			prr = 0.9;
 		double d = drand48();
 		if (d < prr)
 			break;
@@ -686,7 +686,7 @@ void Scene::RenderMaterialEditorWindow(void)
 	}
 
 	if (cur_item != -1) {
-		const char *model_items[4] = {"Lambertian", "Dielectric", "Metal", "Light"};
+		const char *model_items[] = {"Lambertian", "Dielectric", "Metal", "Microfacet", "Light"};
 		static int cur_model_item = -1;
 		static int last_model_item = -1;
 		if (cur_item != last_item)
@@ -700,8 +700,10 @@ void Scene::RenderMaterialEditorWindow(void)
 			cur_model_item = 1;
 		else if (id == typeid(metal))
 			cur_model_item = 2;
-		else if (id == typeid(diffuse_light))
+		else if (id == typeid(torrance_sparrow))
 			cur_model_item = 3;
+		else if (id == typeid(diffuse_light))
+			cur_model_item = 4;
 
 		ImGui::Combo("select model", &cur_model_item, model_items, sizeof(model_items)/sizeof(const char *));
 		if (cur_model_item == 0) {
@@ -786,6 +788,38 @@ void Scene::RenderMaterialEditorWindow(void)
 			colors[objecti][2] = col[2];
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 3) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
+				mat = std::make_shared<torrance_sparrow>(Spectrum(1), 1.0);
+				it->second = mat;
+			}
+			std::shared_ptr<torrance_sparrow> mat_ptr = std::dynamic_pointer_cast<torrance_sparrow>(mat);
+			ImGui::Text("Microfacet");
+			const ImVec2 slider_size(18, 160);
+			static float a[N_SAMPLE];
+			static float alpha = 1.0;
+			if (last_item != cur_item || last_model_item != cur_model_item) {
+				for (int i = 0; i < N_SAMPLE; i++) {
+					a[i] = mat_ptr->albedo.data[i];
+				}
+				alpha = mat_ptr->alpha;
+			}
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (i > 0)
+					ImGui::SameLine();
+				ImGui::PushID(i);
+				ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
+				ImGui::PopID();
+				mat_ptr->albedo.data[i] = a[i];
+			}
+			ImGui::SliderFloat("alpha", &alpha, 0.0f, 3.0f, "");
+			mat_ptr->alpha = alpha;
+			vec3 col = r_rgb(mat_ptr->albedo);
+			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
+			colors[objecti][0] = col[0];
+			colors[objecti][1] = col[1];
+			colors[objecti][2] = col[2];
+			ImGui::ColorButton("Microfacet", color, ImGuiColorEditFlags_DisplayRGB);
+		} else if (cur_model_item == 4) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
 				mat = std::make_shared<diffuse_light>(Spectrum(0.05));
 				it->second = mat;
