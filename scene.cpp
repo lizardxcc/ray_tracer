@@ -712,22 +712,7 @@ void Scene::RenderMaterialEditorWindow(void)
 				it->second = mat;
 			}
 			std::shared_ptr<lambertian> mat_ptr = std::dynamic_pointer_cast<lambertian>(mat);
-			ImGui::Text("Lambertian");
-			const ImVec2 slider_size(18, 160);
-			static float a[N_SAMPLE];
-			if (last_item != cur_item || last_model_item != cur_model_item) {
-				for (int i = 0; i < N_SAMPLE; i++) {
-					a[i] = mat_ptr->albedo.data[i];
-				}
-			}
-			for (int i = 0; i < N_SAMPLE; i++) {
-				if (i > 0)
-					ImGui::SameLine();
-				ImGui::PushID(i);
-				ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
-				ImGui::PopID();
-				mat_ptr->albedo.data[i] = a[i];
-			}
+			LambertianMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
 			colors[objecti][0] = col[0];
@@ -740,22 +725,7 @@ void Scene::RenderMaterialEditorWindow(void)
 				it->second = mat;
 			}
 			std::shared_ptr<dielectric> mat_ptr = std::dynamic_pointer_cast<dielectric>(mat);
-			ImGui::Text("Dielectric");
-			const ImVec2 slider_size(18, 160);
-			static float a[N_SAMPLE];
-			if (last_item != cur_item || last_model_item != cur_model_item) {
-				for (int i = 0; i < N_SAMPLE; i++) {
-					a[i] = mat_ptr->n.data[i];
-				}
-			}
-			for (int i = 0; i < N_SAMPLE; i++) {
-				if (i > 0)
-					ImGui::SameLine();
-				ImGui::PushID(i);
-				ImGui::VSliderFloat("##v", slider_size, &a[i], 1.0f, 5.0f, "");
-				ImGui::PopID();
-				mat_ptr->n.data[i] = a[i];
-			}
+			DielectricMaterialEditor(mat_ptr);
 			colors[objecti][0] = 1.0;
 			colors[objecti][1] = 1.0;
 			colors[objecti][2] = 1.0;
@@ -765,22 +735,7 @@ void Scene::RenderMaterialEditorWindow(void)
 				it->second = mat;
 			}
 			std::shared_ptr<metal> mat_ptr = std::dynamic_pointer_cast<metal>(mat);
-			ImGui::Text("Metal");
-			const ImVec2 slider_size(18, 160);
-			static float a[N_SAMPLE];
-			if (last_item != cur_item || last_model_item != cur_model_item) {
-				for (int i = 0; i < N_SAMPLE; i++) {
-					a[i] = mat_ptr->albedo.data[i];
-				}
-			}
-			for (int i = 0; i < N_SAMPLE; i++) {
-				if (i > 0)
-					ImGui::SameLine();
-				ImGui::PushID(i);
-				ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
-				ImGui::PopID();
-				mat_ptr->albedo.data[i] = a[i];
-			}
+			MetalMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
 			colors[objecti][0] = col[0];
@@ -793,26 +748,7 @@ void Scene::RenderMaterialEditorWindow(void)
 				it->second = mat;
 			}
 			std::shared_ptr<torrance_sparrow> mat_ptr = std::dynamic_pointer_cast<torrance_sparrow>(mat);
-			ImGui::Text("Microfacet");
-			const ImVec2 slider_size(18, 160);
-			static float a[N_SAMPLE];
-			static float alpha = 1.0;
-			if (last_item != cur_item || last_model_item != cur_model_item) {
-				for (int i = 0; i < N_SAMPLE; i++) {
-					a[i] = mat_ptr->albedo.data[i];
-				}
-				alpha = mat_ptr->alpha;
-			}
-			for (int i = 0; i < N_SAMPLE; i++) {
-				if (i > 0)
-					ImGui::SameLine();
-				ImGui::PushID(i);
-				ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
-				ImGui::PopID();
-				mat_ptr->albedo.data[i] = a[i];
-			}
-			ImGui::SliderFloat("alpha", &alpha, 0.0f, 3.0f, "");
-			mat_ptr->alpha = alpha;
+			MicrofacetMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
 			colors[objecti][0] = col[0];
@@ -825,22 +761,7 @@ void Scene::RenderMaterialEditorWindow(void)
 				it->second = mat;
 			}
 			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);
-			ImGui::Text("Light");
-			const ImVec2 slider_size(18, 160);
-			static float a[N_SAMPLE];
-			if (last_item != cur_item || last_model_item != cur_model_item) {
-				for (int i = 0; i < N_SAMPLE; i++) {
-					a[i] = mat_ptr->light_color.data[i];
-				}
-			}
-			for (int i = 0; i < N_SAMPLE; i++) {
-				if (i > 0)
-					ImGui::SameLine();
-				ImGui::PushID(i);
-				ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
-				ImGui::PopID();
-				mat_ptr->light_color.data[i] = a[i];
-			}
+			LightMaterialEditor(mat_ptr);
 			vec3 col = unit_vector(r_rgb(mat_ptr->light_color));
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
 			colors[objecti][0] = col[0];

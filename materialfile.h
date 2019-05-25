@@ -71,4 +71,10 @@ class MaterialLoader {
 		void WriteMaterial(std::shared_ptr<material> mat);
 };
 
+void LambertianMaterialEditor(const std::shared_ptr<lambertian>& mat_ptr);
+void DielectricMaterialEditor(const std::shared_ptr<dielectric>& mat_ptr);
+void MetalMaterialEditor(const std::shared_ptr<metal>& mat_ptr);
+void MicrofacetMaterialEditor(const std::shared_ptr<torrance_sparrow>& mat_ptr);
+void LightMaterialEditor(const std::shared_ptr<diffuse_light>& mat_ptr);
+
 #endif

@@ -6,7 +6,98 @@
 #include "material.h"
 #include "scene.h"
 
+void LambertianMaterialEditor(const std::shared_ptr<lambertian>& mat_ptr)
+{
+	ImGui::Text("lambertian");
+	const ImVec2 slider_size(18, 160);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 1.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->albedo.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->albedo.data[i]);
+		ImGui::PopID();
+	}
+}
 
+void DielectricMaterialEditor(const std::shared_ptr<dielectric>& mat_ptr)
+{
+	ImGui::Text("dielectric");
+	const ImVec2 slider_size(18, 160);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 1.0;
+		const double max = 5.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->n.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->n.data[i]);
+		ImGui::PopID();
+	}
+}
+
+
+void MetalMaterialEditor(const std::shared_ptr<metal>& mat_ptr)
+{
+	ImGui::Text("metal");
+	const ImVec2 slider_size(18, 160);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 1.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->albedo.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->albedo.data[i]);
+		ImGui::PopID();
+	}
+}
+
+
+void MicrofacetMaterialEditor(const std::shared_ptr<torrance_sparrow>& mat_ptr)
+{
+	ImGui::Text("microfacet");
+	const ImVec2 slider_size(18, 160);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 1.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->albedo.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->albedo.data[i]);
+		ImGui::PopID();
+	}
+	{
+		const double min = 0.0;
+		const double max = 3.0;
+		ImGui::SliderScalar("alpha", ImGuiDataType_Double, &mat_ptr->alpha, &min, &max, "%f");
+	}
+}
+
+
+void LightMaterialEditor(const std::shared_ptr<diffuse_light>& mat_ptr)
+{
+	ImGui::Text("light");
+	const ImVec2 slider_size(18, 160);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 1.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->light_color.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->light_color.data[i]);
+		ImGui::PopID();
+	}
+}
 void OutputMaterialNode::Render(void)
 {
 	if (output == nullptr) {
@@ -22,25 +113,6 @@ void LightMaterialNode::Render(void)
 void LambertianMaterialNode::Render(void)
 {
 	ImGui::Text("Lambertian");
-	static float a[10];
-	const ImVec2 slider_size(18, 160);
-	for (int i = 0; i < 10; i++) {
-		if (i > 0)
-			ImGui::SameLine();
-		ImGui::PushID(i);
-		ImGui::VSliderFloat("##v", slider_size, &a[i], 0.0f, 1.0f, "");
-		ImGui::PopID();
-		albedo.data[i] = a[i];
-	}
-	vec3 col = r_rgb(albedo);
-	ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
-	ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
-	if (ImGui::Button("Apply")) {
-		//if (activeObjectIndex != 0) {
-		//	material *mat = new lambertian(albedo);
-		//	world->models[activeObjectIndex-1]->set_material(mat);
-		//}
-	}
 }
 void DielectricMaterialNode::Render(void)
 {
