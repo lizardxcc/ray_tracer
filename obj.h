@@ -23,6 +23,7 @@ class objobject {
 class obj {
 	public:
 		bool Load(const char *filename);
+		void Clear(void);
 		void PrintDebug(void);
 
 		std::ifstream file;

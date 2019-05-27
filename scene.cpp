@@ -1,5 +1,4 @@
 #include <iostream>
-#include <random>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -10,12 +9,118 @@
 #include <thread>
 #include "scene.h"
 #include "vec3.h"
-#include "pdf.h"
+#include "filter.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
+void ImgViewer::LoadImage(const std::shared_ptr<const double[]>& img, int width, int height)
+{
+	if (glimg != nullptr)
+		delete[] glimg;
+	glimg = new GLubyte[width*height*4];
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
+			size_t i_ = width-i-1;
+			size_t j_ = height-j-1;
+			const double dr = img[((height-j_-1)*width+i_)*4];
+			const double dg = img[((height-j_-1)*width+i_)*4+1];
+			const double db = img[((height-j_-1)*width+i_)*4+2];
+			int ir = std::min(std::max(int(255.99*dr), 0), 255);
+			int ig = std::min(std::max(int(255.99*dg), 0), 255);
+			int ib = std::min(std::max(int(255.99*db), 0), 255);
+			glimg[((height-j_-1)*width+i_)*4] = ir;
+			glimg[((height-j_-1)*width+i_)*4+1] = ig;
+			glimg[((height-j_-1)*width+i_)*4+2] = ib;
+			glimg[((height-j_-1)*width+i_)*4+3] = 255;
+		}
+	}
+
+	glGenTextures(1, &opengl_texture);
+	glBindTexture(GL_TEXTURE_2D, opengl_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, glimg);
+	this->width = width;
+	this->height = height;
+}
+
+void ImgViewer::Render(void)
+{
+	ImGui::Image((void*)(intptr_t)opengl_texture, ImVec2(width, height));
+}
+
+void ImgRetouch::Render(void)
+{
+	ImGui::Text("Filters");
+	const double sigma_d_min = 0.0;
+	const double sigma_d_max = 20.0;
+	const double sigma_r_min = 0.0;
+	const double sigma_r_max = 1.0;
+	const uint64_t win_min = 0;
+	const uint64_t win_max = 16;
+	ImGui::SliderScalar("sigma_d", ImGuiDataType_Double, &sigma_d, &sigma_d_min, &sigma_d_max, "%f");
+	ImGui::SliderScalar("sigma_r", ImGuiDataType_Double, &sigma_r, &sigma_r_min, &sigma_r_max, "%f");
+	ImGui::SliderScalar("window", ImGuiDataType_U64, &window, &win_min, &win_max, "%d");
+	if (ImGui::Button("Apply filter")) {
+		BiliteralFilter filter(orig_img.get(), width, height);
+		filter.sigma_d = sigma_d;
+		filter.sigma_r = sigma_r;
+		filter.window = window;
+		filter.FilterImage();
+		double *n = filter.result;
+		retouched.reset(n);
+		retouched_viewer.LoadImage(retouched, width, height);
+	}
+	ImGui::Separator();
+	ImGui::Text("Tone Mapping");
+	ImGui::Separator();
+	original_viewer.Render();
+	ImGui::SameLine();
+	retouched_viewer.Render();
+}
+
+void ImgRetouch::LoadImage(std::shared_ptr<double[]>& img, int width, int height)
+{
+	orig_img = img;
+	retouched.reset(new double[width*height*4]);
+	for (size_t i = 0; i < width*height*4; i++) {
+		retouched[i] = orig_img[i];
+	}
+	this->width = width;
+	this->height = height;
+	original_viewer.LoadImage(orig_img, width, height);
+	retouched_viewer.LoadImage(retouched, width, height);
+}
+
+void RetouchWindow::Render(void)
+{
+	ImGui::Begin("Retouch");
+	if (ImGui::BeginTabBar("Tabs")) {
+		for (size_t i = 0; i < tabs.size(); i++) {
+			if (ImGui::BeginTabItem(img_names[i].c_str())) {
+				tabs[i].Render();
+				ImGui::EndTabItem();
+			}
+		}
+		ImGui::EndTabBar();
+	}
+	ImGui::End();
+}
+
+
+void RetouchWindow::AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height)
+{
+	img_names.push_back(name);
+	ImgRetouch new_retouch;
+	new_retouch.LoadImage(img, width, height);
+	tabs.push_back(new_retouch);
+}
+
+void RetouchWindow::AddImage(std::shared_ptr<double[]>& img, int width, int height)
+{
+	std::string name = "image." + std::to_string(img_names.size());
+	AddImage(name, img, width, height);
+}
 
 Scene::Scene(void)
 {
@@ -57,8 +162,14 @@ Scene::Scene(void)
 	//	0, 1, 3,
 	//	1, 2, 3
 	//};
-	Load("test.obj");
-	for (int o = 0; o < obj_loader.objects.size(); o++) {
+
+}
+
+
+void Scene::Load(const char *filename)
+{
+	renderer.Load(filename);
+	for (int o = 0; o < renderer.obj_loader.objects.size(); o++) {
 		VAOs.push_back(0);
 		glGenVertexArrays(1, &VAOs[o]);
 		GLuint VBO;
@@ -67,17 +178,17 @@ Scene::Scene(void)
 
 		glBindVertexArray(VAOs[o]);
 
-		int triangle_num = obj_loader.objects[o]->f.size();
+		int triangle_num = renderer.obj_loader.objects[o]->f.size();
 		vertices_num.push_back(triangle_num*3);
 		vertices_array.push_back(new float[vertices_num[o]*6]);
 		for (int i = 0; i < triangle_num; i++) {
-			auto& face = obj_loader.objects[o]->f[i];
+			auto& face = renderer.obj_loader.objects[o]->f[i];
 			if (face.size() != 3) {
 				std::cout << "Error!! unsupported vertex size" << std::endl;
 			}
 			vec3 normal, v[3];
 			for (int j = 0; j < face.size(); j++) {
-				v[j] = obj_loader.objects[o]->v[*face[j][0]];
+				v[j] = renderer.obj_loader.objects[o]->v[*face[j][0]];
 			}
 			normal = unit_vector(cross(v[1] - v[0], v[2] - v[1]));
 			for (int j = 0; j < face.size(); j++) {
@@ -94,12 +205,18 @@ Scene::Scene(void)
 				//std::cout << x << " " << y << " " << z << std::endl;
 			}
 		}
-		std::shared_ptr<material> mat = material_loader.materials[obj_loader.objects[o]->material_name];
+		std::shared_ptr<material> mat = renderer.material_loader.materials[renderer.obj_loader.objects[o]->material_name];
 		if (typeid(*mat) == typeid(lambertian)) {
 			vec3 col = r_rgb(std::dynamic_pointer_cast<lambertian>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
 		} else if (typeid(*mat) == typeid(dielectric)) {
 			colors.push_back(std::array<float, 3>({1.0f, 1.0f, 1.0f}));
+		} else if (typeid(*mat) == typeid(metal)) {
+			vec3 col = r_rgb(std::dynamic_pointer_cast<metal>(mat)->albedo);
+			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
+		} else if (typeid(*mat) == typeid(torrance_sparrow)) {
+			vec3 col = r_rgb(std::dynamic_pointer_cast<torrance_sparrow>(mat)->albedo);
+			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
 		} else if (typeid(*mat) == typeid(diffuse_light)) {
 			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<diffuse_light>(mat)->light_color));
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
@@ -152,10 +269,52 @@ Scene::Scene(void)
 	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
+void Scene::ClearData(void)
+{
+	VAOs.clear();
+	vertices_array.clear();
+	vertices_num.clear();
+	colors.clear();
+	renderer.Clear();
+	activeObjectIndex = 0;
+	img_loaded = false;
+}
+
 
 void Scene::RenderSceneWindow(void)
 {
-	ImGui::Begin("3D Scene");
+	ImGui::Begin("3D Scene", nullptr, ImGuiWindowFlags_MenuBar);
+	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Load test.obj")) {
+				if (!scene_loaded) {
+					Load("test.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load test2.obj")) {
+				if (!scene_loaded) {
+					Load("test2.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Close")) {
+				if (scene_loaded) {
+					ClearData();
+					scene_loaded = false;
+				}
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+	if (scene_loaded)
+		RenderScene();
+	ImGui::End();
+}
+
+void Scene::RenderScene(void)
+{
 	ImGui::SliderFloat("d", &d, focal_length, focal_length+5.0);
 	ImGui::SliderFloat("focal length", &focal_length, 0, 50);
 	ImGui::SliderFloat("aperture", &aperture, 0, 10);
@@ -248,7 +407,7 @@ void Scene::RenderSceneWindow(void)
 			activeObjectIndex = index;
 			if (index != 0) {
 				aabb box;
-				if (world->models[index-1]->bounding_box(box)) {
+				if (renderer.world->models[index-1]->bounding_box(box)) {
 					glm::vec3 v(box.center[0], box.center[1], box.center[2]);
 					float a = glm::length(v-cameraPos);
 					d = 1.0/(1.0/focal_length-1.0/a);
@@ -265,339 +424,14 @@ void Scene::RenderSceneWindow(void)
 	ImGui::GetWindowDrawList()->AddImage((void*)texture, ImVec2(pos.x, pos.y),
 			ImVec2(pos.x+640, pos.y+480),
 			ImVec2(0, 1), ImVec2(1, 0));
-	ImGui::End();
 }
 
 
-double Scene::NaivePathTracing(const ray& r)
-{
-	hit_record rec;
-	ray _ray = r;
-	double radiance = 0.0;
-	double beta = 1.0;
-	int bounce = 0;
-	while (1) {
-		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
-
-		if (hit) {
-			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
-		} else
-			break;
-
-		double bxdf, pdf;
-		onb uvw;
-		uvw.build_from_w(rec.normal);
-		vec3 generated_vi;
-		double wli;
-		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-		if (respawn)
-			beta *= (bxdf * abs(generated_vi.z()) / pdf);
-		double prr = 0.5;
-		double d = drand48();
-		if (d < prr)
-			break;
-		beta /= (1-prr);
-
-		ray scattered = ray(rec.p, uvw.localtoworld(generated_vi));
-		_ray.A = scattered.A;
-		_ray.B = scattered.B;
-	}
-
-	return radiance;
-
-}
-
-
-double Scene::NEEPathTracing(const ray& r, bool enableNEE)
-{
-	hit_record rec;
-	ray _ray = r;
-	double radiance = 0.0;
-	double beta = 1.0;
-	int bounce = 0;
-	bool IsLastBounceSpecular = false;
-	while (1) {
-		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
-
-		if (!hit)
-			break;
-			
-
-		if (bounce == 0 || IsLastBounceSpecular)
-			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
-
-		// calculate direct lighting
-		if (rec.mat_ptr->specular_flag == false) {
-			if (!enableNEE) {
-				vec3 generated_vi;
-				double wli;
-				onb uvw_;
-				uvw_.build_from_w(rec.normal);
-				uniform_pdf pdf(rec.normal);
-				vec3 generated_direction = pdf.generate();
-				//bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
-				generated_vi = uvw_.worldtolocal(generated_direction);
-				bool respawn = true;
-				if (respawn) {
-					ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
-					hit_record tmp_rec;
-					scattered.central_wl = _ray.central_wl;
-					scattered.min_wl = _ray.min_wl;
-					scattered.max_wl = _ray.max_wl;
-
-					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
-					if (hit) {
-						double bxdf, pdf_val;
-						pdf_val = pdf.pdf_val(generated_direction);
-						bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
-						radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
-					}
-				}
-			} else {
-				if (rec.mat_ptr->light_flag == false) {
-					std::random_device rnd;
-					int selectedLight = rnd() % material::lights.size();
-					onb uvw_;
-					uvw_.build_from_w(rec.normal);
-					hitable_pdf pdf(material::lights[selectedLight], rec.p);
-					vec3 generated_direction = pdf.generate();
-
-					hit_record light_rec;
-					ray scattered = ray(rec.p, generated_direction);
-					scattered.central_wl = _ray.central_wl;
-					scattered.min_wl = _ray.min_wl;
-					scattered.max_wl = _ray.max_wl;
-					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
-					if (hit) {
-						double pdf_val = pdf.pdf_val(generated_direction);
-						vec3 vi = uvw_.worldtolocal(generated_direction);
-						vec3 vo = uvw_.worldtolocal(-_ray.direction());
-						double wlo = _ray.central_wl;
-						double wli = wlo;
-						double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-						radiance += material::lights.size() * BxDF * (beta * light_rec.mat_ptr->emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
-					}
 
 
 
-				}
-			}
-		}
 
-
-		if (rec.mat_ptr->light_flag)
-			break;
-		vec3 generated_vi;
-		double wli;
-		bool respawn;
-		double bxdf, pdf;
-		onb uvw;
-		uvw.build_from_w(rec.normal);
-		{
-			respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-			if (respawn) {
-				beta *= (bxdf * abs(generated_vi.z()) / pdf);
-				//if (rec.mat_ptr->specular_flag)
-				//	std::cout << bxdf *abs(generated_vi.z())/pdf<< std::endl;
-			}
-		}
-
-		//double prr = std::max(0.8, 1.0-(0.5 + bxdf/2.0));
-		//double prr = std::max(0.5, 1.0 + bxdf/2.0);
-		double prr = 1.0 - std::min(0.7, 0.2+bxdf/2.0);
-		if (bounce > 6)
-			prr = 0.9;
-		double d = drand48();
-		if (d < prr)
-			break;
-		beta /= (1.0-prr);
-
-		if (!respawn)
-			break;
-
-		ray scattered = ray(rec.p, uvw.localtoworld(generated_vi));
-		_ray.A = scattered.A;
-		_ray.B = scattered.B;
-
-		bounce++;
-
-		IsLastBounceSpecular = rec.mat_ptr->specular_flag;
-	}
-
-	return radiance;
-
-}
-
-
-double Scene::GetRadiance(ray& r, int count)
-{
-	hit_record rec;
-	double radiance = 0.0;
-	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
-		radiance += rec.mat_ptr->emitted(r, rec);
-		double bxdf, pdf;
-
-		onb uvw;
-		uvw.build_from_w(rec.normal);
-		vec3 generated_vi;
-		double wli;
-		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-		double prr;
-		//if (respawn)
-		//	beta *= (bxdf * abs(generated_vi.z()) / pdf);
-		if (respawn) {
-			if (count > 10) {
-				prr = 0.01;
-			} else {
-				prr = std::min(0.8, 0.1+bxdf);
-			}
-		} else {
-			prr = 0.0;
-		}
-
-		if (drand48() < prr) {
-			if (respawn) {
-				ray scattered(rec.p, uvw.localtoworld(generated_vi));
-				scattered.central_wl = wli;
-				scattered.min_wl = r.min_wl;
-				scattered.max_wl = r.max_wl;
-				radiance += bxdf * GetRadiance(scattered, count+1) *
-					abs(generated_vi.z()) / pdf / prr;
-			}
-		}
-		return radiance;
-	} else {
-		return 0.0;
-	}
-	return radiance;
-}
-
-
-void Scene::RenderImage(int nx, int ny, int ns, const char *filename)
-{
-	material::lights.clear();
-	for (int i = 0; i < world->models.size(); i++) {
-		//world->models[i]->set_material(std::shared_ptr<material>(materials[i]));
-		auto mat = material_loader.materials[obj_loader.objects[i]->material_name];
-		world->models[i]->set_material(mat);
-		if (mat->light_flag) {
-			material::lights.push_back(world->models[i]);
-		}
-	}
-
-
-	std::ofstream ofs;
-	ofs.open(filename);
-
-	ofs << "P3\n" << nx << " " << ny << "\n255\n";
-	//ofs << "P3\n" << nx << " " << ny << "\n65535\n";
-
-	//camera cam(vec3(-1.0, 2.0, 6.4), vec3(0.0, 4.2, 0.0), vec3(0, 1, 0), 90.0, 1.0);
-	//camera cam(vec3(0.0, 3.0, 3.0), vec3(0.0, 1.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
-	//pinhole_camera cam(vec3(0.0, 3.0, 12.0), vec3(0.0, 0.0, -10.0), vec3(0, 1, 0), 1.0, 1.0);
-	//lens_camera cam(vec3(0.0, 3.0, 12.0), vec3(0.0, 0.0, -10.0), vec3(0, 1, 0), 1.0, 0.85, 0.8, 1.0);
-	//camera cam(vec3(-2.0, 3.0, -3.0), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, 1.0);
-	//camera cam(vec3(0.0, 10.0, 10.0), vec3(0.0, 0.0, 0.0), vec3(0, 1, 0), 60.0, (double)nx/(double)ny);
-
-	size_t count = 0;
-
-int i, j, s;
-#ifdef _OPENMP
-#pragma omp parallel for private(j, s) schedule(dynamic)
-#endif
-	for (i = 0; i < nx; i++) {
-		for (j = 0; j < ny; j++) {
-			//vec3 col(0, 0, 0);
-			Spectrum radiance(0.0);
-			for (s = 0; s < ns; s++) {
-				double u = (i + drand48()) / nx;
-				double v = (j + drand48()) / ny;
-				ray r = cam.get_ray(u, v);
-
-				double rand = drand48();
-				const size_t num = N_SAMPLE; // 調整
-				for (size_t k = 0; k < num; k++) {
-					if (rand <= (static_cast<double>(k+1)/ num)) {
-						double min_wl = 400.0 + 300.0/num*k;
-						double max_wl = min_wl + 300.0/num - 0.00001;
-						//double max_wl = min_wl + SAMPLE_SIZE - 0.00001;
-						//double max_wl = 400 + 300.0/(double)num*(double)(k+1) - 0.00001;
-						r.min_wl = min_wl;
-						r.max_wl = max_wl;
-						r.central_wl = (min_wl + max_wl) / 2.0;
-						double rad = NEEPathTracing(r, true);
-						//if (rad > std::numeric_limits<double>::max()) {
-						//	std::cout << "ALARM" << std::endl;
-						//}
-						if (!std::isnan(rad)) {
-							radiance.add(rad/ns, min_wl, max_wl);
-						}
-						break;
-					}
-				}
-			}
-			vec3 rgb_col = rgb(radiance);
-			for (size_t i = 0; i < 3; i++) {
-				if (rgb_col[i] >= 0.0) {
-					rgb_col.e[i] = pow(rgb_col[i], 1.0/2.2);
-				}
-			}
-			int ir = std::min(std::max(int(255.99*rgb_col[0]), 0), 255);
-			int ig = std::min(std::max(int(255.99*rgb_col[1]), 0), 255);
-			int ib = std::min(std::max(int(255.99*rgb_col[2]), 0), 255);
-			size_t i_ = nx-i-1;
-			size_t j_ = ny-j-1;
-			img[((ny-j_-1)*nx+i_)*4] = ir;
-			img[((ny-j_-1)*nx+i_)*4+1] = ig;
-			img[((ny-j_-1)*nx+i_)*4+2] = ib;
-			img[((ny-j_-1)*nx+i_)*4+3] = 255;
-
-			count++;
-			if (count % 5000 == 0) {
-#ifdef _OPENMP
-				std::cout << "thread: " << omp_get_thread_num() << "  ";
-#endif
-				std::cout << 100.0 * static_cast<double>(count) / (nx*ny) << "%" << std::endl;
-				img_updated = true;
-			}
-
-		}
-	}
-
-	//for (int j = ny-1; j >= 0; j--) {
-	//	for (int i = 0; i < nx; i++) {
-	for (int j = 0; j < ny; j++) {
-		for (int i = nx-1; i >= 0; i--) {
-
-			size_t i_ = nx-i-1;
-			size_t j_ = ny-j-1;
-			int ir = img[((ny-j_-1)*nx+i_)*4];
-			int ig = img[((ny-j_-1)*nx+i_)*4+1];
-			int ib = img[((ny-j_-1)*nx+i_)*4+2];
-
-			ofs << ir << " " << ig << " " << ib << "\n";
-		}
-	}
-	img_updated = true;
-}
-
-void Scene::Load(const char *filename)
-{
-	obj_loader.Load(filename);
-	//for (const auto& s : obj_loader.mtl_file) {
-	//	mtl_loader.Load(s.c_str());
-	//}
-	material_loader.Load("test.material");
-	for (int i = 0; i < obj_loader.objects.size(); i++) {
-		std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
-		//std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
-		//materials.push_back(mat);
-	}
-	world = std::make_unique<objmodel>(obj_loader);
-}
-
-
-void Scene::RenderResultWindow(void)
+void Scene::RenderPreviewWindow(void)
 {
 	ImGui::Begin("Render", nullptr, ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
@@ -607,22 +441,21 @@ void Scene::RenderResultWindow(void)
 		if (ImGui::BeginMenu("Render")) {
 			if (ImGui::MenuItem("Render Image")) {
 				std::cout << img_width << " " << img_height << std::endl;
-				if (img != nullptr)
-					delete[] img;
 				img = new GLubyte[img_width*img_height*4];
-				for (int i = 0; i < img_width*img_height*4; i++)
-					img[i] = 255;
-				//std::memset(img, 255, img_width*img_height*4);
-				img_updated = true;
-				//set_camera(0, 0, 3, 1, 0, 0, M_PI/2.0, 60, (double)img_width/img_height);
 				vec3 veccameraPos = vec3(cameraPos.x, cameraPos.y, cameraPos.z);
 				vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
 				glm::vec3 lookat = cameraPos + cameraFront;
 				vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
 				//cam.set_camera(cameraPos, vlookat, cameraUp, 60, (double)img_width/img_height);
-				cam.set_camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
-				std::thread t(&Scene::RenderImage, this, img_width, img_height, img_samples, "test.pnm");
+				renderer.cam.set_camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
+				std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_samples);
 				t.detach();
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Retouch")) {
+			if (ImGui::MenuItem("Add to Retouch Window")) {
+				retouch_window.AddImage(renderer.orig_img, img_width, img_height);
 			}
 			ImGui::EndMenu();
 		}
@@ -631,14 +464,32 @@ void Scene::RenderResultWindow(void)
 	ImGui::SliderInt("Image Width", &img_width, 0, 2000);            // Edit 1 float using a slider from 0.0f to 1.0f
 	ImGui::SliderInt("Image Height", &img_height, 0, 2000);            // Edit 1 float using a slider from 0.0f to 1.0f
 	ImGui::SliderInt("Image Samples", &img_samples, 0, 1000);            // Edit 1 float using a slider from 0.0f to 1.0f
-	if (img_updated) {
+	if (renderer.img_updated) {
+		int nx = img_width;
+		int ny = img_height;
+		for (int i = 0; i < nx; i++) {
+			for (int j = 0; j < ny; j++) {
+				size_t i_ = nx-i-1;
+				size_t j_ = ny-j-1;
+				const double dr = renderer.orig_img[((ny-j_-1)*nx+i_)*4];
+				const double dg = renderer.orig_img[((ny-j_-1)*nx+i_)*4+1];
+				const double db = renderer.orig_img[((ny-j_-1)*nx+i_)*4+2];
+				int ir = std::min(std::max(int(255.99*dr), 0), 255);
+				int ig = std::min(std::max(int(255.99*dg), 0), 255);
+				int ib = std::min(std::max(int(255.99*db), 0), 255);
+				img[((ny-j_-1)*nx+i_)*4] = ir;
+				img[((ny-j_-1)*nx+i_)*4+1] = ig;
+				img[((ny-j_-1)*nx+i_)*4+2] = ib;
+				img[((ny-j_-1)*nx+i_)*4+3] = 255;
+			}
+		}
 		glGenTextures(1, &my_opengl_texture);
 		glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
-		img_updated = false;
+		renderer.img_updated = false;
 		img_loaded = true;
 	}
 	if (img_loaded)
@@ -658,31 +509,31 @@ void Scene::RenderMaterialEditorWindow(void)
 	static int last_objecti = -1;
 	int objecti = activeObjectIndex-1;
 
-	const char *items[material_loader.materials.size()];
+	const char *items[renderer.material_loader.materials.size()];
 	static int cur_item = -1;
 	static int last_item = -1;
 	int i = 0;
-	for (const auto& m : material_loader.materials) {
+	for (const auto& m : renderer.material_loader.materials) {
 		items[i] = m.first.c_str();
 		if (objecti != last_objecti) {
-			if (m.first == obj_loader.objects[objecti]->material_name) {
+			if (m.first == renderer.obj_loader.objects[objecti]->material_name) {
 				cur_item = i;
 			}
 		}
 		i++;
 	}
-	ImGui::Combo("select material", &cur_item, items, material_loader.materials.size());
+	ImGui::Combo("select material", &cur_item, items, renderer.material_loader.materials.size());
 	if (objecti == last_objecti && cur_item != last_item) {
-		obj_loader.objects[objecti]->material_name = std::string(items[cur_item]);
+		renderer.obj_loader.objects[objecti]->material_name = std::string(items[cur_item]);
 	}
 
-	auto it = material_loader.materials.find(items[cur_item]);
+	auto it = renderer.material_loader.materials.find(items[cur_item]);
 	char str[32] = "";
 	if (ImGui::InputText("Press Enter to add new material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
-		material_loader.materials[std::string(str)] = std::make_shared<lambertian>(Spectrum(1));
-		it = material_loader.materials.find(str);
-		cur_item = std::distance(material_loader.materials.begin(), it);
-		obj_loader.objects[objecti]->material_name = std::string(str);
+		renderer.material_loader.materials[std::string(str)] = std::make_shared<lambertian>(Spectrum(1));
+		it = renderer.material_loader.materials.find(str);
+		cur_item = std::distance(renderer.material_loader.materials.begin(), it);
+		renderer.obj_loader.objects[objecti]->material_name = std::string(str);
 	}
 
 	if (cur_item != -1) {
@@ -773,7 +624,7 @@ void Scene::RenderMaterialEditorWindow(void)
 
 		last_model_item = cur_model_item;
 		if (ImGui::Button("Save material")) {
-			material_loader.Write("test.material");
+			renderer.material_loader.Write("test.material");
 		}
 	}
 

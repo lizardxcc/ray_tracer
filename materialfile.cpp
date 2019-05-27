@@ -181,8 +181,7 @@ bool MaterialLoader::Load(const char *filename)
 			file.seekg(oldpos);
 			LoadMaterial();
 		} else {
-			std::cout << "Error: " << line << std::endl;
-			return false;
+			obj_mat_names.push_back(line);
 		}
 		oldpos = file.tellg();
 	}
@@ -191,6 +190,16 @@ bool MaterialLoader::Load(const char *filename)
 
 	return true;
 }
+
+
+void MaterialLoader::Clear(void)
+{
+	materials.clear();
+	obj_mat_names.clear();
+}
+
+
+
 bool MaterialLoader::LoadMaterial(void)
 {
 	//std::streampos oldpos = file.tellg();
@@ -265,10 +274,13 @@ bool MaterialLoader::LoadMaterial(void)
 void MaterialLoader::Write(const char *filename)
 {
 	ofile.open(filename);
+	for (const auto& n : obj_mat_names)
+		ofile << n << std::endl;
 	for (const auto& m : materials) {
 		ofile << "newmtl " << m.first << std::endl;
 		WriteMaterial(m.second);
 	}
+	ofile.close();
 }
 
 void MaterialLoader::WriteMaterial(std::shared_ptr<material> mat)

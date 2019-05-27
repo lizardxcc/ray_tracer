@@ -62,10 +62,12 @@ class MaterialEditor {
 class MaterialLoader {
 	public:
 		bool Load(const char *filename);
+		void Clear(void);
 		void Write(const char *filename);
 		std::ifstream file;
 		std::ofstream ofile;
 		std::map<std::string, std::shared_ptr<material>> materials;
+		std::vector<std::string> obj_mat_names;
 	private:
 		bool LoadMaterial(void);
 		void WriteMaterial(std::shared_ptr<material> mat);

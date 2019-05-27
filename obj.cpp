@@ -29,9 +29,21 @@ bool obj::Load(const char *filename)
 		oldpos = file.tellg();
 	}
 
+	file.close();
+
 	CalcIndices();
 
 	return true;
+}
+
+
+void obj::Clear(void)
+{
+	mtl_file.clear();
+	for (auto & o : objects) {
+		delete o;
+	}
+	objects.clear();
 }
 
 

@@ -14,10 +14,6 @@ void BiliteralFilter::FilterImage(void)
 {
 	result = new double[img_width*img_height*4];
 
-	double sigma_d = 3.0;
-	double sigma_r = 50.0;
-	int window = 2;
-
 	for (int x = 0; x < img_width; x++) {
 		for (int y = 0; y < img_height; y++) {
 			double sum[3] = {0.0, 0.0, 0.0};
@@ -58,3 +54,5 @@ double BiliteralFilter::gaussian(double x, double c) const
 {
 	return exp(-x*x/(c*c));
 }
+
+

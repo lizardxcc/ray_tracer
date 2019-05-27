@@ -125,8 +125,9 @@ int main(void)
 		}
 
 		scene.RenderSceneWindow();
-		scene.RenderResultWindow();
+		scene.RenderPreviewWindow();
 		scene.RenderMaterialEditorWindow();
+		scene.retouch_window.Render();
 
 		ImGui::Render();
 		int display_w, display_h;

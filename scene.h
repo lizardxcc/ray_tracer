@@ -4,30 +4,64 @@
 #include <vector>
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <glm/glm.hpp>
-#include "obj.h"
-#include "object.h"
-#include "camera.h"
-#include "materialfile.h"
+#include "renderer.h"
+
+
+class ImgViewer {
+	public:
+		void Render(void);
+		void LoadImage(const std::shared_ptr<const double[]>& img, int width, int height);
+	private:
+		GLuint opengl_texture;
+		GLubyte *glimg = nullptr;
+		int width;
+		int height;
+};
+
+
+class ImgRetouch {
+	public:
+		void Render(void);
+		void LoadImage(std::shared_ptr<double[]>& img, int width, int height);
+		std::shared_ptr<double[]> orig_img;
+		std::shared_ptr<double[]> retouched;
+		int width;
+		int height;
+	private:
+		ImgViewer original_viewer;
+		ImgViewer retouched_viewer;
+		double sigma_d = 1.0;
+		double sigma_r = 1.0;
+		uint64_t window = 2;
+};
+
+class RetouchWindow {
+	public:
+		void Render(void);
+		void AddImage(std::shared_ptr<double[]>& img, int width, int height);
+		void AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height);
+	private:
+		std::vector<std::string> img_names;
+		std::vector<ImgRetouch> tabs;
+};
+
 
 class Scene {
 	public:
 		Scene(void);
-		double GetRadiance(ray& r, int count);
-		double NaivePathTracing(const ray& r);
-		double NEEPathTracing(const ray& r, bool enableNEE);
 		void RenderImage(int nx, int ny, int ns, const char *filename);
-		void Load(const char *filename);
 
 		void RenderSceneWindow(void);
-		void RenderResultWindow(void);
+		void RenderPreviewWindow(void);
 		void RenderMaterialEditorWindow(void);
 
+		RetouchWindow retouch_window;
 	private:
-		obj obj_loader;
-		MaterialLoader material_loader;
-		std::unique_ptr<objmodel> world;
-		//std::vector<std::shared_ptr<material> > materials;
-		lens_camera cam;
+		void Load(const char *filename);
+		void ClearData(void);
+		void RenderScene(void);
+		bool scene_loaded = false;
+		Renderer renderer;
 		glm::vec3 cameraPos;
 		glm::vec3 cameraFront;
 		glm::vec3 cameraUp;
@@ -38,7 +72,6 @@ class Scene {
 		int img_height = 500;
 		int img_samples = 100;
 		bool img_loaded = false;
-		bool img_updated = false;
 		GLuint my_opengl_texture;
 
 
