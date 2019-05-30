@@ -166,9 +166,9 @@ Scene::Scene(void)
 }
 
 
-void Scene::Load(const char *filename)
+void Scene::Load(const char *objfilename, const char *matfilename)
 {
-	renderer.Load(filename);
+	renderer.Load(objfilename, matfilename);
 	for (int o = 0; o < renderer.obj_loader.objects.size(); o++) {
 		VAOs.push_back(0);
 		glGenVertexArrays(1, &VAOs[o]);
@@ -205,7 +205,9 @@ void Scene::Load(const char *filename)
 				//std::cout << x << " " << y << " " << z << std::endl;
 			}
 		}
-		std::shared_ptr<material> mat = renderer.material_loader.materials[renderer.obj_loader.objects[o]->material_name];
+		std::shared_ptr<material> mat = renderer.material_loader.materials[renderer.material_loader.obj_mat_names[o]];
+		if (mat == nullptr)
+			std::cout << "WARNING" << std::endl;
 		if (typeid(*mat) == typeid(lambertian)) {
 			vec3 col = r_rgb(std::dynamic_pointer_cast<lambertian>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
@@ -288,13 +290,13 @@ void Scene::RenderSceneWindow(void)
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Load test.obj")) {
 				if (!scene_loaded) {
-					Load("test.obj");
+					Load("test.obj", "test.material");
 					scene_loaded = true;
 				}
 			}
 			if (ImGui::MenuItem("Load test2.obj")) {
 				if (!scene_loaded) {
-					Load("test2.obj");
+					Load("test2.obj", "test2.material");
 					scene_loaded = true;
 				}
 			}
@@ -516,7 +518,7 @@ void Scene::RenderMaterialEditorWindow(void)
 	for (const auto& m : renderer.material_loader.materials) {
 		items[i] = m.first.c_str();
 		if (objecti != last_objecti) {
-			if (m.first == renderer.obj_loader.objects[objecti]->material_name) {
+			if (m.first == renderer.material_loader.obj_mat_names[objecti]) {
 				cur_item = i;
 			}
 		}
@@ -524,7 +526,7 @@ void Scene::RenderMaterialEditorWindow(void)
 	}
 	ImGui::Combo("select material", &cur_item, items, renderer.material_loader.materials.size());
 	if (objecti == last_objecti && cur_item != last_item) {
-		renderer.obj_loader.objects[objecti]->material_name = std::string(items[cur_item]);
+		renderer.material_loader.obj_mat_names[objecti] = std::string(items[cur_item]);
 	}
 
 	auto it = renderer.material_loader.materials.find(items[cur_item]);
@@ -533,11 +535,11 @@ void Scene::RenderMaterialEditorWindow(void)
 		renderer.material_loader.materials[std::string(str)] = std::make_shared<lambertian>(Spectrum(1));
 		it = renderer.material_loader.materials.find(str);
 		cur_item = std::distance(renderer.material_loader.materials.begin(), it);
-		renderer.obj_loader.objects[objecti]->material_name = std::string(str);
+		renderer.material_loader.obj_mat_names[objecti] = std::string(str);
 	}
 
 	if (cur_item != -1) {
-		const char *model_items[] = {"Lambertian", "Dielectric", "Metal", "Microfacet", "Light"};
+		const char *model_items[] = {"Lambertian", "Dielectric", "Metal", "Microfacet", "Transparent", "Light"};
 		static int cur_model_item = -1;
 		static int last_model_item = -1;
 		if (cur_item != last_item)
@@ -553,8 +555,10 @@ void Scene::RenderMaterialEditorWindow(void)
 			cur_model_item = 2;
 		else if (id == typeid(torrance_sparrow))
 			cur_model_item = 3;
-		else if (id == typeid(diffuse_light))
+		else if (id == typeid(transparent))
 			cur_model_item = 4;
+		else if (id == typeid(diffuse_light))
+			cur_model_item = 5;
 
 		ImGui::Combo("select model", &cur_model_item, model_items, sizeof(model_items)/sizeof(const char *));
 		if (cur_model_item == 0) {
@@ -608,6 +612,19 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Microfacet", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 4) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
+				mat = std::make_shared<transparent>();
+				it->second = mat;
+			}
+			std::shared_ptr<transparent> mat_ptr = std::dynamic_pointer_cast<transparent>(mat);
+			TransparentMaterialEditor(mat_ptr);
+			//vec3 col = r_rgb(mat_ptr->albedo);
+			//ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
+			//colors[objecti][0] = col[0];
+			//colors[objecti][1] = col[1];
+			//colors[objecti][2] = col[2];
+			//ImGui::ColorButton("Microfacet", color, ImGuiColorEditFlags_DisplayRGB);
+		} else if (cur_model_item == 5) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
 				mat = std::make_shared<diffuse_light>(Spectrum(0.05));
 				it->second = mat;
 			}
@@ -622,10 +639,57 @@ void Scene::RenderMaterialEditorWindow(void)
 		} else {
 		}
 
-		last_model_item = cur_model_item;
-		if (ImGui::Button("Save material")) {
-			renderer.material_loader.Write("test.material");
+		ImGui::Text("Medium");
+		if (mat->mi == nullptr) {
+			ImGui::Text("Not set");
+			if (ImGui::Button("Add Medium")) {
+				//mat->mi = static_cast<medium_material>(new homogenious());
+				//mat->mi = static_cast<medium_material>(new homogenious());
+				mat->mi = new henyey_greenstein(Spectrum(0.3), Spectrum(1.0), 0.0);
+				//mat->mi = new homogenious(Spectrum(0.5), Spectrum(1.0));
+			}
+		} else {
+			ImGui::Text("set");
+			ImGui::Text("sigma_t");
+			const ImVec2 slider_size(18, 160);
+			for (int i = 0; i < N_SAMPLE; i++) {
+				const double min = 0.0;
+				const double max = 7.0;
+				if (i > 0)
+					ImGui::SameLine();
+				ImGui::PushID(i);
+				ImGui::VSliderScalar("##sigma_t", slider_size, ImGuiDataType_Double, &mat->mi->sigma_t.data[i], &min, &max, "");
+				if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+					ImGui::SetTooltip("%f", mat->mi->sigma_t.data[i]);
+				ImGui::PopID();
+			}
+			ImGui::Text("albedo");
+			for (int i = 0; i < N_SAMPLE; i++) {
+				const double min = 0.0;
+				const double max = 1.0;
+				if (i > 0)
+					ImGui::SameLine();
+				ImGui::PushID(i);
+				ImGui::VSliderScalar("##albedo", slider_size, ImGuiDataType_Double, &mat->mi->albedo.data[i], &min, &max, "");
+				if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+					ImGui::SetTooltip("%f", mat->mi->albedo.data[i]);
+				ImGui::PopID();
+			}
+			const double min = -1.0;
+			const double max = 1.0;
+			henyey_greenstein *mi_ptr = dynamic_cast<henyey_greenstein *>(mat->mi);
+			ImGui::SliderScalar("g ([-1:backward, 1:forward] scattering)", ImGuiDataType_Double, &mi_ptr->g, &min, &max, "%f");
+
 		}
+
+		last_model_item = cur_model_item;
+		char str[32] = "";
+		if (ImGui::InputText("Save material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			renderer.material_loader.Write(str);
+		}
+		//if (ImGui::Button("Save material")) {
+		//	//renderer.material_loader.Write("test.material");
+		//}
 	}
 
 

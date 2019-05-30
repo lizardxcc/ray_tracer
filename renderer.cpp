@@ -11,13 +11,13 @@
 //	Load(filename);
 //}
 
-void Renderer::Load(const char *filename)
+void Renderer::Load(const char *objfilename, const char *matfilename)
 {
-	obj_loader.Load(filename);
+	obj_loader.Load(objfilename);
 	//for (const auto& s : obj_loader.mtl_file) {
 	//	mtl_loader.Load(s.c_str());
 	//}
-	material_loader.Load("test.material");
+	material_loader.Load(matfilename);
 	//for (int i = 0; i < obj_loader.objects.size(); i++) {
 	//	std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
 	//	//std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
@@ -80,7 +80,7 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						double rad = NEEPathTracing(r, true);
+						double rad = NEEVolPathTracing(r, true);
 						if (!std::isnan(rad)) {
 							radiance.add(rad/ns, min_wl, max_wl);
 						}
@@ -298,6 +298,232 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 	return radiance;
 
 }
+
+
+
+double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
+{
+	hit_record rec;
+	ray _ray = r;
+	double radiance = 0.0;
+	double beta = 1.0;
+	int surface_bounce = 0;
+	int volume_bounce = 0;
+	bool IsLastBounceSpecular = false;
+	while (1) {
+		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+
+		if (!hit)
+			break;
+
+		double sampleMedium = false;
+		double medium_t;
+		//auto& id = typeid(*rec.mat_ptr);
+		if (rec.mat_ptr->mi != nullptr) {
+			// when goes out of a object which contains medium inside it
+			if (dot(_ray.direction(), rec.normal) > 0.0) {
+				const double sigma_t = rec.mat_ptr->mi->sigma_t.get(_ray.central_wl);
+				const double sigma_s = sigma_t * rec.mat_ptr->mi->albedo.get(_ray.central_wl);
+				double t = - log(1.0-drand48())/sigma_t / _ray.direction().length();
+				sampleMedium = t < rec.t;
+				if (!sampleMedium)
+					t = rec.t;
+				double tr = exp(-sigma_t * t * _ray.direction().length());
+				if (sampleMedium) {
+					double pdf = sigma_t * tr;
+					beta *= (sigma_s * tr)/pdf;
+					medium_t = t;
+				} else {
+					//double pdf = tr;
+					//beta *= tr / pdf;
+					// don't need to calculate the term (tr / pdf)
+					// because it's guaranteed that tr / pdf is 1.0
+				}
+			}
+
+		}
+
+
+
+		bool respawn = false;
+		double scattering_coefficient = 0.0;
+		vec3 scattered_point; // in world cooredinate
+		vec3 scattered_direction; // in world cooredinate
+
+		if (sampleMedium) {
+			std::random_device rnd;
+			int selectedLight = rnd() % material::lights.size();
+			hitable_pdf pdf(material::lights[selectedLight], _ray.point_at_parameter(medium_t));
+			vec3 generated_direction = pdf.generate();
+
+
+
+			hit_record tmp_rec;
+			ray scattered = ray(_ray.point_at_parameter(medium_t), generated_direction);
+			scattered.central_wl = _ray.central_wl;
+			scattered.min_wl = _ray.min_wl;
+			scattered.max_wl = _ray.max_wl;
+
+			bool hit_anything = false;
+			vec3 last_smoke_point;
+			while (true) {
+				bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
+				hit_anything = hit;
+				if (!hit)
+					break;
+				if (typeid(*tmp_rec.mat_ptr) == typeid(transparent)) {
+					last_smoke_point = scattered.point_at_parameter(tmp_rec.t);
+					scattered = ray(scattered.point_at_parameter(tmp_rec.t), generated_direction);
+					scattered.central_wl = _ray.central_wl;
+					scattered.min_wl = _ray.min_wl;
+					scattered.max_wl = _ray.max_wl;
+				} else {
+					break;
+				}
+			}
+			if (hit_anything) {
+				double distance = (last_smoke_point - _ray.point_at_parameter(medium_t)).length();
+				const double sigma_t = rec.mat_ptr->mi->sigma_t.get(_ray.central_wl);
+				double tr = exp(-sigma_t * distance);
+				double pdf_val = pdf.pdf_val(generated_direction);
+				double wlo = _ray.central_wl;
+				double wli = wlo;
+				double p = rec.mat_ptr->mi->phase(generated_direction, wli, -_ray.direction(), wlo);
+				radiance += material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) / pdf_val;
+			}
+
+			vec3 vi;
+			double wli;
+			double phase, pdf_val;
+			respawn = rec.mat_ptr->mi->sample_p(-_ray.direction(), _ray.central_wl, vi, wli, phase, pdf_val);
+			if (respawn) {
+				scattered_point = _ray.point_at_parameter(medium_t);
+				scattered_direction = vi;
+				//beta *= phase / pdf_val;
+				// don't need to calculate the term (phase / pdf_val) because it's
+				// guaranteed that scattered direction is sampled with a pdf which
+				// completely matches the phase function of the medium
+				scattering_coefficient = phase;
+			}
+
+
+
+			// sample new direction at medium
+			IsLastBounceSpecular = false;
+
+			volume_bounce++;
+
+		} else { // surface interation
+			if (surface_bounce == 0 || IsLastBounceSpecular)
+				radiance += beta * rec.mat_ptr->emitted(_ray, rec);
+
+			// calculate direct lighting
+			if (rec.mat_ptr->specular_flag == false) {
+				if (!enableNEE) {
+					vec3 generated_vi;
+					double wli;
+					onb uvw_;
+					uvw_.build_from_w(rec.normal);
+					uniform_pdf pdf(rec.normal);
+					vec3 generated_direction = pdf.generate();
+					//bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
+					generated_vi = uvw_.worldtolocal(generated_direction);
+					bool respawn = true;
+					if (respawn) {
+						ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
+						hit_record tmp_rec;
+						scattered.central_wl = _ray.central_wl;
+						scattered.min_wl = _ray.min_wl;
+						scattered.max_wl = _ray.max_wl;
+
+						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
+						if (hit) {
+							double bxdf, pdf_val;
+							pdf_val = pdf.pdf_val(generated_direction);
+							bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
+							radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
+						}
+					}
+				} else {
+					if (rec.mat_ptr->light_flag == false) {
+						std::random_device rnd;
+						int selectedLight = rnd() % material::lights.size();
+						onb uvw_;
+						uvw_.build_from_w(rec.normal);
+						hitable_pdf pdf(material::lights[selectedLight], rec.p);
+						vec3 generated_direction = pdf.generate();
+
+						hit_record light_rec;
+						ray scattered = ray(rec.p, generated_direction);
+						scattered.central_wl = _ray.central_wl;
+						scattered.min_wl = _ray.min_wl;
+						scattered.max_wl = _ray.max_wl;
+						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
+						if (hit) {
+							double pdf_val = pdf.pdf_val(generated_direction);
+							vec3 vi = uvw_.worldtolocal(generated_direction);
+							vec3 vo = uvw_.worldtolocal(-_ray.direction());
+							double wlo = _ray.central_wl;
+							double wli = wlo;
+							double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
+							radiance += material::lights.size() * BxDF * (beta * light_rec.mat_ptr->emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
+						}
+
+
+
+					}
+				}
+			}
+
+
+
+			if (rec.mat_ptr->light_flag)
+				break;
+			vec3 generated_vi;
+			double wli;
+			double bxdf, pdf;
+			onb uvw;
+			uvw.build_from_w(rec.normal);
+			{
+				respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+				if (respawn) {
+					beta *= (bxdf * abs(generated_vi.z()) / pdf);
+					scattered_point = rec.p;
+					scattered_direction = uvw.localtoworld(generated_vi);
+					scattering_coefficient = bxdf;
+					//if (rec.mat_ptr->specular_flag)
+					//	std::cout << bxdf *abs(generated_vi.z())/pdf<< std::endl;
+				}
+			}
+			IsLastBounceSpecular = rec.mat_ptr->specular_flag;
+
+			surface_bounce++;
+		}
+
+		//double prr = std::max(0.8, 1.0-(0.5 + bxdf/2.0));
+		//double prr = std::max(0.5, 1.0 + bxdf/2.0);
+		double prr = 1.0 - std::min(0.7, 0.2+scattering_coefficient/2.0);
+		//double prr = 0.5;
+		if (surface_bounce > 10)
+			prr = 0.9;
+		double d = drand48();
+		if (d < prr)
+			break;
+		beta /= (1.0-prr);
+
+		if (!respawn)
+			break;
+
+		ray scattered = ray(scattered_point, scattered_direction);
+		_ray.A = scattered.A;
+		_ray.B = scattered.B;
+
+	}
+
+	return radiance;
+
+}
+
 
 double Renderer::GetRadiance(ray& r, int count)
 {

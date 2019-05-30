@@ -10,11 +10,12 @@
 class Renderer {
 	public:
 		//Renderer(const char *filename);
-		void Load(const char *filename);
+		void Load(const char *objfilename, const char *matfilename);
 		void Clear(void);
 		void RenderImage(int nx, int ny, int ns);
 		double NaivePathTracing(const ray& r);
 		double NEEPathTracing(const ray& r, bool enableNEE);
+		double NEEVolPathTracing(const ray& r, bool enableNEE);
 		double GetRadiance(ray& r, int count);
 		std::shared_ptr<double[]> orig_img;
 		//GLubyte *img = nullptr;

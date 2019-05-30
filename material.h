@@ -8,6 +8,33 @@
 #include "hitable.h"
 #include "spectrum.h"
 
+class medium_material {
+	public:
+		medium_material(const Spectrum& sigma_t, const Spectrum& albedo) : sigma_t(sigma_t), albedo(albedo) {
+		}
+		virtual bool sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdf_val) const {
+			return false;
+		}
+		virtual double phase(const vec3& vi, double wli, const vec3& vo, double wlo) const = 0;
+		Spectrum sigma_t;
+		Spectrum albedo;
+};
+
+class homogenious : public medium_material {
+	public:
+		homogenious(const Spectrum& sigma_t, const Spectrum& albedo) : medium_material(sigma_t, albedo) {}
+		bool sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdf_val) const;
+		double phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+};
+
+class henyey_greenstein : public medium_material {
+	public:
+		henyey_greenstein(const Spectrum& sigma_t, const Spectrum& albedo, double g) : medium_material(sigma_t, albedo), g(g) {}
+		bool sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdf_val) const;
+		double phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		double g;
+};
+
 class material {
 	public:
 		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const {
@@ -19,6 +46,8 @@ class material {
 		virtual double emitted(const ray& r, const hit_record& rec) const {
 			return 0.0;
 		}
+		//std::shared_ptr<medium_material> mi;
+		medium_material *mi = nullptr;
 		static std::vector<std::shared_ptr<hitable> > lights;
 		bool light_flag = false;
 		bool specular_flag = false;
@@ -94,12 +123,23 @@ class torrance_sparrow : public material {
 		double alpha;
 };
 
+class transparent : public material {
+	public:
+		transparent(void)
+		{
+			specular_flag = true;
+		}
+		virtual bool sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+};
+
+
 class diffuse_light : public material {
 	public:
 		diffuse_light(Spectrum color) : light_color(color) {}
 		virtual double emitted(const ray& r, const hit_record& rec) const;
 		Spectrum light_color;
 };
+
 
 
 class mix_material : public material {

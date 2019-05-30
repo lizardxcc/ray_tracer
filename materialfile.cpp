@@ -82,6 +82,18 @@ void MicrofacetMaterialEditor(const std::shared_ptr<torrance_sparrow>& mat_ptr)
 }
 
 
+void TransparentMaterialEditor(const std::shared_ptr<transparent>& mat_ptr)
+{
+	ImGui::Text("transparent");
+	{
+		//const double min = 0.0;
+		//const double max = 3.0;
+		//ImGui::SliderScalar("sigma_t", ImGuiDataType_Double, &mat_ptr->sigma_t, &min, &max, "%f");
+		//ImGui::SliderScalar("sigma_s", ImGuiDataType_Double, &mat_ptr->sigma_s, &min, &max, "%f");
+	}
+}
+
+
 void LightMaterialEditor(const std::shared_ptr<diffuse_light>& mat_ptr)
 {
 	ImGui::Text("light");
@@ -252,6 +264,8 @@ bool MaterialLoader::LoadMaterial(void)
 				alpha = stod(line);
 			}
 			mtl = std::make_shared<torrance_sparrow>(albedo, alpha);
+		} else if (line == "transparent") {
+			mtl = std::make_shared<transparent>();
 		} else if (line == "light") {
 			Spectrum light;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -314,6 +328,10 @@ void MaterialLoader::WriteMaterial(std::shared_ptr<material> mat)
 				ofile << d << std::endl;
 			}
 			ofile << mat_ptr->alpha << std::endl;
+			ofile << std::endl;
+		} else if (id == typeid(transparent)) {
+			std::shared_ptr<transparent> mat_ptr = std::dynamic_pointer_cast<transparent>(mat);
+			ofile << "transparent" << std::endl;
 			ofile << std::endl;
 		} else if (id == typeid(diffuse_light)) {
 			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);

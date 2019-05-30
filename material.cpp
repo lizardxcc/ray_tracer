@@ -3,6 +3,51 @@
 #include "pdf.h"
 #include "object.h"
 
+
+double homogenious::phase(const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	return 1.0/(4.0 * M_PI);
+}
+
+bool homogenious::sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdf_val) const
+{
+	double phi = 2.0 * M_PI * drand48();
+	double cos_theta = 1.0 - 2.0 * drand48();
+	double sin_theta = sqrt(1.0-cos_theta*cos_theta);
+	double x = sin(phi) * cos_theta;
+	double y = sin(phi) * sin_theta;
+	double z = cos(phi);
+	vi = vec3(x, y, z);
+	wli = wlo;
+	phase = 1.0/(4.0 * M_PI);
+	pdf_val = 1.0/(4.0 * M_PI);
+	return true;
+}
+
+double henyey_greenstein::phase(const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	const double cos_theta = dot(vi, vo);
+	const double denom = 1.0+g*g+2.0*g*cos_theta;
+	return (1.0-g*g)/(denom*sqrt(denom)*(4.0 * M_PI));
+}
+
+bool henyey_greenstein::sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdf_val) const
+{
+	double phi = 2.0 * M_PI * drand48();
+	double square = (1.0-g*g)/(1.0-g+2.0*g*drand48());
+	double cos_theta = 0.5 / g *(1.0 + g*g - square*square);
+	double sin_theta = sqrt(1.0-cos_theta*cos_theta);
+	double x = sin(phi) * cos_theta;
+	double y = sin(phi) * sin_theta;
+	double z = cos(phi);
+	vi = vec3(x, y, z);
+	wli = wlo;
+	phase = this->phase(vi, wli, vo, wlo);
+	pdf_val = phase;
+	return true;
+}
+
+
 std::vector<std::shared_ptr<hitable> > material::lights;
 
 vec3 random_in_unit_sphere(void)
@@ -270,6 +315,15 @@ bool torrance_sparrow::sample(const hit_record& rec, const onb& uvw, const vec3&
 }
 
 
+
+bool transparent::sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+{
+	wli = wlo;
+	BxDF = 1.0/abs(vo.z());
+	vi = -vo;
+	pdf_val = 1.0;
+	return true;
+}
 
 double diffuse_light::emitted(const ray& r, const hit_record& rec) const
 {

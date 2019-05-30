@@ -57,7 +57,7 @@ class Scene {
 
 		RetouchWindow retouch_window;
 	private:
-		void Load(const char *filename);
+		void Load(const char *objfilename, const char *matfilename);
 		void ClearData(void);
 		void RenderScene(void);
 		bool scene_loaded = false;
