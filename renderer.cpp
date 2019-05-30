@@ -1,3 +1,4 @@
+#include <stack>
 #include <random>
 #ifdef _OPENMP
 #include <omp.h>
@@ -310,6 +311,8 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 	int surface_bounce = 0;
 	int volume_bounce = 0;
 	bool IsLastBounceSpecular = false;
+
+	std::stack<unsigned int> inside_object_stack;
 	while (1) {
 		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
@@ -318,12 +321,13 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 
 		double sampleMedium = false;
 		double medium_t;
-		//auto& id = typeid(*rec.mat_ptr);
-		if (rec.mat_ptr->mi != nullptr) {
-			// when goes out of a object which contains medium inside it
-			if (dot(_ray.direction(), rec.normal) > 0.0) {
-				const double sigma_t = rec.mat_ptr->mi->sigma_t.get(_ray.central_wl);
-				const double sigma_s = sigma_t * rec.mat_ptr->mi->albedo.get(_ray.central_wl);
+		medium_material *mi = nullptr;
+		if (!inside_object_stack.empty()) {
+			std::shared_ptr<material> mat = material_loader.materials[material_loader.obj_mat_names[inside_object_stack.top()]];
+			mi = mat->mi;
+			if (mi != nullptr) {
+				const double sigma_t = mi->sigma_t.get(_ray.central_wl);
+				const double sigma_s = mi->albedo.get(_ray.central_wl);
 				double t = - log(1.0-drand48())/sigma_t / _ray.direction().length();
 				sampleMedium = t < rec.t;
 				if (!sampleMedium)
@@ -340,7 +344,8 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 					// because it's guaranteed that tr / pdf is 1.0
 				}
 			}
-
+		} else {
+			// if ray is going through world space
 		}
 
 
@@ -365,13 +370,14 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 			scattered.max_wl = _ray.max_wl;
 
 			bool hit_anything = false;
+			unsigned int medium_object_id = inside_object_stack.top();
 			vec3 last_smoke_point;
 			while (true) {
 				bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 				hit_anything = hit;
 				if (!hit)
 					break;
-				if (typeid(*tmp_rec.mat_ptr) == typeid(transparent)) {
+				if (tmp_rec.hit_object_id == medium_object_id) {
 					last_smoke_point = scattered.point_at_parameter(tmp_rec.t);
 					scattered = ray(scattered.point_at_parameter(tmp_rec.t), generated_direction);
 					scattered.central_wl = _ray.central_wl;
@@ -383,19 +389,19 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 			}
 			if (hit_anything) {
 				double distance = (last_smoke_point - _ray.point_at_parameter(medium_t)).length();
-				const double sigma_t = rec.mat_ptr->mi->sigma_t.get(_ray.central_wl);
+				const double sigma_t = mi->sigma_t.get(_ray.central_wl);
 				double tr = exp(-sigma_t * distance);
 				double pdf_val = pdf.pdf_val(generated_direction);
 				double wlo = _ray.central_wl;
 				double wli = wlo;
-				double p = rec.mat_ptr->mi->phase(generated_direction, wli, -_ray.direction(), wlo);
+				double p = mi->phase(generated_direction, wli, -_ray.direction(), wlo);
 				radiance += material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) / pdf_val;
 			}
 
 			vec3 vi;
 			double wli;
 			double phase, pdf_val;
-			respawn = rec.mat_ptr->mi->sample_p(-_ray.direction(), _ray.central_wl, vi, wli, phase, pdf_val);
+			respawn = mi->sample_p(-_ray.direction(), _ray.central_wl, vi, wli, phase, pdf_val);
 			if (respawn) {
 				scattered_point = _ray.point_at_parameter(medium_t);
 				scattered_direction = vi;
@@ -491,6 +497,23 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 					scattered_point = rec.p;
 					scattered_direction = uvw.localtoworld(generated_vi);
 					scattering_coefficient = bxdf;
+
+					// when light penetrates through a surface
+					if ((uvw.worldtolocal(-_ray.direction()).z() * generated_vi.z()) < 0.0) {
+						if (generated_vi.z() > 0.0) { // going out
+							if (!inside_object_stack.empty()) {
+								if (inside_object_stack.top() != rec.hit_object_id)
+									std::cout << "ERROR" << std::endl;
+								else
+									inside_object_stack.pop();
+							} else {
+								//std::cout << "WARNING" << std::endl;
+								// maybe one of the object in the scene is not manifold
+							}
+						} else { // going in
+							inside_object_stack.push(rec.hit_object_id);
+						}
+					}
 					//if (rec.mat_ptr->specular_flag)
 					//	std::cout << bxdf *abs(generated_vi.z())/pdf<< std::endl;
 				}

@@ -15,7 +15,7 @@ struct hit_record {
 	vec3 p;
 	vec3 normal;
 	std::shared_ptr<material> mat_ptr;
-	std::shared_ptr<const hitable> hit_object;
+	unsigned int hit_object_id;
 };
 
 
@@ -26,6 +26,7 @@ class hitable: public std::enable_shared_from_this<hitable> {
 		virtual bool bounding_box(aabb& box) const = 0;
 		virtual void set_material(std::shared_ptr<material> mat);
 		std::shared_ptr<material> mat_ptr;
+		unsigned int object_id;
 };
 
 #endif

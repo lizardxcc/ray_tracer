@@ -25,7 +25,6 @@ class Renderer {
 		//std::vector<std::shared_ptr<material> > materials;
 		lens_camera cam;
 		bool img_updated = false;
-
 };
 
 #endif

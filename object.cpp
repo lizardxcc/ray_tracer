@@ -46,7 +46,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = unit_vector(rec.p - center);
 		rec.mat_ptr = mat_ptr;
-		rec.hit_object = shared_from_this();
+		rec.hit_object_id = object_id;
 		return true;
 	}
 	double t2 = (-b_prime + sqrt(discriminant_prime)) / a;
@@ -55,7 +55,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = unit_vector(rec.p - center);
 		rec.mat_ptr = mat_ptr;
-		rec.hit_object = shared_from_this();
+		rec.hit_object_id = object_id;
 		return true;
 	}
 
@@ -87,7 +87,7 @@ bool plane::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = normal;
 		rec.mat_ptr = mat_ptr;
-		rec.hit_object = shared_from_this();
+		rec.hit_object_id = object_id;
 
 		return true;
 	}
@@ -110,7 +110,7 @@ bool rectangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
 
 		rec.normal = normal;
 		rec.mat_ptr = mat_ptr;
-		rec.hit_object = shared_from_this();
+		rec.hit_object_id = object_id;
 
 		return true;
 	}
@@ -146,7 +146,7 @@ bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 	rec.mat_ptr = mat_ptr;
 	rec.p = r.point_at_parameter(t);
 	rec.normal = vec3(0, 0, 1);
-	rec.hit_object = shared_from_this();
+	rec.hit_object_id = object_id;
 
 	return true;
 }
@@ -165,7 +165,7 @@ bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 	rec.mat_ptr = mat_ptr;
 	rec.p = r.point_at_parameter(t);
 	rec.normal = vec3(1, 0, 0);
-	rec.hit_object = shared_from_this();
+	rec.hit_object_id = object_id;
 
 	return true;
 }
@@ -184,7 +184,7 @@ bool zx_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 	rec.mat_ptr = mat_ptr;
 	rec.p = r.point_at_parameter(t);
 	rec.normal = vec3(0, 1, 0);
-	rec.hit_object = shared_from_this();
+	rec.hit_object_id = object_id;
 
 	return true;
 }
@@ -325,6 +325,7 @@ objmodel::objmodel(obj& o)
 				quad->mat_ptr = nullptr;
 				tmp_model = quad;
 			}
+			tmp_model->object_id = i;
 			model[j] = tmp_model;
 		}
 		std::shared_ptr<hitable> b = std::make_shared<bvh_node>(model);
@@ -438,7 +439,7 @@ bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 			rec.p = p;
 			rec.normal = (result1.length()*normal[0]+result2.length()*normal[1]+result0.length()*normal[2])/tri_area;
 			rec.mat_ptr = mat_ptr;
-			rec.hit_object = shared_from_this();
+			rec.hit_object_id = object_id;
 			return true;
 		}
 	}
@@ -500,7 +501,7 @@ bool quadrilateral::hit(const ray& r, double t_min, double t_max, hit_record& re
 			rec.p = p;
 			rec.normal = normal;
 			rec.mat_ptr = mat_ptr;
-			rec.hit_object = shared_from_this();
+			rec.hit_object_id = object_id;
 			return true;
 		}
 	}
