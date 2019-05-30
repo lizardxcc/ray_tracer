@@ -529,6 +529,8 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 		//double prr = 0.5;
 		if (surface_bounce > 10)
 			prr = 0.9;
+		if (volume_bounce > 10)
+			prr = 0.9;
 		double d = drand48();
 		if (d < prr)
 			break;
