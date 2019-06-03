@@ -169,7 +169,7 @@ Scene::Scene(void)
 void Scene::Load(const char *objfilename, const char *matfilename)
 {
 	renderer.Load(objfilename, matfilename);
-	for (int o = 0; o < renderer.obj_loader.objects.size(); o++) {
+	for (size_t o = 0; o < renderer.obj_loader.objects.size(); o++) {
 		VAOs.push_back(0);
 		glGenVertexArrays(1, &VAOs[o]);
 		GLuint VBO;
@@ -187,11 +187,11 @@ void Scene::Load(const char *objfilename, const char *matfilename)
 				std::cout << "Error!! unsupported vertex size" << std::endl;
 			}
 			vec3 normal, v[3];
-			for (int j = 0; j < face.size(); j++) {
+			for (size_t j = 0; j < face.size(); j++) {
 				v[j] = renderer.obj_loader.objects[o]->v[*face[j][0]];
 			}
 			normal = unit_vector(cross(v[1] - v[0], v[2] - v[1]));
-			for (int j = 0; j < face.size(); j++) {
+			for (size_t j = 0; j < face.size(); j++) {
 
 				//vertex
 				vertices_array[o][i*18+j*6] = v[j].x();
@@ -370,7 +370,7 @@ void Scene::RenderScene(void)
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
 
-	for (int o = 0; o < VAOs.size(); o++) {
+	for (size_t o = 0; o < VAOs.size(); o++) {
 		glStencilFunc(GL_ALWAYS, o+1, -1);
 		glBindVertexArray(VAOs[o]);
 		glm::mat4 tmpModel = model;
