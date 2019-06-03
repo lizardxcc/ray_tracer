@@ -171,8 +171,6 @@ bool Dielectric::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, do
 
 	//double ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
 	double ref_idx = n.get(wlo);
-	double alpha = 4.0 * M_PI * k.get(wlo) / (wlo * pow(10, -9));
-	alpha *= rec.t;
 
 	double cos_o = vo.z();
 	double n_vacuum = 1.0;
@@ -183,7 +181,6 @@ bool Dielectric::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, do
 		// from outside to inside of object
 		n_in = ref_idx;
 		n_out = n_vacuum;
-		alpha = 0.0;
 		normal = vec3(0, 0, 1);
 	} else {
 		// from inside to outside of object
@@ -221,7 +218,6 @@ bool Dielectric::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, do
 		pdfval = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
-	BxDF *= exp(-alpha);
 	wli = wlo;
 
 	return true;
