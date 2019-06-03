@@ -41,10 +41,10 @@ void Renderer::RenderImage(int nx, int ny, int ns)
 	orig_img.reset(new double[nx*ny*4]);
 	Material::lights.clear();
 	for (size_t i = 0; i < world->models.size(); i++) {
-		//world->models[i]->set_Material(std::shared_ptr<Material>(Materials[i]));
+		//world->models[i]->SetMaterial(std::shared_ptr<Material>(Materials[i]));
 		//auto mat = Material_loader.Materials[obj_loader.objects[i]->Material_name];
 		auto mat = Material_loader.Materials[Material_loader.obj_mat_names[i]];
-		world->models[i]->set_Material(mat);
+		world->models[i]->SetMaterial(mat);
 		if (mat->light_flag) {
 			Material::lights.push_back(world->models[i]);
 		}

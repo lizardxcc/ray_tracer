@@ -130,7 +130,7 @@ class ObjModel : public Hittable {
 		virtual bool BoundingBox(AABB& box) const;
 		//std::vector<std::vector<Hittable *>> models;
 		std::vector<std::shared_ptr<Hittable> > models;
-		std::shared_ptr<bvh_node> bvh;
+		std::shared_ptr<BVHNode> bvh;
 };
 
 class PlyModel : public Hittable {
@@ -140,7 +140,7 @@ class PlyModel : public Hittable {
 		virtual bool BoundingBox(AABB& box) const;
 		ply p;
 		std::vector<std::shared_ptr<Hittable> > polygon;
-		bvh_node *pol;
+		BVHNode *pol;
 };
 
 class Triangle : public Hittable {

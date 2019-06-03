@@ -33,7 +33,7 @@ bool box_z_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hitt
 	return (box_left.center.z() < box_right.center.z());
 }
 
-bvh_node::bvh_node(std::vector<std::shared_ptr<Hittable> >& l)
+BVHNode::BVHNode(std::vector<std::shared_ptr<Hittable> >& l)
 {
 	int axis = int(3*drand48());
 	if (axis == 0) {
@@ -54,25 +54,25 @@ bvh_node::bvh_node(std::vector<std::shared_ptr<Hittable> >& l)
 	} else {
 		std::vector<std::shared_ptr<Hittable> > left_l(l.begin(), l.begin()+l.size()/2);
 		std::vector<std::shared_ptr<Hittable> > right_l(l.begin()+l.size()/2, l.end());
-		left = std::shared_ptr<Hittable>(new bvh_node(left_l));
-		right = std::shared_ptr<Hittable>(new bvh_node(right_l));
+		left = std::shared_ptr<Hittable>(new BVHNode(left_l));
+		right = std::shared_ptr<Hittable>(new BVHNode(right_l));
 	}
 
 	AABB box_left, box_right;
 	if(!left->BoundingBox(box_left) || !right->BoundingBox(box_right)) {
-		std::cerr << "no bounding box in bvh_node constructor\n" << std::endl;
+		std::cerr << "no bounding box in BVHNode constructor\n" << std::endl;
 	}
 	box = surrounding_box(box_left, box_right);
 }
 
 
-bool bvh_node::BoundingBox(AABB& b) const
+bool BVHNode::BoundingBox(AABB& b) const
 {
 	b = box;
 	return true;
 }
 
-bool bvh_node::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool BVHNode::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	if (box.Hit(r, t_min, t_max)) {
 		HitRecord left_rec, right_rec;
@@ -101,10 +101,10 @@ bool bvh_node::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 }
 
 
-void bvh_node::set_Material(std::shared_ptr<Material> mat)
+void BVHNode::SetMaterial(std::shared_ptr<Material> mat)
 {
 	if (left != nullptr)
-		left->set_Material(mat);
+		left->SetMaterial(mat);
 	if (right != nullptr)
-		right->set_Material(mat);
+		right->SetMaterial(mat);
 }

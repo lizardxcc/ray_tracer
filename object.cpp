@@ -24,7 +24,7 @@ std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 }
 
 
-void Hittable::set_Material(std::shared_ptr<Material> mat)
+void Hittable::SetMaterial(std::shared_ptr<Material> mat)
 {
 	mat_ptr = mat;
 }
@@ -328,12 +328,12 @@ ObjModel::ObjModel(obj& o)
 			tmp_model->object_id = i;
 			model[j] = tmp_model;
 		}
-		std::shared_ptr<Hittable> b = std::make_shared<bvh_node>(model);
+		std::shared_ptr<Hittable> b = std::make_shared<BVHNode>(model);
 		models[i] = b;
 	}
 
 	auto v(models);
-	bvh = std::make_shared<bvh_node>(v);
+	bvh = std::make_shared<BVHNode>(v);
 }
 
 bool ObjModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
@@ -381,7 +381,7 @@ PlyModel::PlyModel(const char *filename, Material *mat)
 		polygon[i] = tmp_polygon;
 	}
 
-	pol = new bvh_node(polygon);
+	pol = new BVHNode(polygon);
 }
 
 bool PlyModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
