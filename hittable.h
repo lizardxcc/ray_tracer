@@ -8,7 +8,7 @@
 
 class Material;
 class pdf;
-class hitable;
+class Hittable;
 
 struct HitRecord {
 	double t;
@@ -19,7 +19,7 @@ struct HitRecord {
 };
 
 
-class hitable: public std::enable_shared_from_this<hitable> {
+class Hittable: public std::enable_shared_from_this<Hittable> {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const = 0;
 		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);

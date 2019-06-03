@@ -48,7 +48,7 @@ bool henyey_greenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& w
 }
 
 
-std::vector<std::shared_ptr<hitable> > Material::lights;
+std::vector<std::shared_ptr<Hittable> > Material::lights;
 
 vec3 random_in_unit_sphere(void)
 {
@@ -254,7 +254,7 @@ bool oren_nayar::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, do
 	std::vector<std::unique_ptr<pdf> > pdf_list(lights.size()+1);
 	pdf_list[0] = std::make_unique<uniform_pdf>(rec.normal);
 	for (size_t i = 1; i < pdf_list.size(); i++) {
-		pdf_list[i] = std::make_unique<hitable_pdf>(lights[i-1], rec.p);
+		pdf_list[i] = std::make_unique<Hittable_pdf>(lights[i-1], rec.p);
 	}
 	mixture_pdf pdf(std::move(pdf_list));
 

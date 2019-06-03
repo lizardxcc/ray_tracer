@@ -2,20 +2,20 @@
 #define HITABLELIST_H
 
 #include <vector>
-#include "hitable.h"
+#include "Hittable.h"
 #include "bvh.h"
 
-class hitable_list: public hitable {
+class Hittable_list: public Hittable {
 	public:
-	hitable_list() { }
-	hitable_list(std::vector<std::shared_ptr<hitable> > l)
+	Hittable_list() { }
+	Hittable_list(std::vector<std::shared_ptr<Hittable> > l)
 	{
 		list = l;
 	}
 	virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 	virtual bool bounding_box(aabb& box) const;
 
-	std::vector<std::shared_ptr<hitable> > list;
+	std::vector<std::shared_ptr<Hittable> > list;
 	int list_size;
 };
 

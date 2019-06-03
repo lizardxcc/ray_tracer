@@ -2,16 +2,16 @@
 #include <algorithm>
 #include "object.h"
 #include "ray.h"
-#include "hitablelist.h"
+#include "Hittablelist.h"
 #include "pdf.h"
 
 
-//std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
+//std::unique_ptr<pdf> Hittable::generate_pdf_object(const vec3& o)
 //{
 //	std::cout << "Warning generate_pdf_object" << std::endl;
 //	return std::make_unique<uniform_pdf>(vec3(0.0, 0.0, 1.0));
 //}
-std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
+std::unique_ptr<pdf> Hittable::generate_pdf_object(const vec3& o)
 {
 	aabb box;
 	if (bounding_box(box)) {
@@ -24,7 +24,7 @@ std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
 }
 
 
-void hitable::set_Material(std::shared_ptr<Material> mat)
+void Hittable::set_Material(std::shared_ptr<Material> mat)
 {
 	mat_ptr = mat;
 }
@@ -241,7 +241,7 @@ box::box(const vec3& p0, const vec3& p1, Material *ptr)
 	pmin = p0;
 	pmax = p1;
 
-	std::vector<std::shared_ptr<hitable> > list;
+	std::vector<std::shared_ptr<Hittable> > list;
 	list.push_back(std::make_shared<xy_rect>(p0.x(), p0.y(), p1.x(), p1.y(), p1.z(), ptr));
 	list.push_back(std::make_shared<flip_normals>(new xy_rect(p0.x(), p0.y(), p1.x(), p1.y(), p0.z(), ptr)));
 	list.push_back(std::make_shared<zx_rect>(p0.z(), p0.x(), p1.z(), p1.x(), p1.y(), ptr));
@@ -249,7 +249,7 @@ box::box(const vec3& p0, const vec3& p1, Material *ptr)
 	list.push_back(std::make_shared<yz_rect>(p0.y(), p0.z(), p1.y(), p1.z(), p1.x(), ptr));
 	list.push_back(std::make_shared<flip_normals>(new yz_rect(p0.y(), p0.z(), p1.y(), p1.z(), p0.x(), ptr)));
 
-	list_ptr = new hitable_list(list);
+	list_ptr = new Hittable_list(list);
 }
 
 bool box::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
@@ -292,7 +292,7 @@ objmodel::objmodel(obj& o)
 	models.resize(o.objects.size());
 	for (size_t i = 0; i < o.objects.size(); i++) {
 		const auto& object = o.objects[i];
-		std::vector<std::shared_ptr<hitable> > model;
+		std::vector<std::shared_ptr<Hittable> > model;
 		model.resize(object->f.size());
 		std::cout << "f: " << object->f.size() << std::endl;
 
@@ -303,7 +303,7 @@ objmodel::objmodel(obj& o)
 				std::cerr << "Error: " << l << " sided polygon is unsupported" << std::endl;
 				return;
 			}
-			std::shared_ptr<hitable> tmp_model;
+			std::shared_ptr<Hittable> tmp_model;
 			if (l == 3) {
 				std::shared_ptr<triangle> tri = std::make_shared<triangle>();
 				for (size_t k = 0; k < l; k++) {
@@ -328,7 +328,7 @@ objmodel::objmodel(obj& o)
 			tmp_model->object_id = i;
 			model[j] = tmp_model;
 		}
-		std::shared_ptr<hitable> b = std::make_shared<bvh_node>(model);
+		std::shared_ptr<Hittable> b = std::make_shared<bvh_node>(model);
 		models[i] = b;
 	}
 
@@ -358,7 +358,7 @@ plymodel::plymodel(const char *filename, Material *mat)
 			return;
 
 		}
-		std::shared_ptr<hitable> tmp_polygon;
+		std::shared_ptr<Hittable> tmp_polygon;
 		if (l == 3) {
 			std::shared_ptr<triangle> tri(new triangle());
 			for (size_t j = 0; j < l; j++) {

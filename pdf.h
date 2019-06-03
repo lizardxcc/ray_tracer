@@ -8,7 +8,7 @@
 #include "object.h"
 #include "onb.h"
 
-class hitable;
+class Hittable;
 
 class pdf {
 	public:
@@ -55,9 +55,9 @@ class toward_object_pdf : public pdf {
 };
 
 
-class hitable_pdf : public pdf {
+class Hittable_pdf : public pdf {
 	public:
-		hitable_pdf(std::shared_ptr<hitable> p, const vec3& origin)
+		Hittable_pdf(std::shared_ptr<Hittable> p, const vec3& origin)
 		{
 			ptr = p;
 			o = origin;
@@ -67,7 +67,7 @@ class hitable_pdf : public pdf {
 		virtual double pdf_val(const vec3& direction) const;
 
 		vec3 o;
-		std::shared_ptr<hitable> ptr;
+		std::shared_ptr<Hittable> ptr;
 
 		std::unique_ptr<pdf> pdf_ptr;
 };

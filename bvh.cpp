@@ -1,11 +1,11 @@
 #include <algorithm>
 #include "bvh.h"
 
-//bool box_x_compare(const hitable& a, const hitable& b);
-//bool box_y_compare(const hitable& a, const hitable& b);
-//bool box_z_compare(const hitable& a, const hitable& b);
+//bool box_x_compare(const Hittable& a, const Hittable& b);
+//bool box_y_compare(const Hittable& a, const Hittable& b);
+//bool box_z_compare(const Hittable& a, const Hittable& b);
 
-bool box_x_compare(const std::shared_ptr<hitable> a, const std::shared_ptr<hitable> b)
+bool box_x_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hittable> b)
 {
 	aabb box_left, box_right;
 	if (!a->bounding_box(box_left) || !b->bounding_box(box_right)) {
@@ -14,7 +14,7 @@ bool box_x_compare(const std::shared_ptr<hitable> a, const std::shared_ptr<hitab
 
 	return (box_left.center.x() < box_right.center.x());
 }
-bool box_y_compare(const std::shared_ptr<hitable> a, const std::shared_ptr<hitable> b)
+bool box_y_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hittable> b)
 {
 	aabb box_left, box_right;
 	if (!a->bounding_box(box_left) || !b->bounding_box(box_right)) {
@@ -23,7 +23,7 @@ bool box_y_compare(const std::shared_ptr<hitable> a, const std::shared_ptr<hitab
 
 	return (box_left.center.y() < box_right.center.y());
 }
-bool box_z_compare(const std::shared_ptr<hitable> a, const std::shared_ptr<hitable> b)
+bool box_z_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hittable> b)
 {
 	aabb box_left, box_right;
 	if (!a->bounding_box(box_left) || !b->bounding_box(box_right)) {
@@ -33,7 +33,7 @@ bool box_z_compare(const std::shared_ptr<hitable> a, const std::shared_ptr<hitab
 	return (box_left.center.z() < box_right.center.z());
 }
 
-bvh_node::bvh_node(std::vector<std::shared_ptr<hitable> >& l)
+bvh_node::bvh_node(std::vector<std::shared_ptr<Hittable> >& l)
 {
 	int axis = int(3*drand48());
 	if (axis == 0) {
@@ -52,10 +52,10 @@ bvh_node::bvh_node(std::vector<std::shared_ptr<hitable> >& l)
 		left = l[0];
 		right = l[1];
 	} else {
-		std::vector<std::shared_ptr<hitable> > left_l(l.begin(), l.begin()+l.size()/2);
-		std::vector<std::shared_ptr<hitable> > right_l(l.begin()+l.size()/2, l.end());
-		left = std::shared_ptr<hitable>(new bvh_node(left_l));
-		right = std::shared_ptr<hitable>(new bvh_node(right_l));
+		std::vector<std::shared_ptr<Hittable> > left_l(l.begin(), l.begin()+l.size()/2);
+		std::vector<std::shared_ptr<Hittable> > right_l(l.begin()+l.size()/2, l.end());
+		left = std::shared_ptr<Hittable>(new bvh_node(left_l));
+		right = std::shared_ptr<Hittable>(new bvh_node(right_l));
 	}
 
 	aabb box_left, box_right;

@@ -5,7 +5,7 @@
 #include "vec3.h"
 #include "onb.h"
 #include "ray.h"
-#include "hitable.h"
+#include "Hittable.h"
 #include "spectrum.h"
 
 class MediumMaterial {
@@ -48,7 +48,7 @@ class Material {
 		}
 		//std::shared_ptr<MediumMaterial> mi;
 		MediumMaterial *mi = nullptr;
-		static std::vector<std::shared_ptr<hitable> > lights;
+		static std::vector<std::shared_ptr<Hittable> > lights;
 		bool light_flag = false;
 		bool specular_flag = false;
 };

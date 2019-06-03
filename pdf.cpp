@@ -96,12 +96,12 @@ double toward_object_pdf::pdf_val(const vec3& direction) const
 }
 
 
-vec3 hitable_pdf::generate() const
+vec3 Hittable_pdf::generate() const
 {
 	return pdf_ptr->generate();
 }
 
-double hitable_pdf::pdf_val(const vec3& direction) const
+double Hittable_pdf::pdf_val(const vec3& direction) const
 {
 	return pdf_ptr->pdf_val(direction);
 }

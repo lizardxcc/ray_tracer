@@ -1,7 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "hitable.h"
+#include "Hittable.h"
 #include "Material.h"
 #include "obj.h"
 #include "mtl.h"
@@ -9,7 +9,7 @@
 #include "aabb.h"
 #include "bvh.h"
 
-class sphere: public hitable {
+class sphere: public Hittable {
 	public:
 		sphere() { }
 		sphere(vec3 center, double r, Material *mat_ptr) : center(center), radius(r) {
@@ -22,7 +22,7 @@ class sphere: public hitable {
 		double radius;
 };
 
-class plane: public hitable {
+class plane: public Hittable {
 	public:
 		plane() { }
 		plane(vec3 somewhere, vec3 normal, Material *mat_ptr) : somewhere(somewhere), normal(normal) {
@@ -33,7 +33,7 @@ class plane: public hitable {
 		vec3 normal;
 };
 
-class rectangle : public hitable {
+class rectangle : public Hittable {
 	public:
 		rectangle() { }
 		rectangle(vec3 center, vec3 normal, vec3 width_dir, double width, double height, Material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height) {
@@ -49,7 +49,7 @@ class rectangle : public hitable {
 		double height;
 };
 
-class xy_rect : public hitable {
+class xy_rect : public Hittable {
 	public:
 		xy_rect() { }
 		xy_rect(double x0, double y0, double x1, double y1, double k, Material *mat) :
@@ -62,7 +62,7 @@ class xy_rect : public hitable {
 		double x0, x1, y0, y1, k;
 };
 
-class yz_rect : public hitable {
+class yz_rect : public Hittable {
 	public:
 		yz_rect() { }
 		yz_rect(double y0, double z0, double y1, double z1, double k, Material *mat) :
@@ -75,7 +75,7 @@ class yz_rect : public hitable {
 		double y0, y1, z0, z1, k;
 };
 
-class zx_rect : public hitable {
+class zx_rect : public Hittable {
 	public:
 		zx_rect() { }
 		zx_rect(double z0, double x0, double z1, double x1, double k, Material *mat) :
@@ -91,15 +91,15 @@ class zx_rect : public hitable {
 
 
 
-class flip_normals : public hitable {
+class flip_normals : public Hittable {
 	public:
-		flip_normals(hitable *p) : ptr(p) {}
+		flip_normals(Hittable *p) : ptr(p) {}
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		hitable *ptr;
+		Hittable *ptr;
 };
 
-class box : public hitable {
+class box : public Hittable {
 	public:
 		box() { }
 		box(const vec3& p0, const vec3& p1, Material *mat);
@@ -108,42 +108,42 @@ class box : public hitable {
 
 		vec3 pmin;
 		vec3 pmax;
-		hitable *list_ptr;
+		Hittable *list_ptr;
 };
 
 
-class translate : public hitable {
+class translate : public Hittable {
 	public:
-		translate(hitable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
+		translate(Hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 
-		hitable *ptr;
+		Hittable *ptr;
 		vec3 offset;
 };
 
 
-class objmodel : public hitable {
+class objmodel : public Hittable {
 	public:
 		objmodel(obj& o);
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		//std::vector<std::vector<hitable *>> models;
-		std::vector<std::shared_ptr<hitable> > models;
+		//std::vector<std::vector<Hittable *>> models;
+		std::vector<std::shared_ptr<Hittable> > models;
 		std::shared_ptr<bvh_node> bvh;
 };
 
-class plymodel : public hitable {
+class plymodel : public Hittable {
 	public:
 		plymodel(const char *filename, Material *mat);
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		ply p;
-		std::vector<std::shared_ptr<hitable> > polygon;
+		std::vector<std::shared_ptr<Hittable> > polygon;
 		bvh_node *pol;
 };
 
-class triangle : public hitable {
+class triangle : public Hittable {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -153,7 +153,7 @@ class triangle : public hitable {
 		vec3 face_normal;
 };
 
-class quadrilateral : public hitable {
+class quadrilateral : public Hittable {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;

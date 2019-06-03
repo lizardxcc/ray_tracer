@@ -231,7 +231,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 					int selectedLight = rnd() % Material::lights.size();
 					onb uvw_;
 					uvw_.build_from_w(rec.normal);
-					hitable_pdf pdf(Material::lights[selectedLight], rec.p);
+					Hittable_pdf pdf(Material::lights[selectedLight], rec.p);
 					vec3 generated_direction = pdf.generate();
 
 					HitRecord light_rec;
@@ -358,7 +358,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 		if (SampleMedium) {
 			std::random_device rnd;
 			int selectedLight = rnd() % Material::lights.size();
-			hitable_pdf pdf(Material::lights[selectedLight], _ray.point_at_parameter(medium_t));
+			Hittable_pdf pdf(Material::lights[selectedLight], _ray.point_at_parameter(medium_t));
 			vec3 generated_direction = pdf.generate();
 
 
@@ -456,7 +456,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 						int selectedLight = rnd() % Material::lights.size();
 						onb uvw_;
 						uvw_.build_from_w(rec.normal);
-						hitable_pdf pdf(Material::lights[selectedLight], rec.p);
+						Hittable_pdf pdf(Material::lights[selectedLight], rec.p);
 						vec3 generated_direction = pdf.generate();
 
 						HitRecord light_rec;
