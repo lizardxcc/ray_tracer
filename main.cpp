@@ -88,8 +88,6 @@ int main(void)
 	io.Fonts->AddFontFromFileTTF("/System/Library/Fonts/ヒラギノ角ゴシック W2.ttc", 14.0f, nullptr,
 	io.Fonts->GetGlyphRangesJapanese());
 
-	bool show_demo_window = true;
-	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.1f, 1.00f);
 
         int my_image_width = 200, my_image_height = 200;

@@ -65,7 +65,6 @@ bool obj::LoadObject(void)
 	//std::cout << s << std::endl;
 
 
-	size_t property_size = 0;
 	oldpos = file.tellg();
 	while (getline(file, line)) {
 		if (std::all_of(line.begin(), line.end(), isspace)) {
