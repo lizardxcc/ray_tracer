@@ -16,7 +16,7 @@ class objobject {
 		std::vector<std::vector<std::array<boost::optional<size_t>, 3> > > f;
 
 		std::string name;
-		std::string material_name;
+		std::string Material_name;
 		bool s;
 };
 

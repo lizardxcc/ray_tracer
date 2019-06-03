@@ -2,7 +2,7 @@
 #define OBJECT_H
 
 #include "hitable.h"
-#include "material.h"
+#include "Material.h"
 #include "obj.h"
 #include "mtl.h"
 #include "ply.h"
@@ -12,8 +12,8 @@
 class sphere: public hitable {
 	public:
 		sphere() { }
-		sphere(vec3 center, double r, material *mat_ptr) : center(center), radius(r) {
-			this->mat_ptr = std::shared_ptr<material>(mat_ptr);
+		sphere(vec3 center, double r, Material *mat_ptr) : center(center), radius(r) {
+			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double tmin, double tmux, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -25,8 +25,8 @@ class sphere: public hitable {
 class plane: public hitable {
 	public:
 		plane() { }
-		plane(vec3 somewhere, vec3 normal, material *mat_ptr) : somewhere(somewhere), normal(normal) {
-			this->mat_ptr = std::shared_ptr<material>(mat_ptr);
+		plane(vec3 somewhere, vec3 normal, Material *mat_ptr) : somewhere(somewhere), normal(normal) {
+			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double tmin, double tmux, hit_record& rec) const;
 		vec3 somewhere;
@@ -36,8 +36,8 @@ class plane: public hitable {
 class rectangle : public hitable {
 	public:
 		rectangle() { }
-		rectangle(vec3 center, vec3 normal, vec3 width_dir, double width, double height, material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height) {
-			this->mat_ptr = std::shared_ptr<material>(mat_ptr);
+		rectangle(vec3 center, vec3 normal, vec3 width_dir, double width, double height, Material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height) {
+			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
@@ -52,9 +52,9 @@ class rectangle : public hitable {
 class xy_rect : public hitable {
 	public:
 		xy_rect() { }
-		xy_rect(double x0, double y0, double x1, double y1, double k, material *mat) :
+		xy_rect(double x0, double y0, double x1, double y1, double k, Material *mat) :
 		x0(x0), x1(x1), y0(y0), y1(y1), k(k) {
-			mat_ptr = std::shared_ptr<material>(mat);
+			mat_ptr = std::shared_ptr<Material>(mat);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -65,9 +65,9 @@ class xy_rect : public hitable {
 class yz_rect : public hitable {
 	public:
 		yz_rect() { }
-		yz_rect(double y0, double z0, double y1, double z1, double k, material *mat) :
+		yz_rect(double y0, double z0, double y1, double z1, double k, Material *mat) :
 		y0(y0), y1(y1), z0(z0), z1(z1), k(k) {
-			mat_ptr = std::shared_ptr<material>(mat);
+			mat_ptr = std::shared_ptr<Material>(mat);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -78,9 +78,9 @@ class yz_rect : public hitable {
 class zx_rect : public hitable {
 	public:
 		zx_rect() { }
-		zx_rect(double z0, double x0, double z1, double x1, double k, material *mat) :
+		zx_rect(double z0, double x0, double z1, double x1, double k, Material *mat) :
 		z0(z0), z1(z1), x0(x0), x1(x1), k(k) {
-			mat_ptr = std::shared_ptr<material>(mat);
+			mat_ptr = std::shared_ptr<Material>(mat);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
@@ -102,7 +102,7 @@ class flip_normals : public hitable {
 class box : public hitable {
 	public:
 		box() { }
-		box(const vec3& p0, const vec3& p1, material *mat);
+		box(const vec3& p0, const vec3& p1, Material *mat);
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 
@@ -135,7 +135,7 @@ class objmodel : public hitable {
 
 class plymodel : public hitable {
 	public:
-		plymodel(const char *filename, material *mat);
+		plymodel(const char *filename, Material *mat);
 		virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 		virtual bool bounding_box(aabb& box) const;
 		ply p;

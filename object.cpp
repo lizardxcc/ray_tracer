@@ -24,7 +24,7 @@ std::unique_ptr<pdf> hitable::generate_pdf_object(const vec3& o)
 }
 
 
-void hitable::set_material(std::shared_ptr<material> mat)
+void hitable::set_Material(std::shared_ptr<Material> mat)
 {
 	mat_ptr = mat;
 }
@@ -236,7 +236,7 @@ bool flip_normals::bounding_box(aabb& box) const
 }
 
 
-box::box(const vec3& p0, const vec3& p1, material *ptr)
+box::box(const vec3& p0, const vec3& p1, Material *ptr)
 {
 	pmin = p0;
 	pmax = p1;
@@ -347,7 +347,7 @@ bool objmodel::bounding_box(aabb& box) const
 	return true;
 }
 
-plymodel::plymodel(const char *filename, material *mat)
+plymodel::plymodel(const char *filename, Material *mat)
 {
 	p.Load(filename);
 	polygon.resize(p.faces.size());
@@ -365,7 +365,7 @@ plymodel::plymodel(const char *filename, material *mat)
 				tri->v[j] = p.vertices[p.faces[i][j]][0];
 			}
 			//tri->normal = p.vertices[p.faces[i][0]][1];
-			tri->mat_ptr = std::shared_ptr<material>(mat);
+			tri->mat_ptr = std::shared_ptr<Material>(mat);
 			tmp_polygon = tri;
 		}
 		else if (l == 4) {
@@ -374,7 +374,7 @@ plymodel::plymodel(const char *filename, material *mat)
 				quad->v[j] = p.vertices[p.faces[i][j]][0];
 			}
 			quad->normal = p.vertices[p.faces[i][0]][1];
-			quad->mat_ptr = std::shared_ptr<material>(mat);
+			quad->mat_ptr = std::shared_ptr<Material>(mat);
 			tmp_polygon = quad;
 
 		}

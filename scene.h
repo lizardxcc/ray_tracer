@@ -70,7 +70,7 @@ class Scene {
 		GLubyte *img = nullptr;
 		int img_width = 500;
 		int img_height = 500;
-		int img_samples = 100;
+		int img_Samples = 100;
 		bool img_loaded = false;
 		GLuint my_opengl_texture;
 

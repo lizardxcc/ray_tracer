@@ -205,22 +205,22 @@ void Scene::Load(const char *objfilename, const char *matfilename)
 				//std::cout << x << " " << y << " " << z << std::endl;
 			}
 		}
-		std::shared_ptr<material> mat = renderer.material_loader.materials[renderer.material_loader.obj_mat_names[o]];
+		std::shared_ptr<Material> mat = renderer.Material_loader.Materials[renderer.Material_loader.obj_mat_names[o]];
 		if (mat == nullptr)
 			std::cout << "WARNING" << std::endl;
-		if (typeid(*mat) == typeid(lambertian)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<lambertian>(mat)->albedo);
+		if (typeid(*mat) == typeid(Lambertian)) {
+			vec3 col = r_rgb(std::dynamic_pointer_cast<Lambertian>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(dielectric)) {
+		} else if (typeid(*mat) == typeid(Dielectric)) {
 			colors.push_back(std::array<float, 3>({1.0f, 1.0f, 1.0f}));
-		} else if (typeid(*mat) == typeid(metal)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<metal>(mat)->albedo);
+		} else if (typeid(*mat) == typeid(Metal)) {
+			vec3 col = r_rgb(std::dynamic_pointer_cast<Metal>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(torrance_sparrow)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<torrance_sparrow>(mat)->albedo);
+		} else if (typeid(*mat) == typeid(TorranceSparrow)) {
+			vec3 col = r_rgb(std::dynamic_pointer_cast<TorranceSparrow>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(diffuse_light)) {
-			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<diffuse_light>(mat)->light_color));
+		} else if (typeid(*mat) == typeid(DiffuseLight)) {
+			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<DiffuseLight>(mat)->light_color));
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
 		} else {
 			colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
@@ -290,13 +290,13 @@ void Scene::RenderSceneWindow(void)
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Load test.obj")) {
 				if (!scene_loaded) {
-					Load("test.obj", "test.material");
+					Load("test.obj", "test.Material");
 					scene_loaded = true;
 				}
 			}
 			if (ImGui::MenuItem("Load test2.obj")) {
 				if (!scene_loaded) {
-					Load("test2.obj", "test2.material");
+					Load("test2.obj", "test2.Material");
 					scene_loaded = true;
 				}
 			}
@@ -450,7 +450,7 @@ void Scene::RenderPreviewWindow(void)
 				vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
 				//cam.set_camera(cameraPos, vlookat, cameraUp, 60, (double)img_width/img_height);
 				renderer.cam.set_camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
-				std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_samples);
+				std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_Samples);
 				t.detach();
 			}
 			ImGui::EndMenu();
@@ -465,7 +465,7 @@ void Scene::RenderPreviewWindow(void)
 	}
 	ImGui::SliderInt("Image Width", &img_width, 0, 2000);            // Edit 1 float using a slider from 0.0f to 1.0f
 	ImGui::SliderInt("Image Height", &img_height, 0, 2000);            // Edit 1 float using a slider from 0.0f to 1.0f
-	ImGui::SliderInt("Image Samples", &img_samples, 0, 1000);            // Edit 1 float using a slider from 0.0f to 1.0f
+	ImGui::SliderInt("Image Samples", &img_Samples, 0, 1000);            // Edit 1 float using a slider from 0.0f to 1.0f
 	if (renderer.img_updated) {
 		int nx = img_width;
 		int ny = img_height;
@@ -511,31 +511,31 @@ void Scene::RenderMaterialEditorWindow(void)
 	static int last_objecti = -1;
 	int objecti = activeObjectIndex-1;
 
-	const char *items[renderer.material_loader.materials.size()];
+	const char *items[renderer.Material_loader.Materials.size()];
 	static int cur_item = -1;
 	static int last_item = -1;
 	int i = 0;
-	for (const auto& m : renderer.material_loader.materials) {
+	for (const auto& m : renderer.Material_loader.Materials) {
 		items[i] = m.first.c_str();
 		if (objecti != last_objecti) {
-			if (m.first == renderer.material_loader.obj_mat_names[objecti]) {
+			if (m.first == renderer.Material_loader.obj_mat_names[objecti]) {
 				cur_item = i;
 			}
 		}
 		i++;
 	}
-	ImGui::Combo("select material", &cur_item, items, renderer.material_loader.materials.size());
+	ImGui::Combo("select Material", &cur_item, items, renderer.Material_loader.Materials.size());
 	if (objecti == last_objecti && cur_item != last_item) {
-		renderer.material_loader.obj_mat_names[objecti] = std::string(items[cur_item]);
+		renderer.Material_loader.obj_mat_names[objecti] = std::string(items[cur_item]);
 	}
 
-	auto it = renderer.material_loader.materials.find(items[cur_item]);
+	auto it = renderer.Material_loader.Materials.find(items[cur_item]);
 	char str[32] = "";
-	if (ImGui::InputText("Press Enter to add new material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
-		renderer.material_loader.materials[std::string(str)] = std::make_shared<lambertian>(Spectrum(1));
-		it = renderer.material_loader.materials.find(str);
-		cur_item = std::distance(renderer.material_loader.materials.begin(), it);
-		renderer.material_loader.obj_mat_names[objecti] = std::string(str);
+	if (ImGui::InputText("Press Enter to add new Material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		renderer.Material_loader.Materials[std::string(str)] = std::make_shared<Lambertian>(Spectrum(1));
+		it = renderer.Material_loader.Materials.find(str);
+		cur_item = std::distance(renderer.Material_loader.Materials.begin(), it);
+		renderer.Material_loader.obj_mat_names[objecti] = std::string(str);
 	}
 
 	if (cur_item != -1) {
@@ -545,28 +545,28 @@ void Scene::RenderMaterialEditorWindow(void)
 		if (cur_item != last_item)
 			last_model_item = -1;
 
-		std::shared_ptr<material> mat = it->second;
+		std::shared_ptr<Material> mat = it->second;
 		auto& id = typeid(*mat);
-		if (id == typeid(lambertian))
+		if (id == typeid(Lambertian))
 			cur_model_item = 0;
-		else if (id == typeid(dielectric))
+		else if (id == typeid(Dielectric))
 			cur_model_item = 1;
-		else if (id == typeid(metal))
+		else if (id == typeid(Metal))
 			cur_model_item = 2;
-		else if (id == typeid(torrance_sparrow))
+		else if (id == typeid(TorranceSparrow))
 			cur_model_item = 3;
-		else if (id == typeid(transparent))
+		else if (id == typeid(Transparent))
 			cur_model_item = 4;
-		else if (id == typeid(diffuse_light))
+		else if (id == typeid(DiffuseLight))
 			cur_model_item = 5;
 
 		ImGui::Combo("select model", &cur_model_item, model_items, sizeof(model_items)/sizeof(const char *));
 		if (cur_model_item == 0) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<lambertian>(Spectrum(1));
+				mat = std::make_shared<Lambertian>(Spectrum(1));
 				it->second = mat;
 			}
-			std::shared_ptr<lambertian> mat_ptr = std::dynamic_pointer_cast<lambertian>(mat);
+			std::shared_ptr<Lambertian> mat_ptr = std::dynamic_pointer_cast<Lambertian>(mat);
 			LambertianMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
@@ -576,20 +576,20 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 1) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<dielectric>(Spectrum(1.33333));
+				mat = std::make_shared<Dielectric>(Spectrum(1.33333));
 				it->second = mat;
 			}
-			std::shared_ptr<dielectric> mat_ptr = std::dynamic_pointer_cast<dielectric>(mat);
+			std::shared_ptr<Dielectric> mat_ptr = std::dynamic_pointer_cast<Dielectric>(mat);
 			DielectricMaterialEditor(mat_ptr);
 			colors[objecti][0] = 1.0;
 			colors[objecti][1] = 1.0;
 			colors[objecti][2] = 1.0;
 		} else if (cur_model_item == 2) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<metal>(Spectrum(1));
+				mat = std::make_shared<Metal>(Spectrum(1));
 				it->second = mat;
 			}
-			std::shared_ptr<metal> mat_ptr = std::dynamic_pointer_cast<metal>(mat);
+			std::shared_ptr<Metal> mat_ptr = std::dynamic_pointer_cast<Metal>(mat);
 			MetalMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
@@ -599,10 +599,10 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 3) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<torrance_sparrow>(Spectrum(1), 1.0);
+				mat = std::make_shared<TorranceSparrow>(Spectrum(1), 1.0);
 				it->second = mat;
 			}
-			std::shared_ptr<torrance_sparrow> mat_ptr = std::dynamic_pointer_cast<torrance_sparrow>(mat);
+			std::shared_ptr<TorranceSparrow> mat_ptr = std::dynamic_pointer_cast<TorranceSparrow>(mat);
 			MicrofacetMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
@@ -612,10 +612,10 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Microfacet", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 4) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<transparent>();
+				mat = std::make_shared<Transparent>();
 				it->second = mat;
 			}
-			std::shared_ptr<transparent> mat_ptr = std::dynamic_pointer_cast<transparent>(mat);
+			std::shared_ptr<Transparent> mat_ptr = std::dynamic_pointer_cast<Transparent>(mat);
 			TransparentMaterialEditor(mat_ptr);
 			//vec3 col = r_rgb(mat_ptr->albedo);
 			//ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
@@ -625,10 +625,10 @@ void Scene::RenderMaterialEditorWindow(void)
 			//ImGui::ColorButton("Microfacet", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 5) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<diffuse_light>(Spectrum(0.05));
+				mat = std::make_shared<DiffuseLight>(Spectrum(0.05));
 				it->second = mat;
 			}
-			std::shared_ptr<diffuse_light> mat_ptr = std::dynamic_pointer_cast<diffuse_light>(mat);
+			std::shared_ptr<DiffuseLight> mat_ptr = std::dynamic_pointer_cast<DiffuseLight>(mat);
 			LightMaterialEditor(mat_ptr);
 			vec3 col = unit_vector(r_rgb(mat_ptr->light_color));
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
@@ -643,10 +643,10 @@ void Scene::RenderMaterialEditorWindow(void)
 		if (mat->mi == nullptr) {
 			ImGui::Text("Not set");
 			if (ImGui::Button("Add Medium")) {
-				//mat->mi = static_cast<medium_material>(new homogenious());
-				//mat->mi = static_cast<medium_material>(new homogenious());
+				//mat->mi = static_cast<MediumMaterial>(new Homogenious());
+				//mat->mi = static_cast<MediumMaterial>(new Homogenious());
 				mat->mi = new henyey_greenstein(Spectrum(0.3), Spectrum(1.0), 0.0);
-				//mat->mi = new homogenious(Spectrum(0.5), Spectrum(1.0));
+				//mat->mi = new Homogenious(Spectrum(0.5), Spectrum(1.0));
 			}
 		} else {
 			ImGui::Text("set");
@@ -684,11 +684,11 @@ void Scene::RenderMaterialEditorWindow(void)
 
 		last_model_item = cur_model_item;
 		char str[32] = "";
-		if (ImGui::InputText("Save material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
-			renderer.material_loader.Write(str);
+		if (ImGui::InputText("Save Material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			renderer.Material_loader.Write(str);
 		}
-		//if (ImGui::Button("Save material")) {
-		//	//renderer.material_loader.Write("test.material");
+		//if (ImGui::Button("Save Material")) {
+		//	//renderer.Material_loader.Write("test.Material");
 		//}
 	}
 

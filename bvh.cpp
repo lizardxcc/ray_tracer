@@ -101,10 +101,10 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 }
 
 
-void bvh_node::set_material(std::shared_ptr<material> mat)
+void bvh_node::set_Material(std::shared_ptr<Material> mat)
 {
 	if (left != nullptr)
-		left->set_material(mat);
+		left->set_Material(mat);
 	if (right != nullptr)
-		right->set_material(mat);
+		right->set_Material(mat);
 }

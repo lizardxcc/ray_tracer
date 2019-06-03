@@ -17,8 +17,8 @@
 #include "ray.h"
 #include "camera.h"
 #include "hitablelist.h"
-#include "material.h"
-#include "materialfile.h"
+#include "Material.h"
+#include "Materialfile.h"
 #include "object.h"
 #include "spectrum.h"
 #include "scene.h"
@@ -100,7 +100,7 @@ int main(void)
 	}
 
 	Scene scene;
-	MaterialEditor material_editor;
+	MaterialEditor Material_editor;
 
 
 	while (!glfwWindowShouldClose(window))

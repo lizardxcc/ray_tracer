@@ -18,11 +18,11 @@ void Renderer::Load(const char *objfilename, const char *matfilename)
 	//for (const auto& s : obj_loader.mtl_file) {
 	//	mtl_loader.Load(s.c_str());
 	//}
-	material_loader.Load(matfilename);
+	Material_loader.Load(matfilename);
 	//for (int i = 0; i < obj_loader.objects.size(); i++) {
-	//	std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
-	//	//std::shared_ptr<material> mat = material_loader.materials.at(obj_loader.objects[i]->material_name);
-	//	//materials.push_back(mat);
+	//	std::cout << "name: " << obj_loader.objects[i]->Material_name << std::endl;
+	//	//std::shared_ptr<Material> mat = Material_loader.Materials.at(obj_loader.objects[i]->Material_name);
+	//	//Materials.push_back(mat);
 	//}
 	world = std::make_unique<objmodel>(obj_loader);
 }
@@ -31,7 +31,7 @@ void Renderer::Load(const char *objfilename, const char *matfilename)
 void Renderer::Clear(void)
 {
 	obj_loader.Clear();
-	material_loader.Clear();
+	Material_loader.Clear();
 	img_updated = false;
 }
 
@@ -39,14 +39,14 @@ void Renderer::Clear(void)
 void Renderer::RenderImage(int nx, int ny, int ns)
 {
 	orig_img.reset(new double[nx*ny*4]);
-	material::lights.clear();
+	Material::lights.clear();
 	for (int i = 0; i < world->models.size(); i++) {
-		//world->models[i]->set_material(std::shared_ptr<material>(materials[i]));
-		//auto mat = material_loader.materials[obj_loader.objects[i]->material_name];
-		auto mat = material_loader.materials[material_loader.obj_mat_names[i]];
-		world->models[i]->set_material(mat);
+		//world->models[i]->set_Material(std::shared_ptr<Material>(Materials[i]));
+		//auto mat = Material_loader.Materials[obj_loader.objects[i]->Material_name];
+		auto mat = Material_loader.Materials[Material_loader.obj_mat_names[i]];
+		world->models[i]->set_Material(mat);
 		if (mat->light_flag) {
-			material::lights.push_back(world->models[i]);
+			Material::lights.push_back(world->models[i]);
 		}
 	}
 
@@ -151,7 +151,7 @@ double Renderer::NaivePathTracing(const ray& r)
 		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
 		if (hit) {
-			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
+			radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
 		} else
 			break;
 
@@ -160,7 +160,7 @@ double Renderer::NaivePathTracing(const ray& r)
 		uvw.build_from_w(rec.normal);
 		vec3 generated_vi;
 		double wli;
-		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 		if (respawn)
 			beta *= (bxdf * abs(generated_vi.z()) / pdf);
 		double prr = 0.5;
@@ -196,7 +196,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 			
 
 		if (bounce == 0 || IsLastBounceSpecular)
-			radiance += beta * rec.mat_ptr->emitted(_ray, rec);
+			radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
 
 		// calculate direct lighting
 		if (rec.mat_ptr->specular_flag == false) {
@@ -207,7 +207,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 				uvw_.build_from_w(rec.normal);
 				uniform_pdf pdf(rec.normal);
 				vec3 generated_direction = pdf.generate();
-				//bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
+				//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
 				generated_vi = uvw_.worldtolocal(generated_direction);
 				bool respawn = true;
 				if (respawn) {
@@ -222,16 +222,16 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 						double bxdf, pdf_val;
 						pdf_val = pdf.pdf_val(generated_direction);
 						bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
-						radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
+						radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
 					}
 				}
 			} else {
 				if (rec.mat_ptr->light_flag == false) {
 					std::random_device rnd;
-					int selectedLight = rnd() % material::lights.size();
+					int selectedLight = rnd() % Material::lights.size();
 					onb uvw_;
 					uvw_.build_from_w(rec.normal);
-					hitable_pdf pdf(material::lights[selectedLight], rec.p);
+					hitable_pdf pdf(Material::lights[selectedLight], rec.p);
 					vec3 generated_direction = pdf.generate();
 
 					hit_record light_rec;
@@ -247,7 +247,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 						double wlo = _ray.central_wl;
 						double wli = wlo;
 						double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-						radiance += material::lights.size() * BxDF * (beta * light_rec.mat_ptr->emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
+						radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
 					}
 
 
@@ -266,7 +266,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 		onb uvw;
 		uvw.build_from_w(rec.normal);
 		{
-			respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+			respawn = rec.mat_ptr->Sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 			if (respawn) {
 				beta *= (bxdf * abs(generated_vi.z()) / pdf);
 				//if (rec.mat_ptr->specular_flag)
@@ -319,21 +319,21 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 		if (!hit)
 			break;
 
-		double sampleMedium = false;
+		double SampleMedium = false;
 		double medium_t;
-		medium_material *mi = nullptr;
+		MediumMaterial *mi = nullptr;
 		if (!inside_object_stack.empty()) {
-			std::shared_ptr<material> mat = material_loader.materials[material_loader.obj_mat_names[inside_object_stack.top()]];
+			std::shared_ptr<Material> mat = Material_loader.Materials[Material_loader.obj_mat_names[inside_object_stack.top()]];
 			mi = mat->mi;
 			if (mi != nullptr) {
 				const double sigma_t = mi->sigma_t.get(_ray.central_wl);
 				const double sigma_s = mi->albedo.get(_ray.central_wl);
 				double t = - log(1.0-drand48())/sigma_t / _ray.direction().length();
-				sampleMedium = t < rec.t;
-				if (!sampleMedium)
+				SampleMedium = t < rec.t;
+				if (!SampleMedium)
 					t = rec.t;
 				double tr = exp(-sigma_t * t * _ray.direction().length());
-				if (sampleMedium) {
+				if (SampleMedium) {
 					double pdf = sigma_t * tr;
 					beta *= (sigma_s * tr)/pdf;
 					medium_t = t;
@@ -355,10 +355,10 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 		vec3 scattered_point; // in world cooredinate
 		vec3 scattered_direction; // in world cooredinate
 
-		if (sampleMedium) {
+		if (SampleMedium) {
 			std::random_device rnd;
-			int selectedLight = rnd() % material::lights.size();
-			hitable_pdf pdf(material::lights[selectedLight], _ray.point_at_parameter(medium_t));
+			int selectedLight = rnd() % Material::lights.size();
+			hitable_pdf pdf(Material::lights[selectedLight], _ray.point_at_parameter(medium_t));
 			vec3 generated_direction = pdf.generate();
 
 
@@ -394,34 +394,34 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 				double pdf_val = pdf.pdf_val(generated_direction);
 				double wlo = _ray.central_wl;
 				double wli = wlo;
-				double p = mi->phase(generated_direction, wli, -_ray.direction(), wlo);
-				radiance += material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) / pdf_val;
+				double p = mi->Phase(generated_direction, wli, -_ray.direction(), wlo);
+				radiance += Material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) / pdf_val;
 			}
 
 			vec3 vi;
 			double wli;
-			double phase, pdf_val;
-			respawn = mi->sample_p(-_ray.direction(), _ray.central_wl, vi, wli, phase, pdf_val);
+			double Phase, pdf_val;
+			respawn = mi->Sample_p(-_ray.direction(), _ray.central_wl, vi, wli, Phase, pdf_val);
 			if (respawn) {
 				scattered_point = _ray.point_at_parameter(medium_t);
 				scattered_direction = vi;
-				//beta *= phase / pdf_val;
-				// don't need to calculate the term (phase / pdf_val) because it's
-				// guaranteed that scattered direction is sampled with a pdf which
-				// completely matches the phase function of the medium
-				scattering_coefficient = phase;
+				//beta *= Phase / pdf_val;
+				// don't need to calculate the term (Phase / pdf_val) because it's
+				// guaranteed that scattered direction is Sampled with a pdf which
+				// completely matches the Phase function of the medium
+				scattering_coefficient = Phase;
 			}
 
 
 
-			// sample new direction at medium
+			// Sample new direction at medium
 			IsLastBounceSpecular = false;
 
 			volume_bounce++;
 
 		} else { // surface interation
 			if (surface_bounce == 0 || IsLastBounceSpecular)
-				radiance += beta * rec.mat_ptr->emitted(_ray, rec);
+				radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
 
 			// calculate direct lighting
 			if (rec.mat_ptr->specular_flag == false) {
@@ -432,7 +432,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 					uvw_.build_from_w(rec.normal);
 					uniform_pdf pdf(rec.normal);
 					vec3 generated_direction = pdf.generate();
-					//bool respawn = rec.mat_ptr->sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
+					//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
 					generated_vi = uvw_.worldtolocal(generated_direction);
 					bool respawn = true;
 					if (respawn) {
@@ -447,16 +447,16 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 							double bxdf, pdf_val;
 							pdf_val = pdf.pdf_val(generated_direction);
 							bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
-							radiance += bxdf * (beta * tmp_rec.mat_ptr->emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
+							radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
 						}
 					}
 				} else {
 					if (rec.mat_ptr->light_flag == false) {
 						std::random_device rnd;
-						int selectedLight = rnd() % material::lights.size();
+						int selectedLight = rnd() % Material::lights.size();
 						onb uvw_;
 						uvw_.build_from_w(rec.normal);
-						hitable_pdf pdf(material::lights[selectedLight], rec.p);
+						hitable_pdf pdf(Material::lights[selectedLight], rec.p);
 						vec3 generated_direction = pdf.generate();
 
 						hit_record light_rec;
@@ -472,7 +472,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 							double wlo = _ray.central_wl;
 							double wli = wlo;
 							double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-							radiance += material::lights.size() * BxDF * (beta * light_rec.mat_ptr->emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
+							radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
 						}
 
 
@@ -491,7 +491,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 			onb uvw;
 			uvw.build_from_w(rec.normal);
 			{
-				respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+				respawn = rec.mat_ptr->Sample(rec, uvw, uvw.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 				if (respawn) {
 					beta *= (bxdf * abs(generated_vi.z()) / pdf);
 					scattered_point = rec.p;
@@ -555,14 +555,14 @@ double Renderer::GetRadiance(ray& r, int count)
 	hit_record rec;
 	double radiance = 0.0;
 	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
-		radiance += rec.mat_ptr->emitted(r, rec);
+		radiance += rec.mat_ptr->Emitted(r, rec);
 		double bxdf, pdf;
 
 		onb uvw;
 		uvw.build_from_w(rec.normal);
 		vec3 generated_vi;
 		double wli;
-		bool respawn = rec.mat_ptr->sample(rec, uvw, uvw.worldtolocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.worldtolocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 		double prr;
 		//if (respawn)
 		//	beta *= (bxdf * abs(generated_vi.z()) / pdf);

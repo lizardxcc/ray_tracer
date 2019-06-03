@@ -5,7 +5,7 @@
 #include "obj.h"
 #include "object.h"
 #include "camera.h"
-#include "materialfile.h"
+#include "Materialfile.h"
 
 class Renderer {
 	public:
@@ -20,9 +20,9 @@ class Renderer {
 		std::shared_ptr<double[]> orig_img;
 		//GLubyte *img = nullptr;
 		obj obj_loader;
-		MaterialLoader material_loader;
+		MaterialLoader Material_loader;
 		std::unique_ptr<objmodel> world;
-		//std::vector<std::shared_ptr<material> > materials;
+		//std::vector<std::shared_ptr<Material> > Materials;
 		lens_camera cam;
 		bool img_updated = false;
 };
