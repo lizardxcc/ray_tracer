@@ -356,9 +356,6 @@ void Scene::RenderScene(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glUseProgram(shaderProgram);
 
-	float timeValue = glfwGetTime();
-	float greenValue = std::sin(timeValue) / 2.0f + 0.5f;
-
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 	glm::mat4 projection;
