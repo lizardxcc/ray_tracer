@@ -35,7 +35,7 @@ bool AABB::Hit(const ray& r, double t_min, double t_max) const
 
 
 
-AABB surrounding_box(const AABB& box0, const AABB& box1)
+AABB SurroundingBox(const AABB& box0, const AABB& box1)
 {
 	vec3 min_p(std::min(box0.minp.x(), box1.minp.x()),
 	std::min(box0.minp.y(), box1.minp.y()),

@@ -62,7 +62,7 @@ BVHNode::BVHNode(std::vector<std::shared_ptr<Hittable> >& l)
 	if(!left->BoundingBox(box_left) || !right->BoundingBox(box_right)) {
 		std::cerr << "no bounding box in BVHNode constructor\n" << std::endl;
 	}
-	box = surrounding_box(box_left, box_right);
+	box = SurroundingBox(box_left, box_right);
 }
 
 

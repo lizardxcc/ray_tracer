@@ -25,5 +25,5 @@ class AABB {
 };
 
 
-AABB surrounding_box(const AABB& box0, const AABB& box1);
+AABB SurroundingBox(const AABB& box0, const AABB& box1);
 #endif

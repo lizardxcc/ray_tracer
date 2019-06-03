@@ -37,7 +37,7 @@ class henyey_greenstein : public MediumMaterial {
 
 class Material {
 	public:
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const {
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const {
 			return false;
 		}
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const {
@@ -56,7 +56,7 @@ class Material {
 class Lambertian : public Material {
 	public:
 		Lambertian(const Spectrum& a) : albedo(a) {}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
 
@@ -69,7 +69,7 @@ class Metal : public Material {
 		Metal(const Spectrum& a) : albedo(a) {
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
 		Spectrum albedo;
@@ -92,7 +92,7 @@ class Dielectric : public Material {
 		Dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 
 		double ref_B, ref_C;
 		Spectrum albedo;
@@ -101,10 +101,10 @@ class Dielectric : public Material {
 };
 
 
-class oren_nayar : public Material {
+class OrenNayar : public Material {
 	public:
-		oren_nayar(const Spectrum& albedo, double sigma) : albedo(albedo), sigma(sigma) {}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		OrenNayar(const Spectrum& albedo, double sigma) : albedo(albedo), sigma(sigma) {}
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		Spectrum albedo;
 		double sigma;
@@ -116,7 +116,7 @@ class TorranceSparrow : public Material {
 		TorranceSparrow(const Spectrum& albedo, double alpha) : albedo(albedo), alpha(alpha) {
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		double lambda(const vec3& v) const;
 		Spectrum albedo;
@@ -129,7 +129,7 @@ class Transparent : public Material {
 		{
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 };
 
 
@@ -151,7 +151,7 @@ class MixMaterial : public Material {
 			this->fac = fac;
 		}
 		virtual double Emitted(const ray& r, const HitRecord& rec) const;
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		const Material *mat1, *mat2;
 		double fac;

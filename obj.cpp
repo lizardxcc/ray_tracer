@@ -123,7 +123,7 @@ bool obj::LoadObject(void)
 				obj->f.push_back(face);
 			} else if (s == "usemtl") {
 				iss >> s;
-				obj->Material_name = s;
+				obj->material_name = s;
 			} else if (s == "s") {
 				iss >> s;
 				if (s == "off") {

@@ -33,7 +33,7 @@ bool Hittable_list::BoundingBox(AABB& box) const
 
 	for (size_t i = 0; i < list.size(); i++) {
 		if (list[i]->BoundingBox(temp_box)) {
-			box = surrounding_box(box, temp_box);
+			box = SurroundingBox(box, temp_box);
 		} else {
 			return false;
 		}

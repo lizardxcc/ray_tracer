@@ -221,9 +221,9 @@ bool MaterialLoader::LoadMaterial(void)
 
 	getline(file, line);
 	std::istringstream iss(line);
-	std::string s, Material_name;
+	std::string s, material_name;
 	iss >> s;
-	iss >> Material_name;
+	iss >> material_name;
 
 	if (getline(file, line)) {
 		if (line == "lambertian") {
@@ -280,7 +280,7 @@ bool MaterialLoader::LoadMaterial(void)
 			return false;
 		}
 	}
-	Materials[Material_name] = mtl;
+	Materials[material_name] = mtl;
 	return true;
 }
 

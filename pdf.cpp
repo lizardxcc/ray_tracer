@@ -48,7 +48,7 @@ vec3 CosineWeightedRandomOnUnitHemiSphere(void)
 
 vec3 UniformPdf::Generate() const
 {
-	return uvw.localtoworld(RandomOnUnitHemiSphere());
+	return uvw.LocalToWorld(RandomOnUnitHemiSphere());
 }
 
 
@@ -64,7 +64,7 @@ double UniformPdf::PdfVal(const vec3& direction) const
 
 vec3 CosinePdf::Generate() const
 {
-	return uvw.localtoworld(CosineWeightedRandomOnUnitHemiSphere());
+	return uvw.LocalToWorld(CosineWeightedRandomOnUnitHemiSphere());
 }
 
 
@@ -82,7 +82,7 @@ double CosinePdf::PdfVal(const vec3& direction) const
 
 vec3 toward_object_Pdf::Generate() const
 {
-	return uvw.localtoworld(RandomOnUnitHemiSphere(theta_max));
+	return uvw.LocalToWorld(RandomOnUnitHemiSphere(theta_max));
 }
 
 double toward_object_Pdf::PdfVal(const vec3& direction) const

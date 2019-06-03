@@ -1,34 +1,34 @@
 #include "onb.h"
 
-vec3 onb::u() const
+vec3 ONB::u() const
 {
 	return axis[0];
 }
-vec3 onb::v() const
+vec3 ONB::v() const
 {
 	return axis[1];
 }
-vec3 onb::w() const
+vec3 ONB::w() const
 {
 	return axis[2];
 }
 
-vec3 onb::localtoworld(double a, double b, double c) const
+vec3 ONB::LocalToWorld(double a, double b, double c) const
 {
 	return a*u() + b*v() + c*w();
 }
 
-vec3 onb::localtoworld(const vec3& a) const
+vec3 ONB::LocalToWorld(const vec3& a) const
 {
 	return a.x()*u() + a.y()*v() + a.z()*w();
 }
 
-vec3 onb::worldtolocal(const vec3& a) const
+vec3 ONB::WorldToLocal(const vec3& a) const
 {
 	return vec3(dot(u(), a), dot(v(), a), dot(w(), a));
 }
 
-void onb::build_from_w(const vec3& n)
+void ONB::BuildFromW(const vec3& n)
 {
 	axis[2] = unit_vector(n);
 	vec3 a;

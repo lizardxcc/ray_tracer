@@ -1,10 +1,10 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-class camera {
+class Camera {
 	public:
-		camera(){}
-		camera(vec3 lookfrom, vec3 axis, double rot_theta, double vfov, double aspect)
+		Camera(){}
+		Camera(vec3 lookfrom, vec3 axis, double rot_theta, double vfov, double aspect)
 		{
 			vec3 forward = vec3(0, -1, 0);
 			vec3 up = vec3(0, 0, -1);
@@ -21,7 +21,7 @@ class camera {
 			horizontal = 2 * half_width * u;
 			vertical = 2 * half_height * v;
 		}
-		void set_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
+		void set_Camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
 		{
 			double theta = vfov*M_PI/180;
 			double half_height = tan(theta/2);
@@ -47,9 +47,9 @@ class camera {
 };
 
 
-class pinhole_camera {
+class PinholeCamera {
 	public:
-		pinhole_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d)
+		PinholeCamera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d)
 		{
 			double half_height = 0.5;
 			double half_width = aspect * half_height;
@@ -78,10 +78,10 @@ class pinhole_camera {
 };
 
 
-class lens_camera {
+class LensCamera {
 	public:
-		lens_camera() {}
-		void set_camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d, double focal_length, double aperture)
+		LensCamera() {}
+		void set_Camera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d, double focal_length, double aperture)
 		{
 			double half_height = 0.5;
 			double half_width = aspect * half_height;

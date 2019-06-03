@@ -445,8 +445,8 @@ void Scene::RenderPreviewWindow(void)
 				vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
 				glm::vec3 lookat = cameraPos + cameraFront;
 				vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
-				//cam.set_camera(cameraPos, vlookat, cameraUp, 60, (double)img_width/img_height);
-				renderer.cam.set_camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
+				//cam.set_Camera(cameraPos, vlookat, cameraUp, 60, (double)img_width/img_height);
+				renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
 				std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_Samples);
 				t.detach();
 			}

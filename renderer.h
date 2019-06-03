@@ -23,7 +23,7 @@ class Renderer {
 		MaterialLoader Material_loader;
 		std::unique_ptr<ObjModel> world;
 		//std::vector<std::shared_ptr<Material> > Materials;
-		lens_camera cam;
+		LensCamera cam;
 		bool img_updated = false;
 };
 

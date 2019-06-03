@@ -20,37 +20,37 @@ class UniformPdf : public Pdf {
 	public:
 		UniformPdf(const vec3& w)
 		{
-			uvw.build_from_w(w);
+			uvw.BuildFromW(w);
 		}
 		virtual vec3 Generate() const;
 		virtual double PdfVal(const vec3& direction) const;
 
-		onb uvw;
+		ONB uvw;
 };
 
 class CosinePdf : public Pdf {
 	public:
 		CosinePdf(const vec3& w)
 		{
-			uvw.build_from_w(w);
+			uvw.BuildFromW(w);
 		}
 		virtual vec3 Generate() const;
 		virtual double PdfVal(const vec3& direction) const;
 
-		onb uvw;
+		ONB uvw;
 };
 
 class toward_object_Pdf : public Pdf {
 	public:
 		toward_object_Pdf(const vec3& w, double _theta_max)
 		{
-			uvw.build_from_w(w);
+			uvw.BuildFromW(w);
 			this->theta_max = _theta_max;
 		}
 		virtual vec3 Generate() const;
 		virtual double PdfVal(const vec3& direction) const;
 
-		onb uvw;
+		ONB uvw;
 		double theta_max;
 };
 
