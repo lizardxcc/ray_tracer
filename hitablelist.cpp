@@ -1,8 +1,8 @@
 #include "hitablelist.h"
 
-bool hitable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool hitable_list::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
-	hit_record temp_rec;
+	HitRecord temp_rec;
 	bool hit_anything = false;
 	double closest_so_far = t_max;
 	for (int i = 0; i < list.size(); i++) {

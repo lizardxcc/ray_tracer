@@ -142,7 +142,7 @@ int i, j, s;
 
 double Renderer::NaivePathTracing(const ray& r)
 {
-	hit_record rec;
+	HitRecord rec;
 	ray _ray = r;
 	double radiance = 0.0;
 	double beta = 1.0;
@@ -182,7 +182,7 @@ double Renderer::NaivePathTracing(const ray& r)
 
 double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 {
-	hit_record rec;
+	HitRecord rec;
 	ray _ray = r;
 	double radiance = 0.0;
 	double beta = 1.0;
@@ -212,7 +212,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 				bool respawn = true;
 				if (respawn) {
 					ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
-					hit_record tmp_rec;
+					HitRecord tmp_rec;
 					scattered.central_wl = _ray.central_wl;
 					scattered.min_wl = _ray.min_wl;
 					scattered.max_wl = _ray.max_wl;
@@ -234,7 +234,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 					hitable_pdf pdf(Material::lights[selectedLight], rec.p);
 					vec3 generated_direction = pdf.generate();
 
-					hit_record light_rec;
+					HitRecord light_rec;
 					ray scattered = ray(rec.p, generated_direction);
 					scattered.central_wl = _ray.central_wl;
 					scattered.min_wl = _ray.min_wl;
@@ -304,7 +304,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 
 double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 {
-	hit_record rec;
+	HitRecord rec;
 	ray _ray = r;
 	double radiance = 0.0;
 	double beta = 1.0;
@@ -363,7 +363,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 
 
 
-			hit_record tmp_rec;
+			HitRecord tmp_rec;
 			ray scattered = ray(_ray.point_at_parameter(medium_t), generated_direction);
 			scattered.central_wl = _ray.central_wl;
 			scattered.min_wl = _ray.min_wl;
@@ -437,7 +437,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 					bool respawn = true;
 					if (respawn) {
 						ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
-						hit_record tmp_rec;
+						HitRecord tmp_rec;
 						scattered.central_wl = _ray.central_wl;
 						scattered.min_wl = _ray.min_wl;
 						scattered.max_wl = _ray.max_wl;
@@ -459,7 +459,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 						hitable_pdf pdf(Material::lights[selectedLight], rec.p);
 						vec3 generated_direction = pdf.generate();
 
-						hit_record light_rec;
+						HitRecord light_rec;
 						ray scattered = ray(rec.p, generated_direction);
 						scattered.central_wl = _ray.central_wl;
 						scattered.min_wl = _ray.min_wl;
@@ -552,7 +552,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 
 double Renderer::GetRadiance(ray& r, int count)
 {
-	hit_record rec;
+	HitRecord rec;
 	double radiance = 0.0;
 	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
 		radiance += rec.mat_ptr->Emitted(r, rec);

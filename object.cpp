@@ -30,7 +30,7 @@ void hitable::set_Material(std::shared_ptr<Material> mat)
 }
 
 
-bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool sphere::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double a = pow(r.B.length(), 2.0);
 	double b_prime = dot(r.A - center, r.B);
@@ -79,7 +79,7 @@ std::unique_ptr<pdf> sphere::generate_pdf_object(const vec3& o)
 }
 
 
-bool plane::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool plane::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(somewhere - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -94,7 +94,7 @@ bool plane::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 	return false;
 }
 
-bool rectangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool rectangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(center - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -131,7 +131,7 @@ bool rectangle::bounding_box(aabb& box) const
 	return false;
 }
 
-bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool xy_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().z()) / r.direction().z();
 	if (t < t_min || t > t_max)
@@ -150,7 +150,7 @@ bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 
 	return true;
 }
-bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool yz_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().x()) / r.direction().x();
 	if (t < t_min || t > t_max)
@@ -169,7 +169,7 @@ bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) con
 
 	return true;
 }
-bool zx_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool zx_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().y()) / r.direction().y();
 	if (t < t_min || t > t_max)
@@ -222,7 +222,7 @@ bool zx_rect::bounding_box(aabb& box) const
 //}
 
 
-bool flip_normals::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool flip_normals::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	if (ptr->hit(r, t_min, t_max, rec)) {
 		rec.normal = -rec.normal;
@@ -252,7 +252,7 @@ box::box(const vec3& p0, const vec3& p1, Material *ptr)
 	list_ptr = new hitable_list(list);
 }
 
-bool box::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool box::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	return list_ptr->hit(r, t_min, t_max, rec);
 }
@@ -265,7 +265,7 @@ bool box::bounding_box(aabb& box) const
 }
 
 
-bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool translate::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	ray moved_r(r.origin() - offset, r.direction());
 	if (ptr->hit(moved_r, t_min, t_max, rec)) {
@@ -336,7 +336,7 @@ objmodel::objmodel(obj& o)
 	bvh = std::make_shared<bvh_node>(v);
 }
 
-bool objmodel::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool objmodel::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	return bvh->hit(r, t_min, t_max, rec);
 }
@@ -384,7 +384,7 @@ plymodel::plymodel(const char *filename, Material *mat)
 	pol = new bvh_node(polygon);
 }
 
-bool plymodel::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool plymodel::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	//bool hit_flag = false;
 	//rec.t = t_max;
@@ -425,7 +425,7 @@ bool plymodel::bounding_box(aabb& box) const
 }
 
 
-bool triangle::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool triangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), face_normal) / dot(r.direction(), face_normal);
 	if (t >= t_min && t <= t_max) {
@@ -481,7 +481,7 @@ std::unique_ptr<pdf> triangle::generate_pdf_object(const vec3& o)
 	return std::make_unique<toward_object_pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
 
-bool quadrilateral::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
+bool quadrilateral::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {

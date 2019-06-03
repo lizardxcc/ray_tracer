@@ -85,7 +85,7 @@ double Lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 	return albedo.get(wli)/M_PI;
 }
 
-bool Lambertian::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Lambertian::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 	cosine_pdf pdf(rec.normal);
 
@@ -106,7 +106,7 @@ double Metal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 
 	return albedo.get(wli) / abs(vi.z());
 }
-bool Metal::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Metal::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 	vi[0] = -vo[0];
 	vi[1] = -vo[1];
@@ -117,7 +117,7 @@ bool Metal::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double
 	return true;
 }
 /*
-double Metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered) const
+double Metal::BxDF(const ray& r_in, const HitRecord& rec, const ray& scattered) const
 {
 	double cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	if (cosine < 0)
@@ -129,7 +129,7 @@ double Metal::BxDF(const ray& r_in, const hit_record& rec, const ray& scattered)
 	return pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100);
 }
 
-bool Metal::Sample(const ray& r_in, const hit_record& rec, ray& scattered, double& BxDF, double& pdf) const
+bool Metal::Sample(const ray& r_in, const HitRecord& rec, ray& scattered, double& BxDF, double& pdf) const
 {
 	vec3 normal = unit_vector(rec.normal);
 	vec3 v = unit_vector(r_in.direction());
@@ -147,7 +147,7 @@ bool Metal::Sample(const ray& r_in, const hit_record& rec, ray& scattered, doubl
 */
 
 /*
-bool Metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, double& pdf) const
+bool Metal::scatter(const ray& r_in, const HitRecord& rec, vec3& attenuation, ray& scattered, double& pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
 	vec3 reflected = reflect(v, rec.normal);
@@ -166,7 +166,7 @@ double shlick(double theta, double n1, double n2)
 }
 
 
-bool Dielectric::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Dielectric::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 
 	//double ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
@@ -249,7 +249,7 @@ double oren_nayar::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 	return albedo.get(wli)/M_PI * (A + B * tmp * sin_alpha * tan_beta);
 }
 
-bool oren_nayar::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool oren_nayar::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 	std::vector<std::unique_ptr<pdf> > pdf_list(lights.size()+1);
 	pdf_list[0] = std::make_unique<uniform_pdf>(rec.normal);
@@ -300,7 +300,7 @@ double TorranceSparrow::lambda(const vec3& v) const
 	return 0.5 * (std::erf(a) - 1.0 + exp(a*a) / (a * sqrt(M_PI)));
 }
 
-bool TorranceSparrow::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool TorranceSparrow::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 	cosine_pdf pdf(rec.normal);
 
@@ -316,7 +316,7 @@ bool TorranceSparrow::Sample(const hit_record& rec, const onb& uvw, const vec3& 
 
 
 
-bool Transparent::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Transparent::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 	wli = wlo;
 	BxDF = 1.0/abs(vo.z());
@@ -325,12 +325,12 @@ bool Transparent::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, 
 	return true;
 }
 
-double DiffuseLight::Emitted(const ray& r, const hit_record& rec) const
+double DiffuseLight::Emitted(const ray& r, const HitRecord& rec) const
 {
 	return light_color.integrate(r.min_wl, r.max_wl);
 }
 
-double MixMaterial::Emitted(const ray& r, const hit_record& rec) const
+double MixMaterial::Emitted(const ray& r, const HitRecord& rec) const
 {
 	if (drand48() < fac) {
 		return mat2->Emitted(r, rec);
@@ -339,7 +339,7 @@ double MixMaterial::Emitted(const ray& r, const hit_record& rec) const
 	}
 }
 
-bool MixMaterial::Sample(const hit_record& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool MixMaterial::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
 {
 	if (drand48() < fac) {
 		return mat2->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdf_val);
@@ -357,7 +357,7 @@ double MixMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo)
 	}
 }
 /*
-double straight_light::Emitted(double u, double v, const ray& r_in, const hit_record& rec) const
+double straight_light::Emitted(double u, double v, const ray& r_in, const HitRecord& rec) const
 {
 	//return light_color*pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 20.0);
 	//return light_color.integrate(r_in.min_wl, r_in.max_wl) * pow(dot(unit_vector(rec.normal), -unit_vector(r_in.direction())), 100);
