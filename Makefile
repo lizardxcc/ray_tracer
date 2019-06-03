@@ -35,9 +35,11 @@ INCLUDE += `pkg-config glfw3 --cflags`
 INCLUDE += `pkg-config glm --cflags`
 
 CFLAGS = -Wall -Wextra
+CFLAGS += -Wno-unused-parameter
 CFLAGS += -MMD -MP
 
 CXXFLAGS = -Wall -Wextra -std=c++14
+CXXFLAGS += -Wno-unused-parameter
 CXXFLAGS += -MMD -MP
 
 CXXFLAGS += $(INCLUDE)
