@@ -374,7 +374,7 @@ void Scene::RenderScene(void)
 		glStencilFunc(GL_ALWAYS, o+1, -1);
 		glBindVertexArray(VAOs[o]);
 		glm::mat4 tmpModel = model;
-		//model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
+		//model = glm::Translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
 		//glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 		glm::mat3 normalModel = glm::mat3(model);

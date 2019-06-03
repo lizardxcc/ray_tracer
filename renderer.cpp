@@ -24,7 +24,7 @@ void Renderer::Load(const char *objfilename, const char *matfilename)
 	//	//std::shared_ptr<Material> mat = Material_loader.Materials.at(obj_loader.objects[i]->Material_name);
 	//	//Materials.push_back(mat);
 	//}
-	world = std::make_unique<objmodel>(obj_loader);
+	world = std::make_unique<ObjModel>(obj_loader);
 }
 
 

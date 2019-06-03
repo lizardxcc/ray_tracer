@@ -21,7 +21,7 @@ class Renderer {
 		//GLubyte *img = nullptr;
 		obj obj_loader;
 		MaterialLoader Material_loader;
-		std::unique_ptr<objmodel> world;
+		std::unique_ptr<ObjModel> world;
 		//std::vector<std::shared_ptr<Material> > Materials;
 		lens_camera cam;
 		bool img_updated = false;

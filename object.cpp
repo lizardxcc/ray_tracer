@@ -131,7 +131,7 @@ bool Rectangle::BoundingBox(aabb& box) const
 	return false;
 }
 
-bool xy_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool XYRect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().z()) / r.direction().z();
 	if (t < t_min || t > t_max)
@@ -150,7 +150,7 @@ bool xy_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 
 	return true;
 }
-bool yz_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool YZRect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().x()) / r.direction().x();
 	if (t < t_min || t > t_max)
@@ -169,7 +169,7 @@ bool yz_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 
 	return true;
 }
-bool zx_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool ZXRect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().y()) / r.direction().y();
 	if (t < t_min || t > t_max)
@@ -190,22 +190,22 @@ bool zx_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 }
 
 
-bool xy_rect::BoundingBox(aabb& box) const
+bool XYRect::BoundingBox(aabb& box) const
 {
 	box = aabb(vec3(x0, y0, k - 0.001), vec3(x1, y1, k + 0.001));
 	return true;
 }
-bool yz_rect::BoundingBox(aabb& box) const
+bool YZRect::BoundingBox(aabb& box) const
 {
 	box = aabb(vec3(k - 0.001, y0, z0), vec3(k + 0.001, y1, z1));
 	return true;
 }
-bool zx_rect::BoundingBox(aabb& box) const
+bool ZXRect::BoundingBox(aabb& box) const
 {
 	box = aabb(vec3(x0, k - 0.001, z0), vec3(x1, k + 0.001, z1));
 	return true;
 }
-//double zx_rect::generate_Pdf_dir(const vec3& o, vec3& direction)
+//double ZXRect::generate_Pdf_dir(const vec3& o, vec3& direction)
 //{
 //	vec3 random_point_on_rect = vec3(
 //	x0 + drand48()*(x1-x0),
@@ -222,7 +222,7 @@ bool zx_rect::BoundingBox(aabb& box) const
 //}
 
 
-bool flip_normals::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool FlipNormals::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	if (ptr->Hit(r, t_min, t_max, rec)) {
 		rec.normal = -rec.normal;
@@ -230,7 +230,7 @@ bool flip_normals::Hit(const ray& r, double t_min, double t_max, HitRecord& rec)
 	} else
 		return false;
 }
-bool flip_normals::BoundingBox(aabb& box) const
+bool FlipNormals::BoundingBox(aabb& box) const
 {
 	return ptr->BoundingBox(box);
 }
@@ -242,12 +242,12 @@ box::box(const vec3& p0, const vec3& p1, Material *ptr)
 	pmax = p1;
 
 	std::vector<std::shared_ptr<Hittable> > list;
-	list.push_back(std::make_shared<xy_rect>(p0.x(), p0.y(), p1.x(), p1.y(), p1.z(), ptr));
-	list.push_back(std::make_shared<flip_normals>(new xy_rect(p0.x(), p0.y(), p1.x(), p1.y(), p0.z(), ptr)));
-	list.push_back(std::make_shared<zx_rect>(p0.z(), p0.x(), p1.z(), p1.x(), p1.y(), ptr));
-	list.push_back(std::make_shared<flip_normals>(new zx_rect(p0.z(), p0.x(), p1.z(), p1.x(), p0.y(), ptr)));
-	list.push_back(std::make_shared<yz_rect>(p0.y(), p0.z(), p1.y(), p1.z(), p1.x(), ptr));
-	list.push_back(std::make_shared<flip_normals>(new yz_rect(p0.y(), p0.z(), p1.y(), p1.z(), p0.x(), ptr)));
+	list.push_back(std::make_shared<XYRect>(p0.x(), p0.y(), p1.x(), p1.y(), p1.z(), ptr));
+	list.push_back(std::make_shared<FlipNormals>(new XYRect(p0.x(), p0.y(), p1.x(), p1.y(), p0.z(), ptr)));
+	list.push_back(std::make_shared<ZXRect>(p0.z(), p0.x(), p1.z(), p1.x(), p1.y(), ptr));
+	list.push_back(std::make_shared<FlipNormals>(new ZXRect(p0.z(), p0.x(), p1.z(), p1.x(), p0.y(), ptr)));
+	list.push_back(std::make_shared<YZRect>(p0.y(), p0.z(), p1.y(), p1.z(), p1.x(), ptr));
+	list.push_back(std::make_shared<FlipNormals>(new YZRect(p0.y(), p0.z(), p1.y(), p1.z(), p0.x(), ptr)));
 
 	list_ptr = new Hittable_list(list);
 }
@@ -265,7 +265,7 @@ bool box::BoundingBox(aabb& box) const
 }
 
 
-bool translate::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Translate::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	ray moved_r(r.origin() - offset, r.direction());
 	if (ptr->Hit(moved_r, t_min, t_max, rec)) {
@@ -274,7 +274,7 @@ bool translate::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) co
 	} else
 		return false;
 }
-bool translate::BoundingBox(aabb& box) const
+bool Translate::BoundingBox(aabb& box) const
 {
 	if (ptr->BoundingBox(box)) {
 		box.minp += offset;
@@ -287,7 +287,7 @@ bool translate::BoundingBox(aabb& box) const
 }
 
 
-objmodel::objmodel(obj& o)
+ObjModel::ObjModel(obj& o)
 {
 	models.resize(o.objects.size());
 	for (size_t i = 0; i < o.objects.size(); i++) {
@@ -336,18 +336,18 @@ objmodel::objmodel(obj& o)
 	bvh = std::make_shared<bvh_node>(v);
 }
 
-bool objmodel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool ObjModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	return bvh->Hit(r, t_min, t_max, rec);
 }
-bool objmodel::BoundingBox(aabb& box) const
+bool ObjModel::BoundingBox(aabb& box) const
 {
 	box = bvh->box;
 
 	return true;
 }
 
-plymodel::plymodel(const char *filename, Material *mat)
+PlyModel::PlyModel(const char *filename, Material *mat)
 {
 	p.Load(filename);
 	polygon.resize(p.faces.size());
@@ -384,7 +384,7 @@ plymodel::plymodel(const char *filename, Material *mat)
 	pol = new bvh_node(polygon);
 }
 
-bool plymodel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool PlyModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	//bool hit_flag = false;
 	//rec.t = t_max;
@@ -400,7 +400,7 @@ bool plymodel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 }
 
 
-bool plymodel::BoundingBox(aabb& box) const
+bool PlyModel::BoundingBox(aabb& box) const
 {
 	aabb temp_box;
 	if (polygon.size() == 0) {

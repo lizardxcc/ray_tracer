@@ -49,10 +49,10 @@ class Rectangle : public Hittable {
 		double height;
 };
 
-class xy_rect : public Hittable {
+class XYRect : public Hittable {
 	public:
-		xy_rect() { }
-		xy_rect(double x0, double y0, double x1, double y1, double k, Material *mat) :
+		XYRect() { }
+		XYRect(double x0, double y0, double x1, double y1, double k, Material *mat) :
 		x0(x0), x1(x1), y0(y0), y1(y1), k(k) {
 			mat_ptr = std::shared_ptr<Material>(mat);
 		};
@@ -62,10 +62,10 @@ class xy_rect : public Hittable {
 		double x0, x1, y0, y1, k;
 };
 
-class yz_rect : public Hittable {
+class YZRect : public Hittable {
 	public:
-		yz_rect() { }
-		yz_rect(double y0, double z0, double y1, double z1, double k, Material *mat) :
+		YZRect() { }
+		YZRect(double y0, double z0, double y1, double z1, double k, Material *mat) :
 		y0(y0), y1(y1), z0(z0), z1(z1), k(k) {
 			mat_ptr = std::shared_ptr<Material>(mat);
 		};
@@ -75,10 +75,10 @@ class yz_rect : public Hittable {
 		double y0, y1, z0, z1, k;
 };
 
-class zx_rect : public Hittable {
+class ZXRect : public Hittable {
 	public:
-		zx_rect() { }
-		zx_rect(double z0, double x0, double z1, double x1, double k, Material *mat) :
+		ZXRect() { }
+		ZXRect(double z0, double x0, double z1, double x1, double k, Material *mat) :
 		z0(z0), z1(z1), x0(x0), x1(x1), k(k) {
 			mat_ptr = std::shared_ptr<Material>(mat);
 		};
@@ -91,9 +91,9 @@ class zx_rect : public Hittable {
 
 
 
-class flip_normals : public Hittable {
+class FlipNormals : public Hittable {
 	public:
-		flip_normals(Hittable *p) : ptr(p) {}
+		FlipNormals(Hittable *p) : ptr(p) {}
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool BoundingBox(aabb& box) const;
 		Hittable *ptr;
@@ -112,9 +112,9 @@ class box : public Hittable {
 };
 
 
-class translate : public Hittable {
+class Translate : public Hittable {
 	public:
-		translate(Hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
+		Translate(Hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool BoundingBox(aabb& box) const;
 
@@ -123,9 +123,9 @@ class translate : public Hittable {
 };
 
 
-class objmodel : public Hittable {
+class ObjModel : public Hittable {
 	public:
-		objmodel(obj& o);
+		ObjModel(obj& o);
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool BoundingBox(aabb& box) const;
 		//std::vector<std::vector<Hittable *>> models;
@@ -133,9 +133,9 @@ class objmodel : public Hittable {
 		std::shared_ptr<bvh_node> bvh;
 };
 
-class plymodel : public Hittable {
+class PlyModel : public Hittable {
 	public:
-		plymodel(const char *filename, Material *mat);
+		PlyModel(const char *filename, Material *mat);
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool BoundingBox(aabb& box) const;
 		ply p;
