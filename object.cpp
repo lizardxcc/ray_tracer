@@ -249,7 +249,7 @@ box::box(const vec3& p0, const vec3& p1, Material *ptr)
 	list.push_back(std::make_shared<YZRect>(p0.y(), p0.z(), p1.y(), p1.z(), p1.x(), ptr));
 	list.push_back(std::make_shared<FlipNormals>(new YZRect(p0.y(), p0.z(), p1.y(), p1.z(), p0.x(), ptr)));
 
-	list_ptr = new Hittable_list(list);
+	list_ptr = new HittableList(list);
 }
 
 bool box::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const

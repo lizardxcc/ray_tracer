@@ -5,10 +5,10 @@
 #include "Hittable.h"
 #include "bvh.h"
 
-class Hittable_list: public Hittable {
+class HittableList: public Hittable {
 	public:
-	Hittable_list() { }
-	Hittable_list(std::vector<std::shared_ptr<Hittable> > l)
+	HittableList() { }
+	HittableList(std::vector<std::shared_ptr<Hittable> > l)
 	{
 		list = l;
 	}

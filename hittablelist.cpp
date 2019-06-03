@@ -1,6 +1,6 @@
 #include "hittablelist.h"
 
-bool Hittable_list::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool HittableList::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	HitRecord temp_rec;
 	bool hit_anything = false;
@@ -18,7 +18,7 @@ bool Hittable_list::Hit(const ray& r, double t_min, double t_max, HitRecord& rec
 
 
 
-bool Hittable_list::BoundingBox(AABB& box) const
+bool HittableList::BoundingBox(AABB& box) const
 {
 	AABB temp_box;
 	if (list.size() == 0) {
