@@ -15,7 +15,7 @@ class Filter {
 class BiliteralFilter : public Filter {
 	public:
 		BiliteralFilter(double *img, int width, int height);
-		void FilterImage(void);
+		void FilterImage(void) override;
 		double sigma_d;
 		double sigma_r;
 		int window;

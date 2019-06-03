@@ -23,15 +23,15 @@ class MediumMaterial {
 class Homogenious : public MediumMaterial {
 	public:
 		Homogenious(const Spectrum& sigma_t, const Spectrum& albedo) : MediumMaterial(sigma_t, albedo) {}
-		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdfval) const;
-		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdfval) const override;
+		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 };
 
 class HenyeyGreenstein : public MediumMaterial {
 	public:
 		HenyeyGreenstein(const Spectrum& sigma_t, const Spectrum& albedo, double g) : MediumMaterial(sigma_t, albedo), g(g) {}
-		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdfval) const;
-		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& phase, double& pdfval) const override;
+		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		double g;
 };
 
@@ -56,8 +56,8 @@ class Material {
 class Lambertian : public Material {
 	public:
 		Lambertian(const Spectrum& a) : albedo(a) {}
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 
 
 		Spectrum albedo;
@@ -69,8 +69,8 @@ class Metal : public Material {
 		Metal(const Spectrum& a) : albedo(a) {
 			specular_flag = true;
 		}
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 
 		Spectrum albedo;
 		double fuzz;
@@ -92,7 +92,7 @@ class Dielectric : public Material {
 		Dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
 			specular_flag = true;
 		}
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 
 		double ref_B, ref_C;
 		Spectrum albedo;
@@ -104,8 +104,8 @@ class Dielectric : public Material {
 class OrenNayar : public Material {
 	public:
 		OrenNayar(const Spectrum& albedo, double sigma) : albedo(albedo), sigma(sigma) {}
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		Spectrum albedo;
 		double sigma;
 };
@@ -116,8 +116,8 @@ class TorranceSparrow : public Material {
 		TorranceSparrow(const Spectrum& albedo, double alpha) : albedo(albedo), alpha(alpha) {
 			specular_flag = true;
 		}
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		double lambda(const vec3& v) const;
 		Spectrum albedo;
 		double alpha;
@@ -129,14 +129,14 @@ class Transparent : public Material {
 		{
 			specular_flag = true;
 		}
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 };
 
 
 class DiffuseLight : public Material {
 	public:
 		DiffuseLight(Spectrum color) : light_color(color) {}
-		double Emitted(const ray& r, const HitRecord& rec) const;
+		double Emitted(const ray& r, const HitRecord& rec) const override;
 		Spectrum light_color;
 };
 
@@ -150,9 +150,9 @@ class MixMaterial : public Material {
 			this->mat2 = mat2;
 			this->fac = fac;
 		}
-		double Emitted(const ray& r, const HitRecord& rec) const;
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		double Emitted(const ray& r, const HitRecord& rec) const override;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		const Material *mat1, *mat2;
 		double fac;
 };

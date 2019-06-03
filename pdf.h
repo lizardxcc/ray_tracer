@@ -22,8 +22,8 @@ class UniformPdf : public Pdf {
 		{
 			uvw.BuildFromW(w);
 		}
-		vec3 Generate() const;
-		double PdfVal(const vec3& direction) const;
+		vec3 Generate() const override;
+		double PdfVal(const vec3& direction) const override;
 
 		ONB uvw;
 };
@@ -34,8 +34,8 @@ class CosinePdf : public Pdf {
 		{
 			uvw.BuildFromW(w);
 		}
-		vec3 Generate() const;
-		double PdfVal(const vec3& direction) const;
+		vec3 Generate() const override;
+		double PdfVal(const vec3& direction) const override;
 
 		ONB uvw;
 };
@@ -47,8 +47,8 @@ class toward_object_Pdf : public Pdf {
 			uvw.BuildFromW(w);
 			this->theta_max = _theta_max;
 		}
-		vec3 Generate() const;
-		double PdfVal(const vec3& direction) const;
+		vec3 Generate() const override;
+		double PdfVal(const vec3& direction) const override;
 
 		ONB uvw;
 		double theta_max;
@@ -63,8 +63,8 @@ class HittablePdf : public Pdf {
 			o = origin;
 			pdf_ptr = p->GeneratePdfObject(origin);
 		}
-		vec3 Generate() const;
-		double PdfVal(const vec3& direction) const;
+		vec3 Generate() const override;
+		double PdfVal(const vec3& direction) const override;
 
 		vec3 o;
 		std::shared_ptr<Hittable> ptr;
@@ -79,8 +79,8 @@ class MixturePdf : public Pdf {
 		{
 		}
 
-		vec3 Generate() const;
-		double PdfVal(const vec3& direction) const;
+		vec3 Generate() const override;
+		double PdfVal(const vec3& direction) const override;
 
 		std::vector<std::unique_ptr<Pdf> > pdf_list;
 };
