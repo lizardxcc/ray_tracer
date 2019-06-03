@@ -16,7 +16,7 @@ class Sphere: public Hittable {
 			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 		};
 		virtual bool Hit(const ray& r, double tmin, double tmux, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
 		vec3 center;
 		double radius;
@@ -41,7 +41,7 @@ class Rectangle : public Hittable {
 		};
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		vec3 center;
 		vec3 normal;
 		vec3 width_dir;
@@ -57,7 +57,7 @@ class XYRect : public Hittable {
 			mat_ptr = std::shared_ptr<Material>(mat);
 		};
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 
 		double x0, x1, y0, y1, k;
 };
@@ -70,7 +70,7 @@ class YZRect : public Hittable {
 			mat_ptr = std::shared_ptr<Material>(mat);
 		};
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 
 		double y0, y1, z0, z1, k;
 };
@@ -83,7 +83,7 @@ class ZXRect : public Hittable {
 			mat_ptr = std::shared_ptr<Material>(mat);
 		};
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		//virtual double generate_Pdf_dir(const vec3& o, vec3& direction);
 
 		double z0, z1, x0, x1, k;
@@ -95,7 +95,7 @@ class FlipNormals : public Hittable {
 	public:
 		FlipNormals(Hittable *p) : ptr(p) {}
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		Hittable *ptr;
 };
 
@@ -104,7 +104,7 @@ class box : public Hittable {
 		box() { }
 		box(const vec3& p0, const vec3& p1, Material *mat);
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 
 		vec3 pmin;
 		vec3 pmax;
@@ -116,7 +116,7 @@ class Translate : public Hittable {
 	public:
 		Translate(Hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 
 		Hittable *ptr;
 		vec3 offset;
@@ -127,7 +127,7 @@ class ObjModel : public Hittable {
 	public:
 		ObjModel(obj& o);
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		//std::vector<std::vector<Hittable *>> models;
 		std::vector<std::shared_ptr<Hittable> > models;
 		std::shared_ptr<bvh_node> bvh;
@@ -137,7 +137,7 @@ class PlyModel : public Hittable {
 	public:
 		PlyModel(const char *filename, Material *mat);
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		ply p;
 		std::vector<std::shared_ptr<Hittable> > polygon;
 		bvh_node *pol;
@@ -146,7 +146,7 @@ class PlyModel : public Hittable {
 class Triangle : public Hittable {
 	public:
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
 		vec3 v[3];
 		vec3 normal[3];
@@ -156,7 +156,7 @@ class Triangle : public Hittable {
 class Quadrilateral : public Hittable {
 	public:
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual bool BoundingBox(aabb& box) const;
+		virtual bool BoundingBox(AABB& box) const;
 		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
 		vec3 v[4];
 		vec3 normal;

@@ -18,9 +18,9 @@ bool Hittable_list::Hit(const ray& r, double t_min, double t_max, HitRecord& rec
 
 
 
-bool Hittable_list::BoundingBox(aabb& box) const
+bool Hittable_list::BoundingBox(AABB& box) const
 {
-	aabb temp_box;
+	AABB temp_box;
 	if (list.size() == 0) {
 		return false;
 	}

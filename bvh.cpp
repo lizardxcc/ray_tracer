@@ -7,7 +7,7 @@
 
 bool box_x_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hittable> b)
 {
-	aabb box_left, box_right;
+	AABB box_left, box_right;
 	if (!a->BoundingBox(box_left) || !b->BoundingBox(box_right)) {
 		std::cerr << "no bounding box in box_x_compare()" << std::endl;
 	}
@@ -16,7 +16,7 @@ bool box_x_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hitt
 }
 bool box_y_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hittable> b)
 {
-	aabb box_left, box_right;
+	AABB box_left, box_right;
 	if (!a->BoundingBox(box_left) || !b->BoundingBox(box_right)) {
 		std::cerr << "no bounding box in box_x_compare()" << std::endl;
 	}
@@ -25,7 +25,7 @@ bool box_y_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hitt
 }
 bool box_z_compare(const std::shared_ptr<Hittable> a, const std::shared_ptr<Hittable> b)
 {
-	aabb box_left, box_right;
+	AABB box_left, box_right;
 	if (!a->BoundingBox(box_left) || !b->BoundingBox(box_right)) {
 		std::cerr << "no bounding box in box_x_compare()" << std::endl;
 	}
@@ -58,7 +58,7 @@ bvh_node::bvh_node(std::vector<std::shared_ptr<Hittable> >& l)
 		right = std::shared_ptr<Hittable>(new bvh_node(right_l));
 	}
 
-	aabb box_left, box_right;
+	AABB box_left, box_right;
 	if(!left->BoundingBox(box_left) || !right->BoundingBox(box_right)) {
 		std::cerr << "no bounding box in bvh_node constructor\n" << std::endl;
 	}
@@ -66,7 +66,7 @@ bvh_node::bvh_node(std::vector<std::shared_ptr<Hittable> >& l)
 }
 
 
-bool bvh_node::BoundingBox(aabb& b) const
+bool bvh_node::BoundingBox(AABB& b) const
 {
 	b = box;
 	return true;

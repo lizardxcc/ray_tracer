@@ -14,7 +14,7 @@ inline double ffmax(double a, double b)
 	return a > b ? a : b;
 }
 
-bool aabb::Hit(const ray& r, double t_min, double t_max) const
+bool AABB::Hit(const ray& r, double t_min, double t_max) const
 {
 	for (int i = 0; i < 3; i++) {
 		double t0 = ffmin(
@@ -35,7 +35,7 @@ bool aabb::Hit(const ray& r, double t_min, double t_max) const
 
 
 
-aabb surrounding_box(const aabb& box0, const aabb& box1)
+AABB surrounding_box(const AABB& box0, const AABB& box1)
 {
 	vec3 min_p(std::min(box0.minp.x(), box1.minp.x()),
 	std::min(box0.minp.y(), box1.minp.y()),
@@ -43,7 +43,7 @@ aabb surrounding_box(const aabb& box0, const aabb& box1)
 	vec3 max_p(std::max(box0.maxp.x(), box1.maxp.x()),
 	std::max(box0.maxp.y(), box1.maxp.y()),
 	std::max(box0.maxp.z(), box1.maxp.z()));
-	return aabb(min_p, max_p);
+	return AABB(min_p, max_p);
 }
 
 

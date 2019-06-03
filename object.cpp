@@ -13,7 +13,7 @@
 //}
 std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 {
-	aabb box;
+	AABB box;
 	if (BoundingBox(box)) {
 		vec3 v = box.center - o;
 		double r = (box.center-box.minp).length();
@@ -62,9 +62,9 @@ bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 	return false;
 }
 
-bool Sphere::BoundingBox(aabb& box) const
+bool Sphere::BoundingBox(AABB& box) const
 {
-	box = aabb(
+	box = AABB(
 		center - vec3(radius, radius, radius),
 		center + vec3(radius, radius, radius)
 	);
@@ -126,7 +126,7 @@ std::unique_ptr<Pdf> Rectangle::GeneratePdfObject(const vec3& o)
 	return std::make_unique<toward_object_Pdf>(unit_vector(v), atan2(r, v.length()));
 }
 
-bool Rectangle::BoundingBox(aabb& box) const
+bool Rectangle::BoundingBox(AABB& box) const
 {
 	return false;
 }
@@ -190,19 +190,19 @@ bool ZXRect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 }
 
 
-bool XYRect::BoundingBox(aabb& box) const
+bool XYRect::BoundingBox(AABB& box) const
 {
-	box = aabb(vec3(x0, y0, k - 0.001), vec3(x1, y1, k + 0.001));
+	box = AABB(vec3(x0, y0, k - 0.001), vec3(x1, y1, k + 0.001));
 	return true;
 }
-bool YZRect::BoundingBox(aabb& box) const
+bool YZRect::BoundingBox(AABB& box) const
 {
-	box = aabb(vec3(k - 0.001, y0, z0), vec3(k + 0.001, y1, z1));
+	box = AABB(vec3(k - 0.001, y0, z0), vec3(k + 0.001, y1, z1));
 	return true;
 }
-bool ZXRect::BoundingBox(aabb& box) const
+bool ZXRect::BoundingBox(AABB& box) const
 {
-	box = aabb(vec3(x0, k - 0.001, z0), vec3(x1, k + 0.001, z1));
+	box = AABB(vec3(x0, k - 0.001, z0), vec3(x1, k + 0.001, z1));
 	return true;
 }
 //double ZXRect::generate_Pdf_dir(const vec3& o, vec3& direction)
@@ -230,7 +230,7 @@ bool FlipNormals::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) 
 	} else
 		return false;
 }
-bool FlipNormals::BoundingBox(aabb& box) const
+bool FlipNormals::BoundingBox(AABB& box) const
 {
 	return ptr->BoundingBox(box);
 }
@@ -258,9 +258,9 @@ bool box::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 }
 
 
-bool box::BoundingBox(aabb& box) const
+bool box::BoundingBox(AABB& box) const
 {
-	box = aabb(pmin, pmax);
+	box = AABB(pmin, pmax);
 	return true;
 }
 
@@ -274,7 +274,7 @@ bool Translate::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) co
 	} else
 		return false;
 }
-bool Translate::BoundingBox(aabb& box) const
+bool Translate::BoundingBox(AABB& box) const
 {
 	if (ptr->BoundingBox(box)) {
 		box.minp += offset;
@@ -340,7 +340,7 @@ bool ObjModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 {
 	return bvh->Hit(r, t_min, t_max, rec);
 }
-bool ObjModel::BoundingBox(aabb& box) const
+bool ObjModel::BoundingBox(AABB& box) const
 {
 	box = bvh->box;
 
@@ -400,9 +400,9 @@ bool PlyModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 }
 
 
-bool PlyModel::BoundingBox(aabb& box) const
+bool PlyModel::BoundingBox(AABB& box) const
 {
-	aabb temp_box;
+	AABB temp_box;
 	if (polygon.size() == 0) {
 		return false;
 	}
@@ -448,7 +448,7 @@ bool Triangle::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 
 
 
-bool Triangle::BoundingBox(aabb& box) const
+bool Triangle::BoundingBox(AABB& box) const
 {
 	vec3 minp = vec3(
 	std::min(v[0].x(), std::min(v[1].x(), v[2].x())),
@@ -467,7 +467,7 @@ bool Triangle::BoundingBox(aabb& box) const
 			maxp.e[i] += 0.0001;
 		}
 	}
-	box = aabb(minp, maxp);
+	box = AABB(minp, maxp);
 	return true;
 }
 
@@ -510,7 +510,7 @@ bool Quadrilateral::Hit(const ray& r, double t_min, double t_max, HitRecord& rec
 
 
 
-bool Quadrilateral::BoundingBox(aabb& box) const
+bool Quadrilateral::BoundingBox(AABB& box) const
 {
 	vec3 minp = vec3(
 	std::min({v[0].x(), v[1].x(), v[2].x(), v[3].x()}),
@@ -530,7 +530,7 @@ bool Quadrilateral::BoundingBox(aabb& box) const
 		}
 	}
 
-	box = aabb(minp, maxp);
+	box = AABB(minp, maxp);
 	return true;
 }
 

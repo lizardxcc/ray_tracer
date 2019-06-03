@@ -405,7 +405,7 @@ void Scene::RenderScene(void)
 			glReadPixels(x, 480-y-1, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
 			activeObjectIndex = index;
 			if (index != 0) {
-				aabb box;
+				AABB box;
 				if (renderer.world->models[index-1]->BoundingBox(box)) {
 					glm::vec3 v(box.center[0], box.center[1], box.center[2]);
 					float a = glm::length(v-cameraPos);

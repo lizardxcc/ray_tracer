@@ -23,7 +23,7 @@ class Hittable: public std::enable_shared_from_this<Hittable> {
 	public:
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const = 0;
 		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
-		virtual bool BoundingBox(aabb& box) const = 0;
+		virtual bool BoundingBox(AABB& box) const = 0;
 		virtual void set_Material(std::shared_ptr<Material> mat);
 		std::shared_ptr<Material> mat_ptr;
 		unsigned int object_id;

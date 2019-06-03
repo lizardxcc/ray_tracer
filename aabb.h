@@ -4,13 +4,13 @@
 #include "vec3.h"
 #include "ray.h"
 
-class aabb {
+class AABB {
 	public:
-		aabb()
+		AABB()
 		{
 		}
 
-		aabb(const vec3& a, const vec3& b)
+		AABB(const vec3& a, const vec3& b)
 		{
 			minp = a;
 			maxp = b;
@@ -25,5 +25,5 @@ class aabb {
 };
 
 
-aabb surrounding_box(const aabb& box0, const aabb& box1);
+AABB surrounding_box(const AABB& box0, const AABB& box1);
 #endif
