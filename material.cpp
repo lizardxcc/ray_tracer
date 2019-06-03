@@ -24,14 +24,14 @@ bool Homogenious::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, do
 	return true;
 }
 
-double henyey_greenstein::Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const
+double HenyeyGreenstein::Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	const double cos_theta = dot(vi, vo);
 	const double denom = 1.0+g*g+2.0*g*cos_theta;
 	return (1.0-g*g)/(denom*sqrt(denom)*(4.0 * M_PI));
 }
 
-bool henyey_greenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const
+bool HenyeyGreenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const
 {
 	double phi = 2.0 * M_PI * drand48();
 	double square = (1.0-g*g)/(1.0-g+2.0*g*drand48());

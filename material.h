@@ -27,9 +27,9 @@ class Homogenious : public MediumMaterial {
 		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 };
 
-class henyey_greenstein : public MediumMaterial {
+class HenyeyGreenstein : public MediumMaterial {
 	public:
-		henyey_greenstein(const Spectrum& sigma_t, const Spectrum& albedo, double g) : MediumMaterial(sigma_t, albedo), g(g) {}
+		HenyeyGreenstein(const Spectrum& sigma_t, const Spectrum& albedo, double g) : MediumMaterial(sigma_t, albedo), g(g) {}
 		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const;
 		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		double g;

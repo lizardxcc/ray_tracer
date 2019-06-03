@@ -642,7 +642,7 @@ void Scene::RenderMaterialEditorWindow(void)
 			if (ImGui::Button("Add Medium")) {
 				//mat->mi = static_cast<MediumMaterial>(new Homogenious());
 				//mat->mi = static_cast<MediumMaterial>(new Homogenious());
-				mat->mi = new henyey_greenstein(Spectrum(0.3), Spectrum(1.0), 0.0);
+				mat->mi = new HenyeyGreenstein(Spectrum(0.3), Spectrum(1.0), 0.0);
 				//mat->mi = new Homogenious(Spectrum(0.5), Spectrum(1.0));
 			}
 		} else {
@@ -674,7 +674,7 @@ void Scene::RenderMaterialEditorWindow(void)
 			}
 			const double min = -1.0;
 			const double max = 1.0;
-			henyey_greenstein *mi_ptr = dynamic_cast<henyey_greenstein *>(mat->mi);
+			HenyeyGreenstein *mi_ptr = dynamic_cast<HenyeyGreenstein *>(mat->mi);
 			ImGui::SliderScalar("g ([-1:backward, 1:forward] scattering)", ImGuiDataType_Double, &mi_ptr->g, &min, &max, "%f");
 
 		}
