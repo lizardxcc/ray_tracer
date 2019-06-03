@@ -14,7 +14,7 @@ inline double ffmax(double a, double b)
 	return a > b ? a : b;
 }
 
-bool aabb::hit(const ray& r, double t_min, double t_max) const
+bool aabb::Hit(const ray& r, double t_min, double t_max) const
 {
 	for (int i = 0; i < 3; i++) {
 		double t0 = ffmin(

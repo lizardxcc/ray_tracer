@@ -72,12 +72,12 @@ bool bvh_node::BoundingBox(aabb& b) const
 	return true;
 }
 
-bool bvh_node::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool bvh_node::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
-	if (box.hit(r, t_min, t_max)) {
+	if (box.Hit(r, t_min, t_max)) {
 		HitRecord left_rec, right_rec;
-		bool hit_left = left->hit(r, t_min, t_max, left_rec);
-		bool hit_right = right->hit(r, t_min, t_max, right_rec);
+		bool hit_left = left->Hit(r, t_min, t_max, left_rec);
+		bool hit_right = right->Hit(r, t_min, t_max, right_rec);
 
 		if (hit_left && hit_right) {
 			if (left_rec.t < right_rec.t) {

@@ -12,7 +12,7 @@ class Hittable_list: public Hittable {
 	{
 		list = l;
 	}
-	virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
+	virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 	virtual bool BoundingBox(aabb& box) const;
 
 	std::vector<std::shared_ptr<Hittable> > list;

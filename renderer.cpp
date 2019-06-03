@@ -147,7 +147,7 @@ double Renderer::NaivePathTracing(const ray& r)
 	double radiance = 0.0;
 	double beta = 1.0;
 	while (1) {
-		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
 		if (hit) {
 			radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
@@ -188,7 +188,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 	int bounce = 0;
 	bool IsLastBounceSpecular = false;
 	while (1) {
-		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
 		if (!hit)
 			break;
@@ -217,7 +217,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 					wli = _ray.central_wl;
 
 					HitRecord tmp_rec;
-					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
+					bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 					if (hit) {
 						double bxdf, pdfval;
 						pdfval = pdf.PdfVal(generated_direction);
@@ -239,7 +239,7 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 					scattered.central_wl = _ray.central_wl;
 					scattered.min_wl = _ray.min_wl;
 					scattered.max_wl = _ray.max_wl;
-					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
+					bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 					if (hit) {
 						double pdfval = pdf.PdfVal(generated_direction);
 						vec3 vi = uvw_.worldtolocal(generated_direction);
@@ -314,7 +314,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 
 	std::stack<unsigned int> inside_object_stack;
 	while (1) {
-		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
 		if (!hit)
 			break;
@@ -373,7 +373,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 			unsigned int medium_object_id = inside_object_stack.top();
 			vec3 last_smoke_point;
 			while (true) {
-				bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
+				bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 				hit_anything = hit;
 				if (!hit)
 					break;
@@ -443,7 +443,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 						wli = _ray.central_wl;
 						HitRecord tmp_rec;
 
-						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
+						bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 						if (hit) {
 							double bxdf, pdfval;
 							pdfval = pdf.PdfVal(generated_direction);
@@ -465,7 +465,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 						scattered.central_wl = _ray.central_wl;
 						scattered.min_wl = _ray.min_wl;
 						scattered.max_wl = _ray.max_wl;
-						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
+						bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 						if (hit) {
 							double pdfval = pdf.PdfVal(generated_direction);
 							vec3 vi = uvw_.worldtolocal(generated_direction);
@@ -555,7 +555,7 @@ double Renderer::GetRadiance(ray& r, int count)
 {
 	HitRecord rec;
 	double radiance = 0.0;
-	if (world->hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
+	if (world->Hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
 		radiance += rec.mat_ptr->Emitted(r, rec);
 		double bxdf, pdf;
 

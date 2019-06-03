@@ -17,7 +17,7 @@ class aabb {
 			center = (a+b)/2.0;
 		}
 
-		bool hit(const ray& r, double t_min, double t_max) const;
+		bool Hit(const ray& r, double t_min, double t_max) const;
 
 		vec3 minp;
 		vec3 maxp;

@@ -30,7 +30,7 @@ void Hittable::set_Material(std::shared_ptr<Material> mat)
 }
 
 
-bool Sphere::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double a = pow(r.B.length(), 2.0);
 	double b_prime = dot(r.A - center, r.B);
@@ -79,7 +79,7 @@ std::unique_ptr<Pdf> Sphere::GeneratePdfObject(const vec3& o)
 }
 
 
-bool Plane::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Plane::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(somewhere - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -94,7 +94,7 @@ bool Plane::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 	return false;
 }
 
-bool Rectangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Rectangle::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(center - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -131,7 +131,7 @@ bool Rectangle::BoundingBox(aabb& box) const
 	return false;
 }
 
-bool xy_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool xy_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().z()) / r.direction().z();
 	if (t < t_min || t > t_max)
@@ -150,7 +150,7 @@ bool xy_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 
 	return true;
 }
-bool yz_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool yz_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().x()) / r.direction().x();
 	if (t < t_min || t > t_max)
@@ -169,7 +169,7 @@ bool yz_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 
 	return true;
 }
-bool zx_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool zx_rect::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = (k - r.origin().y()) / r.direction().y();
 	if (t < t_min || t > t_max)
@@ -222,9 +222,9 @@ bool zx_rect::BoundingBox(aabb& box) const
 //}
 
 
-bool flip_normals::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool flip_normals::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
-	if (ptr->hit(r, t_min, t_max, rec)) {
+	if (ptr->Hit(r, t_min, t_max, rec)) {
 		rec.normal = -rec.normal;
 		return true;
 	} else
@@ -252,9 +252,9 @@ box::box(const vec3& p0, const vec3& p1, Material *ptr)
 	list_ptr = new Hittable_list(list);
 }
 
-bool box::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool box::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
-	return list_ptr->hit(r, t_min, t_max, rec);
+	return list_ptr->Hit(r, t_min, t_max, rec);
 }
 
 
@@ -265,10 +265,10 @@ bool box::BoundingBox(aabb& box) const
 }
 
 
-bool translate::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool translate::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	ray moved_r(r.origin() - offset, r.direction());
-	if (ptr->hit(moved_r, t_min, t_max, rec)) {
+	if (ptr->Hit(moved_r, t_min, t_max, rec)) {
 		rec.p += offset;
 		return true;
 	} else
@@ -336,9 +336,9 @@ objmodel::objmodel(obj& o)
 	bvh = std::make_shared<bvh_node>(v);
 }
 
-bool objmodel::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool objmodel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
-	return bvh->hit(r, t_min, t_max, rec);
+	return bvh->Hit(r, t_min, t_max, rec);
 }
 bool objmodel::BoundingBox(aabb& box) const
 {
@@ -384,19 +384,19 @@ plymodel::plymodel(const char *filename, Material *mat)
 	pol = new bvh_node(polygon);
 }
 
-bool plymodel::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool plymodel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	//bool hit_flag = false;
 	//rec.t = t_max;
 	//for (size_t i = 0; i < polygon.size(); i++) {
-	//	if (polygon[i]->hit(r, t_min, rec.t, rec)) {
+	//	if (polygon[i]->Hit(r, t_min, rec.t, rec)) {
 	//		hit_flag = true;
 	//	}
 	//}
 
 	//return hit_flag;
-	//return pol.hit(r, t_min, t_max, rec);
-	return pol->hit(r, t_min, t_max, rec);
+	//return pol.Hit(r, t_min, t_max, rec);
+	return pol->Hit(r, t_min, t_max, rec);
 }
 
 
@@ -425,7 +425,7 @@ bool plymodel::BoundingBox(aabb& box) const
 }
 
 
-bool Triangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Triangle::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), face_normal) / dot(r.direction(), face_normal);
 	if (t >= t_min && t <= t_max) {
@@ -481,7 +481,7 @@ std::unique_ptr<Pdf> Triangle::GeneratePdfObject(const vec3& o)
 	return std::make_unique<toward_object_Pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
 
-bool Quadrilateral::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Quadrilateral::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
