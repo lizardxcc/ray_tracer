@@ -17,7 +17,7 @@
 #include "ray.h"
 #include "camera.h"
 #include "Hittablelist.h"
-#include "Material.h"
+#include "material.h"
 #include "Materialfile.h"
 #include "object.h"
 #include "spectrum.h"

@@ -2,7 +2,7 @@
 #define OBJECT_H
 
 #include "Hittable.h"
-#include "Material.h"
+#include "material.h"
 #include "obj.h"
 #include "mtl.h"
 #include "ply.h"

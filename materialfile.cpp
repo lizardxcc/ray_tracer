@@ -3,7 +3,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "Materialfile.h"
-#include "Material.h"
+#include "material.h"
 #include "scene.h"
 
 void LambertianMaterialEditor(const std::shared_ptr<Lambertian>& mat_ptr)

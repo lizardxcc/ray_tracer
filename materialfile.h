@@ -4,7 +4,7 @@
 #include <fstream>
 #include <map>
 #include "spectrum.h"
-#include "Material.h"
+#include "material.h"
 
 class MaterialNode {
 	public:
