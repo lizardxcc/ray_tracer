@@ -40,7 +40,7 @@ void Renderer::RenderImage(int nx, int ny, int ns)
 {
 	orig_img.reset(new double[nx*ny*4]);
 	Material::lights.clear();
-	for (int i = 0; i < world->models.size(); i++) {
+	for (size_t i = 0; i < world->models.size(); i++) {
 		//world->models[i]->set_Material(std::shared_ptr<Material>(Materials[i]));
 		//auto mat = Material_loader.Materials[obj_loader.objects[i]->Material_name];
 		auto mat = Material_loader.Materials[Material_loader.obj_mat_names[i]];
@@ -146,7 +146,6 @@ double Renderer::NaivePathTracing(const ray& r)
 	ray _ray = r;
 	double radiance = 0.0;
 	double beta = 1.0;
-	int bounce = 0;
 	while (1) {
 		bool hit = world->hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
@@ -212,11 +211,12 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 				bool respawn = true;
 				if (respawn) {
 					ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
-					HitRecord tmp_rec;
 					scattered.central_wl = _ray.central_wl;
 					scattered.min_wl = _ray.min_wl;
 					scattered.max_wl = _ray.max_wl;
+					wli = _ray.central_wl;
 
+					HitRecord tmp_rec;
 					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 					if (hit) {
 						double bxdf, pdfval;
@@ -320,7 +320,7 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 			break;
 
 		double SampleMedium = false;
-		double medium_t;
+		double medium_t = 0.0;
 		MediumMaterial *mi = nullptr;
 		if (!inside_object_stack.empty()) {
 			std::shared_ptr<Material> mat = Material_loader.Materials[Material_loader.obj_mat_names[inside_object_stack.top()]];
@@ -437,10 +437,11 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 					bool respawn = true;
 					if (respawn) {
 						ray scattered = ray(rec.p, uvw_.localtoworld(generated_vi));
-						HitRecord tmp_rec;
 						scattered.central_wl = _ray.central_wl;
 						scattered.min_wl = _ray.min_wl;
 						scattered.max_wl = _ray.max_wl;
+						wli = _ray.central_wl;
+						HitRecord tmp_rec;
 
 						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 						if (hit) {
