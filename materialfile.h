@@ -13,7 +13,7 @@ class MaterialNode {
 
 class OutputMaterialNode : public MaterialNode {
 	public:
-		virtual void Render(void);
+		void Render(void);
 		MaterialNode *output;
 };
 
@@ -22,7 +22,7 @@ class LightMaterialNode : public MaterialNode {
 		LightMaterialNode(void) {
 			light = Spectrum(1.0);
 		}
-		virtual void Render(void);
+		void Render(void);
 		Spectrum light;
 };
 class LambertianMaterialNode : public MaterialNode {
@@ -30,23 +30,23 @@ class LambertianMaterialNode : public MaterialNode {
 		LambertianMaterialNode(void) {
 			albedo = RGBtoSpectrum(vec3(0.5, 1.0, 0.5));
 		}
-		virtual void Render(void);
+		void Render(void);
 		Spectrum albedo;
 };
 class DielectricMaterialNode : public MaterialNode {
 	public:
-		virtual void Render(void);
+		void Render(void);
 		Spectrum albedo;
 };
 class MetalMaterialNode : public MaterialNode {
 	public:
-		virtual void Render(void);
+		void Render(void);
 		Spectrum albedo;
 };
 
 class MixMaterialNode : public MaterialNode {
 	public:
-		virtual void Render(void);
+		void Render(void);
 		float ratio;
 		MaterialNode *p1, *p2;
 };
