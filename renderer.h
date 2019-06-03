@@ -5,7 +5,7 @@
 #include "obj.h"
 #include "object.h"
 #include "camera.h"
-#include "Materialfile.h"
+#include "materialfile.h"
 
 class Renderer {
 	public:

@@ -18,7 +18,7 @@
 #include "camera.h"
 #include "hittablelist.h"
 #include "material.h"
-#include "Materialfile.h"
+#include "materialfile.h"
 #include "object.h"
 #include "spectrum.h"
 #include "scene.h"
