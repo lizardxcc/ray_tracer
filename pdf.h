@@ -10,79 +10,79 @@
 
 class Hittable;
 
-class pdf {
+class Pdf {
 	public:
-		virtual vec3 generate() const = 0;
-		virtual double pdf_val(const vec3& direction) const = 0;
+		virtual vec3 Generate() const = 0;
+		virtual double PdfVal(const vec3& direction) const = 0;
 };
 
-class uniform_pdf : public pdf {
+class UniformPdf : public Pdf {
 	public:
-		uniform_pdf(const vec3& w)
+		UniformPdf(const vec3& w)
 		{
 			uvw.build_from_w(w);
 		}
-		virtual vec3 generate() const;
-		virtual double pdf_val(const vec3& direction) const;
+		virtual vec3 Generate() const;
+		virtual double PdfVal(const vec3& direction) const;
 
 		onb uvw;
 };
 
-class cosine_pdf : public pdf {
+class CosinePdf : public Pdf {
 	public:
-		cosine_pdf(const vec3& w)
+		CosinePdf(const vec3& w)
 		{
 			uvw.build_from_w(w);
 		}
-		virtual vec3 generate() const;
-		virtual double pdf_val(const vec3& direction) const;
+		virtual vec3 Generate() const;
+		virtual double PdfVal(const vec3& direction) const;
 
 		onb uvw;
 };
 
-class toward_object_pdf : public pdf {
+class toward_object_Pdf : public Pdf {
 	public:
-		toward_object_pdf(const vec3& w, double _theta_max)
+		toward_object_Pdf(const vec3& w, double _theta_max)
 		{
 			uvw.build_from_w(w);
 			this->theta_max = _theta_max;
 		}
-		virtual vec3 generate() const;
-		virtual double pdf_val(const vec3& direction) const;
+		virtual vec3 Generate() const;
+		virtual double PdfVal(const vec3& direction) const;
 
 		onb uvw;
 		double theta_max;
 };
 
 
-class Hittable_pdf : public pdf {
+class HittablePdf : public Pdf {
 	public:
-		Hittable_pdf(std::shared_ptr<Hittable> p, const vec3& origin)
+		HittablePdf(std::shared_ptr<Hittable> p, const vec3& origin)
 		{
 			ptr = p;
 			o = origin;
-			pdf_ptr = p->generate_pdf_object(origin);
+			pdf_ptr = p->generate_Pdf_object(origin);
 		}
-		virtual vec3 generate() const;
-		virtual double pdf_val(const vec3& direction) const;
+		virtual vec3 Generate() const;
+		virtual double PdfVal(const vec3& direction) const;
 
 		vec3 o;
 		std::shared_ptr<Hittable> ptr;
 
-		std::unique_ptr<pdf> pdf_ptr;
+		std::unique_ptr<Pdf> pdf_ptr;
 };
 
 
-class mixture_pdf : public pdf {
+class MixturePdf : public Pdf {
 	public:
-		mixture_pdf(std::vector<std::unique_ptr<pdf> > pdf_list) : pdf_list(std::move(pdf_list))
+		MixturePdf(std::vector<std::unique_ptr<Pdf> > pdf_list) : pdf_list(std::move(pdf_list))
 		{
 		}
 
-		virtual vec3 generate() const;
-		virtual double pdf_val(const vec3& direction) const;
+		virtual vec3 Generate() const;
+		virtual double PdfVal(const vec3& direction) const;
 
-		std::vector<std::unique_ptr<pdf> > pdf_list;
+		std::vector<std::unique_ptr<Pdf> > pdf_list;
 };
 
 #endif

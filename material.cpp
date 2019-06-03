@@ -9,7 +9,7 @@ double Homogenious::Phase(const vec3& vi, double wli, const vec3& vo, double wlo
 	return 1.0/(4.0 * M_PI);
 }
 
-bool Homogenious::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& pdf_val) const
+bool Homogenious::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const
 {
 	double phi = 2.0 * M_PI * drand48();
 	double cos_theta = 1.0 - 2.0 * drand48();
@@ -20,7 +20,7 @@ bool Homogenious::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, do
 	vi = vec3(x, y, z);
 	wli = wlo;
 	Phase = 1.0/(4.0 * M_PI);
-	pdf_val = 1.0/(4.0 * M_PI);
+	PdfVal = 1.0/(4.0 * M_PI);
 	return true;
 }
 
@@ -31,7 +31,7 @@ double henyey_greenstein::Phase(const vec3& vi, double wli, const vec3& vo, doub
 	return (1.0-g*g)/(denom*sqrt(denom)*(4.0 * M_PI));
 }
 
-bool henyey_greenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& pdf_val) const
+bool henyey_greenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const
 {
 	double phi = 2.0 * M_PI * drand48();
 	double square = (1.0-g*g)/(1.0-g+2.0*g*drand48());
@@ -43,7 +43,7 @@ bool henyey_greenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& w
 	vi = vec3(x, y, z);
 	wli = wlo;
 	Phase = this->Phase(vi, wli, vo, wlo);
-	pdf_val = Phase;
+	PdfVal = Phase;
 	return true;
 }
 
@@ -85,12 +85,12 @@ double Lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 	return albedo.get(wli)/M_PI;
 }
 
-bool Lambertian::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Lambertian::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
-	cosine_pdf pdf(rec.normal);
+	CosinePdf Pdf(rec.normal);
 
-	vec3 generated_direction = pdf.generate();
-	pdf_val = pdf.pdf_val(generated_direction);
+	vec3 generated_direction = Pdf.Generate();
+	PdfVal = Pdf.PdfVal(generated_direction);
 	vi = uvw.worldtolocal(generated_direction);
 
 	wli = wlo;
@@ -106,14 +106,14 @@ double Metal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 
 	return albedo.get(wli) / abs(vi.z());
 }
-bool Metal::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Metal::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
 	vi[0] = -vo[0];
 	vi[1] = -vo[1];
 	vi[2] = vo[2];
 	wli = wlo;
 	BxDF = this->BxDF(vi, wli, vo, wlo);
-	pdf_val = 1;
+	PdfVal = 1;
 	return true;
 }
 /*
@@ -129,7 +129,7 @@ double Metal::BxDF(const ray& r_in, const HitRecord& rec, const ray& scattered) 
 	return pow(dot(unit_vector(scattered.direction()), unit_vector(reflected)), 100);
 }
 
-bool Metal::Sample(const ray& r_in, const HitRecord& rec, ray& scattered, double& BxDF, double& pdf) const
+bool Metal::Sample(const ray& r_in, const HitRecord& rec, ray& scattered, double& BxDF, double& Pdf) const
 {
 	vec3 normal = unit_vector(rec.normal);
 	vec3 v = unit_vector(r_in.direction());
@@ -141,13 +141,13 @@ bool Metal::Sample(const ray& r_in, const HitRecord& rec, ray& scattered, double
 	scattered.central_wl = r_in.central_wl;
 	//attenuation = albedo;
 	BxDF = 1.0/abs_cos_o;
-	pdf = 1;
+	Pdf = 1;
 	return true;
 }
 */
 
 /*
-bool Metal::scatter(const ray& r_in, const HitRecord& rec, vec3& attenuation, ray& scattered, double& pdf) const
+bool Metal::scatter(const ray& r_in, const HitRecord& rec, vec3& attenuation, ray& scattered, double& Pdf) const
 {
 	vec3 v = unit_vector(r_in.direction());
 	vec3 reflected = reflect(v, rec.normal);
@@ -166,7 +166,7 @@ double shlick(double theta, double n1, double n2)
 }
 
 
-bool Dielectric::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Dielectric::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
 
 	//double ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
@@ -214,11 +214,11 @@ bool Dielectric::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, do
 		vi[0] = -vo[0];
 		vi[1] = -vo[1];
 		vi[2] = vo[2];
-		pdf_val = fresnel;
+		PdfVal = fresnel;
 		BxDF = fresnel/cos_o;
 	} else { // refraction
 		vi = (-cos_t) * normal - sin_t * unit_vector(vec3(vo[0], vo[1], 0));
-		pdf_val = 1.0-fresnel;
+		PdfVal = 1.0-fresnel;
 		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
 	}
 	BxDF *= exp(-alpha);
@@ -249,17 +249,17 @@ double oren_nayar::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) 
 	return albedo.get(wli)/M_PI * (A + B * tmp * sin_alpha * tan_beta);
 }
 
-bool oren_nayar::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool oren_nayar::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
-	std::vector<std::unique_ptr<pdf> > pdf_list(lights.size()+1);
-	pdf_list[0] = std::make_unique<uniform_pdf>(rec.normal);
-	for (size_t i = 1; i < pdf_list.size(); i++) {
-		pdf_list[i] = std::make_unique<Hittable_pdf>(lights[i-1], rec.p);
+	std::vector<std::unique_ptr<Pdf> > Pdf_list(lights.size()+1);
+	Pdf_list[0] = std::make_unique<UniformPdf>(rec.normal);
+	for (size_t i = 1; i < Pdf_list.size(); i++) {
+		Pdf_list[i] = std::make_unique<HittablePdf>(lights[i-1], rec.p);
 	}
-	mixture_pdf pdf(std::move(pdf_list));
+	MixturePdf Pdf(std::move(Pdf_list));
 
-	vec3 generated_direction = pdf.generate();
-	pdf_val = pdf.pdf_val(generated_direction);
+	vec3 generated_direction = Pdf.Generate();
+	PdfVal = Pdf.PdfVal(generated_direction);
 	vi = uvw.worldtolocal(generated_direction);
 
 	wli = wlo;
@@ -300,12 +300,12 @@ double TorranceSparrow::lambda(const vec3& v) const
 	return 0.5 * (std::erf(a) - 1.0 + exp(a*a) / (a * sqrt(M_PI)));
 }
 
-bool TorranceSparrow::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool TorranceSparrow::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
-	cosine_pdf pdf(rec.normal);
+	CosinePdf Pdf(rec.normal);
 
-	vec3 generated_direction = pdf.generate();
-	pdf_val = pdf.pdf_val(generated_direction);
+	vec3 generated_direction = Pdf.Generate();
+	PdfVal = Pdf.PdfVal(generated_direction);
 	vi = uvw.worldtolocal(generated_direction);
 
 	wli = wlo;
@@ -316,12 +316,12 @@ bool TorranceSparrow::Sample(const HitRecord& rec, const onb& uvw, const vec3& v
 
 
 
-bool Transparent::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool Transparent::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
 	wli = wlo;
 	BxDF = 1.0/abs(vo.z());
 	vi = -vo;
-	pdf_val = 1.0;
+	PdfVal = 1.0;
 	return true;
 }
 
@@ -339,12 +339,12 @@ double MixMaterial::Emitted(const ray& r, const HitRecord& rec) const
 	}
 }
 
-bool MixMaterial::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const
+bool MixMaterial::Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const
 {
 	if (drand48() < fac) {
-		return mat2->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdf_val);
+		return mat2->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, PdfVal);
 	} else {
-		return mat1->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdf_val);
+		return mat1->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, PdfVal);
 	}
 }
 

@@ -205,9 +205,9 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 				double wli;
 				onb uvw_;
 				uvw_.build_from_w(rec.normal);
-				uniform_pdf pdf(rec.normal);
-				vec3 generated_direction = pdf.generate();
-				//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
+				UniformPdf pdf(rec.normal);
+				vec3 generated_direction = pdf.Generate();
+				//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
 				generated_vi = uvw_.worldtolocal(generated_direction);
 				bool respawn = true;
 				if (respawn) {
@@ -219,10 +219,10 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 
 					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 					if (hit) {
-						double bxdf, pdf_val;
-						pdf_val = pdf.pdf_val(generated_direction);
+						double bxdf, pdfval;
+						pdfval = pdf.PdfVal(generated_direction);
 						bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
-						radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
+						radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdfval);
 					}
 				}
 			} else {
@@ -231,8 +231,8 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 					int selectedLight = rnd() % Material::lights.size();
 					onb uvw_;
 					uvw_.build_from_w(rec.normal);
-					Hittable_pdf pdf(Material::lights[selectedLight], rec.p);
-					vec3 generated_direction = pdf.generate();
+					HittablePdf pdf(Material::lights[selectedLight], rec.p);
+					vec3 generated_direction = pdf.Generate();
 
 					HitRecord light_rec;
 					ray scattered = ray(rec.p, generated_direction);
@@ -241,13 +241,13 @@ double Renderer::NEEPathTracing(const ray& r, bool enableNEE)
 					scattered.max_wl = _ray.max_wl;
 					bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 					if (hit) {
-						double pdf_val = pdf.pdf_val(generated_direction);
+						double pdfval = pdf.PdfVal(generated_direction);
 						vec3 vi = uvw_.worldtolocal(generated_direction);
 						vec3 vo = uvw_.worldtolocal(-_ray.direction());
 						double wlo = _ray.central_wl;
 						double wli = wlo;
 						double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-						radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
+						radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdfval;
 					}
 
 
@@ -358,8 +358,8 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 		if (SampleMedium) {
 			std::random_device rnd;
 			int selectedLight = rnd() % Material::lights.size();
-			Hittable_pdf pdf(Material::lights[selectedLight], _ray.point_at_parameter(medium_t));
-			vec3 generated_direction = pdf.generate();
+			HittablePdf pdf(Material::lights[selectedLight], _ray.point_at_parameter(medium_t));
+			vec3 generated_direction = pdf.Generate();
 
 
 
@@ -391,25 +391,25 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 				double distance = (last_smoke_point - _ray.point_at_parameter(medium_t)).length();
 				const double sigma_t = mi->sigma_t.get(_ray.central_wl);
 				double tr = exp(-sigma_t * distance);
-				double pdf_val = pdf.pdf_val(generated_direction);
+				double pdfval = pdf.PdfVal(generated_direction);
 				double wlo = _ray.central_wl;
 				double wli = wlo;
 				double p = mi->Phase(generated_direction, wli, -_ray.direction(), wlo);
-				radiance += Material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) / pdf_val;
+				radiance += Material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) / pdfval;
 			}
 
 			vec3 vi;
 			double wli;
-			double Phase, pdf_val;
-			respawn = mi->Sample_p(-_ray.direction(), _ray.central_wl, vi, wli, Phase, pdf_val);
+			double phase, pdfval;
+			respawn = mi->Sample_p(-_ray.direction(), _ray.central_wl, vi, wli, phase, pdfval);
 			if (respawn) {
 				scattered_point = _ray.point_at_parameter(medium_t);
 				scattered_direction = vi;
-				//beta *= Phase / pdf_val;
-				// don't need to calculate the term (Phase / pdf_val) because it's
+				//beta *= phase / pdfval;
+				// don't need to calculate the term (phase / pdfval) because it's
 				// guaranteed that scattered direction is Sampled with a pdf which
-				// completely matches the Phase function of the medium
-				scattering_coefficient = Phase;
+				// completely matches the phase function of the medium
+				scattering_coefficient = phase;
 			}
 
 
@@ -430,9 +430,9 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 					double wli;
 					onb uvw_;
 					uvw_.build_from_w(rec.normal);
-					uniform_pdf pdf(rec.normal);
-					vec3 generated_direction = pdf.generate();
-					//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf_val);
+					UniformPdf pdf(rec.normal);
+					vec3 generated_direction = pdf.Generate();
+					//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.worldtolocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
 					generated_vi = uvw_.worldtolocal(generated_direction);
 					bool respawn = true;
 					if (respawn) {
@@ -444,10 +444,10 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 
 						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 						if (hit) {
-							double bxdf, pdf_val;
-							pdf_val = pdf.pdf_val(generated_direction);
+							double bxdf, pdfval;
+							pdfval = pdf.PdfVal(generated_direction);
 							bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.worldtolocal(-_ray.direction()), r.central_wl);
-							radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdf_val);
+							radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdfval);
 						}
 					}
 				} else {
@@ -456,8 +456,8 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 						int selectedLight = rnd() % Material::lights.size();
 						onb uvw_;
 						uvw_.build_from_w(rec.normal);
-						Hittable_pdf pdf(Material::lights[selectedLight], rec.p);
-						vec3 generated_direction = pdf.generate();
+						HittablePdf pdf(Material::lights[selectedLight], rec.p);
+						vec3 generated_direction = pdf.Generate();
 
 						HitRecord light_rec;
 						ray scattered = ray(rec.p, generated_direction);
@@ -466,13 +466,13 @@ double Renderer::NEEVolPathTracing(const ray& r, bool enableNEE)
 						scattered.max_wl = _ray.max_wl;
 						bool hit = world->hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 						if (hit) {
-							double pdf_val = pdf.pdf_val(generated_direction);
+							double pdfval = pdf.PdfVal(generated_direction);
 							vec3 vi = uvw_.worldtolocal(generated_direction);
 							vec3 vo = uvw_.worldtolocal(-_ray.direction());
 							double wlo = _ray.central_wl;
 							double wli = wlo;
 							double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-							radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdf_val;
+							radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdfval;
 						}
 
 

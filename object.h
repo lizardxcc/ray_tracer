@@ -17,7 +17,7 @@ class sphere: public Hittable {
 		};
 		virtual bool hit(const ray& r, double tmin, double tmux, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<Pdf> generate_Pdf_object(const vec3& o);
 		vec3 center;
 		double radius;
 };
@@ -40,7 +40,7 @@ class rectangle : public Hittable {
 			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
-		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<Pdf> generate_Pdf_object(const vec3& o);
 		virtual bool bounding_box(aabb& box) const;
 		vec3 center;
 		vec3 normal;
@@ -84,7 +84,7 @@ class zx_rect : public Hittable {
 		};
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		//virtual double generate_pdf_dir(const vec3& o, vec3& direction);
+		//virtual double generate_Pdf_dir(const vec3& o, vec3& direction);
 
 		double z0, z1, x0, x1, k;
 };
@@ -147,7 +147,7 @@ class triangle : public Hittable {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<Pdf> generate_Pdf_object(const vec3& o);
 		vec3 v[3];
 		vec3 normal[3];
 		vec3 face_normal;
@@ -157,7 +157,7 @@ class quadrilateral : public Hittable {
 	public:
 		virtual bool hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		virtual bool bounding_box(aabb& box) const;
-		virtual std::unique_ptr<pdf> generate_pdf_object(const vec3& o);
+		virtual std::unique_ptr<Pdf> generate_Pdf_object(const vec3& o);
 		vec3 v[4];
 		vec3 normal;
 };

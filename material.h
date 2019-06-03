@@ -12,7 +12,7 @@ class MediumMaterial {
 	public:
 		MediumMaterial(const Spectrum& sigma_t, const Spectrum& albedo) : sigma_t(sigma_t), albedo(albedo) {
 		}
-		virtual bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& pdf_val) const {
+		virtual bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const {
 			return false;
 		}
 		virtual double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const = 0;
@@ -23,21 +23,21 @@ class MediumMaterial {
 class Homogenious : public MediumMaterial {
 	public:
 		Homogenious(const Spectrum& sigma_t, const Spectrum& albedo) : MediumMaterial(sigma_t, albedo) {}
-		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& pdf_val) const;
+		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const;
 		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 };
 
 class henyey_greenstein : public MediumMaterial {
 	public:
 		henyey_greenstein(const Spectrum& sigma_t, const Spectrum& albedo, double g) : MediumMaterial(sigma_t, albedo), g(g) {}
-		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& pdf_val) const;
+		bool Sample_p(const vec3& vo, double wlo, vec3& vi, double& wli, double& Phase, double& PdfVal) const;
 		double Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		double g;
 };
 
 class Material {
 	public:
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const {
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const {
 			return false;
 		}
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const {
@@ -56,7 +56,7 @@ class Material {
 class Lambertian : public Material {
 	public:
 		Lambertian(const Spectrum& a) : albedo(a) {}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
 
@@ -69,7 +69,7 @@ class Metal : public Material {
 		Metal(const Spectrum& a) : albedo(a) {
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 
 		Spectrum albedo;
@@ -92,7 +92,7 @@ class Dielectric : public Material {
 		Dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 
 		double ref_B, ref_C;
 		Spectrum albedo;
@@ -104,7 +104,7 @@ class Dielectric : public Material {
 class oren_nayar : public Material {
 	public:
 		oren_nayar(const Spectrum& albedo, double sigma) : albedo(albedo), sigma(sigma) {}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		Spectrum albedo;
 		double sigma;
@@ -116,7 +116,7 @@ class TorranceSparrow : public Material {
 		TorranceSparrow(const Spectrum& albedo, double alpha) : albedo(albedo), alpha(alpha) {
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		double lambda(const vec3& v) const;
 		Spectrum albedo;
@@ -129,7 +129,7 @@ class Transparent : public Material {
 		{
 			specular_flag = true;
 		}
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 };
 
 
@@ -151,7 +151,7 @@ class MixMaterial : public Material {
 			this->fac = fac;
 		}
 		virtual double Emitted(const ray& r, const HitRecord& rec) const;
-		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdf_val) const;
+		virtual bool Sample(const HitRecord& rec, const onb& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& PdfVal) const;
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const;
 		const Material *mat1, *mat2;
 		double fac;
@@ -161,7 +161,7 @@ class MixMaterial : public Material {
 class straight_light : public Material {
 	public:
 		straight_light(Spectrum color) : light_color(color) {}
-		virtual bool Sample(const ray& r_in, const HitRecord& rec, ray& scattered, double&BxDF, double& pdf_val) const;
+		virtual bool Sample(const ray& r_in, const HitRecord& rec, ray& scattered, double&BxDF, double& PdfVal) const;
 		virtual double Emitted(double u, double v, const ray& r_in, const HitRecord& rec) const;
 		Spectrum light_color;
 };
