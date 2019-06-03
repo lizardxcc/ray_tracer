@@ -1,4 +1,4 @@
-#include "Hittablelist.h"
+#include "hittablelist.h"
 
 bool Hittable_list::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
@@ -18,21 +18,21 @@ bool Hittable_list::hit(const ray& r, double t_min, double t_max, HitRecord& rec
 
 
 
-bool Hittable_list::bounding_box(aabb& box) const
+bool Hittable_list::BoundingBox(aabb& box) const
 {
 	aabb temp_box;
 	if (list.size() == 0) {
 		return false;
 	}
 
-	if (list[0]->bounding_box(temp_box) == false) {
+	if (list[0]->BoundingBox(temp_box) == false) {
 		return false;
 	}
 
 	box = temp_box;
 
 	for (size_t i = 0; i < list.size(); i++) {
-		if (list[i]->bounding_box(temp_box)) {
+		if (list[i]->BoundingBox(temp_box)) {
 			box = surrounding_box(box, temp_box);
 		} else {
 			return false;

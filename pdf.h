@@ -61,7 +61,7 @@ class HittablePdf : public Pdf {
 		{
 			ptr = p;
 			o = origin;
-			pdf_ptr = p->generate_Pdf_object(origin);
+			pdf_ptr = p->GeneratePdfObject(origin);
 		}
 		virtual vec3 Generate() const;
 		virtual double PdfVal(const vec3& direction) const;

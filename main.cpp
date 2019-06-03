@@ -16,7 +16,7 @@
 #include "onb.h"
 #include "ray.h"
 #include "camera.h"
-#include "Hittablelist.h"
+#include "hittablelist.h"
 #include "material.h"
 #include "Materialfile.h"
 #include "object.h"

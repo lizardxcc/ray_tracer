@@ -10,7 +10,7 @@ vec3 FromSphericalToXYZ(double theta, double phi)
 	);
 }
 
-vec3 RandomOnUnitHemisphere(void)
+vec3 RandomOnUnitHemiSphere(void)
 {
 	double r1 = drand48();
 	double r2 = drand48();
@@ -23,7 +23,7 @@ vec3 RandomOnUnitHemisphere(void)
 }
 
 
-vec3 RandomOnUnitHemisphere(double theta_max)
+vec3 RandomOnUnitHemiSphere(double theta_max)
 {
 	double r1 = drand48();
 	double r2 = drand48();
@@ -33,7 +33,7 @@ vec3 RandomOnUnitHemisphere(double theta_max)
 }
 
 
-vec3 CosineWeightedRandomOnUnitHemisphere(void)
+vec3 CosineWeightedRandomOnUnitHemiSphere(void)
 {
 	double r1 = drand48();
 	double r2 = drand48();
@@ -48,7 +48,7 @@ vec3 CosineWeightedRandomOnUnitHemisphere(void)
 
 vec3 UniformPdf::Generate() const
 {
-	return uvw.localtoworld(RandomOnUnitHemisphere());
+	return uvw.localtoworld(RandomOnUnitHemiSphere());
 }
 
 
@@ -64,7 +64,7 @@ double UniformPdf::PdfVal(const vec3& direction) const
 
 vec3 CosinePdf::Generate() const
 {
-	return uvw.localtoworld(CosineWeightedRandomOnUnitHemisphere());
+	return uvw.localtoworld(CosineWeightedRandomOnUnitHemiSphere());
 }
 
 
@@ -82,7 +82,7 @@ double CosinePdf::PdfVal(const vec3& direction) const
 
 vec3 toward_object_Pdf::Generate() const
 {
-	return uvw.localtoworld(RandomOnUnitHemisphere(theta_max));
+	return uvw.localtoworld(RandomOnUnitHemiSphere(theta_max));
 }
 
 double toward_object_Pdf::PdfVal(const vec3& direction) const

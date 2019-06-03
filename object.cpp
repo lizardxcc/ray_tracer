@@ -2,24 +2,24 @@
 #include <algorithm>
 #include "object.h"
 #include "ray.h"
-#include "Hittablelist.h"
+#include "hittablelist.h"
 #include "pdf.h"
 
 
-//std::unique_ptr<Pdf> Hittable::generate_Pdf_object(const vec3& o)
+//std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 //{
-//	std::cout << "Warning generate_Pdf_object" << std::endl;
+//	std::cout << "Warning GeneratePdfObject" << std::endl;
 //	return std::make_unique<UniformPdf>(vec3(0.0, 0.0, 1.0));
 //}
-std::unique_ptr<Pdf> Hittable::generate_Pdf_object(const vec3& o)
+std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 {
 	aabb box;
-	if (bounding_box(box)) {
+	if (BoundingBox(box)) {
 		vec3 v = box.center - o;
 		double r = (box.center-box.minp).length();
 		return std::make_unique<toward_object_Pdf>(unit_vector(v), atan2(r, v.length()));
 	} else {
-		std::cout << "Warning generate_Pdf_object" << std::endl;
+		std::cout << "Warning GeneratePdfObject" << std::endl;
 	}
 }
 
@@ -30,7 +30,7 @@ void Hittable::set_Material(std::shared_ptr<Material> mat)
 }
 
 
-bool sphere::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Sphere::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double a = pow(r.B.length(), 2.0);
 	double b_prime = dot(r.A - center, r.B);
@@ -62,7 +62,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 	return false;
 }
 
-bool sphere::bounding_box(aabb& box) const
+bool Sphere::BoundingBox(aabb& box) const
 {
 	box = aabb(
 		center - vec3(radius, radius, radius),
@@ -71,7 +71,7 @@ bool sphere::bounding_box(aabb& box) const
 	return true;
 }
 
-std::unique_ptr<Pdf> sphere::generate_Pdf_object(const vec3& o)
+std::unique_ptr<Pdf> Sphere::GeneratePdfObject(const vec3& o)
 {
 	vec3 v = center - o;
 	double r = radius;
@@ -79,7 +79,7 @@ std::unique_ptr<Pdf> sphere::generate_Pdf_object(const vec3& o)
 }
 
 
-bool plane::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Plane::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(somewhere - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -94,7 +94,7 @@ bool plane::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 	return false;
 }
 
-bool rectangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Rectangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(center - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -119,14 +119,14 @@ bool rectangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) co
 
 
 
-std::unique_ptr<Pdf> rectangle::generate_Pdf_object(const vec3& o)
+std::unique_ptr<Pdf> Rectangle::GeneratePdfObject(const vec3& o)
 {
 	vec3 v = center - o;
 	double r = 0.5 * sqrt(width*width + height*height);
 	return std::make_unique<toward_object_Pdf>(unit_vector(v), atan2(r, v.length()));
 }
 
-bool rectangle::bounding_box(aabb& box) const
+bool Rectangle::BoundingBox(aabb& box) const
 {
 	return false;
 }
@@ -190,17 +190,17 @@ bool zx_rect::hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 }
 
 
-bool xy_rect::bounding_box(aabb& box) const
+bool xy_rect::BoundingBox(aabb& box) const
 {
 	box = aabb(vec3(x0, y0, k - 0.001), vec3(x1, y1, k + 0.001));
 	return true;
 }
-bool yz_rect::bounding_box(aabb& box) const
+bool yz_rect::BoundingBox(aabb& box) const
 {
 	box = aabb(vec3(k - 0.001, y0, z0), vec3(k + 0.001, y1, z1));
 	return true;
 }
-bool zx_rect::bounding_box(aabb& box) const
+bool zx_rect::BoundingBox(aabb& box) const
 {
 	box = aabb(vec3(x0, k - 0.001, z0), vec3(x1, k + 0.001, z1));
 	return true;
@@ -230,9 +230,9 @@ bool flip_normals::hit(const ray& r, double t_min, double t_max, HitRecord& rec)
 	} else
 		return false;
 }
-bool flip_normals::bounding_box(aabb& box) const
+bool flip_normals::BoundingBox(aabb& box) const
 {
-	return ptr->bounding_box(box);
+	return ptr->BoundingBox(box);
 }
 
 
@@ -258,7 +258,7 @@ bool box::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 }
 
 
-bool box::bounding_box(aabb& box) const
+bool box::BoundingBox(aabb& box) const
 {
 	box = aabb(pmin, pmax);
 	return true;
@@ -274,9 +274,9 @@ bool translate::hit(const ray& r, double t_min, double t_max, HitRecord& rec) co
 	} else
 		return false;
 }
-bool translate::bounding_box(aabb& box) const
+bool translate::BoundingBox(aabb& box) const
 {
-	if (ptr->bounding_box(box)) {
+	if (ptr->BoundingBox(box)) {
 		box.minp += offset;
 		box.maxp += offset;
 		box.center += offset;
@@ -305,7 +305,7 @@ objmodel::objmodel(obj& o)
 			}
 			std::shared_ptr<Hittable> tmp_model;
 			if (l == 3) {
-				std::shared_ptr<triangle> tri = std::make_shared<triangle>();
+				std::shared_ptr<Triangle> tri = std::make_shared<Triangle>();
 				for (size_t k = 0; k < l; k++) {
 					tri->v[k] = object->v[*f[k][0]];
 					tri->normal[k] = object->vn[*f[k][2]];
@@ -314,7 +314,7 @@ objmodel::objmodel(obj& o)
 				tri->mat_ptr = nullptr;
 				tmp_model = tri;
 			} else if (l == 4) {
-				std::shared_ptr<quadrilateral> quad = std::make_shared<quadrilateral>();
+				std::shared_ptr<Quadrilateral> quad = std::make_shared<Quadrilateral>();
 				quad->normal = vec3(0, 0, 0);
 				for (size_t k = 0; k < l; k++) {
 					quad->v[k] = object->v[*f[k][0]];
@@ -340,7 +340,7 @@ bool objmodel::hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 {
 	return bvh->hit(r, t_min, t_max, rec);
 }
-bool objmodel::bounding_box(aabb& box) const
+bool objmodel::BoundingBox(aabb& box) const
 {
 	box = bvh->box;
 
@@ -360,7 +360,7 @@ plymodel::plymodel(const char *filename, Material *mat)
 		}
 		std::shared_ptr<Hittable> tmp_polygon;
 		if (l == 3) {
-			std::shared_ptr<triangle> tri(new triangle());
+			std::shared_ptr<Triangle> tri(new Triangle());
 			for (size_t j = 0; j < l; j++) {
 				tri->v[j] = p.vertices[p.faces[i][j]][0];
 			}
@@ -369,7 +369,7 @@ plymodel::plymodel(const char *filename, Material *mat)
 			tmp_polygon = tri;
 		}
 		else if (l == 4) {
-			std::shared_ptr<quadrilateral> quad(new quadrilateral());
+			std::shared_ptr<Quadrilateral> quad(new Quadrilateral());
 			for (size_t j = 0; j < l; j++) {
 				quad->v[j] = p.vertices[p.faces[i][j]][0];
 			}
@@ -400,21 +400,21 @@ bool plymodel::hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 }
 
 
-bool plymodel::bounding_box(aabb& box) const
+bool plymodel::BoundingBox(aabb& box) const
 {
 	aabb temp_box;
 	if (polygon.size() == 0) {
 		return false;
 	}
 
-	if (polygon[0]->bounding_box(temp_box) == false) {
+	if (polygon[0]->BoundingBox(temp_box) == false) {
 		return false;
 	}
 
 	box = temp_box;
 
 	for (size_t i = 0; i < polygon.size(); i++) {
-		if (polygon[i]->bounding_box(temp_box)) {
+		if (polygon[i]->BoundingBox(temp_box)) {
 			box = surrounding_box(box, temp_box);
 		} else {
 			return false;
@@ -425,7 +425,7 @@ bool plymodel::bounding_box(aabb& box) const
 }
 
 
-bool triangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Triangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), face_normal) / dot(r.direction(), face_normal);
 	if (t >= t_min && t <= t_max) {
@@ -448,7 +448,7 @@ bool triangle::hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 
 
 
-bool triangle::bounding_box(aabb& box) const
+bool Triangle::BoundingBox(aabb& box) const
 {
 	vec3 minp = vec3(
 	std::min(v[0].x(), std::min(v[1].x(), v[2].x())),
@@ -473,7 +473,7 @@ bool triangle::bounding_box(aabb& box) const
 
 
 
-std::unique_ptr<Pdf> triangle::generate_Pdf_object(const vec3& o)
+std::unique_ptr<Pdf> Triangle::GeneratePdfObject(const vec3& o)
 {
 	vec3 c = (v[0]+v[1]+v[2])/3.0;
 	vec3 vec = c - o;
@@ -481,7 +481,7 @@ std::unique_ptr<Pdf> triangle::generate_Pdf_object(const vec3& o)
 	return std::make_unique<toward_object_Pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
 
-bool quadrilateral::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+bool Quadrilateral::hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
 	if (t >= t_min && t <= t_max) {
@@ -510,7 +510,7 @@ bool quadrilateral::hit(const ray& r, double t_min, double t_max, HitRecord& rec
 
 
 
-bool quadrilateral::bounding_box(aabb& box) const
+bool Quadrilateral::BoundingBox(aabb& box) const
 {
 	vec3 minp = vec3(
 	std::min({v[0].x(), v[1].x(), v[2].x(), v[3].x()}),
@@ -535,7 +535,7 @@ bool quadrilateral::bounding_box(aabb& box) const
 }
 
 
-std::unique_ptr<Pdf> quadrilateral::generate_Pdf_object(const vec3& o)
+std::unique_ptr<Pdf> Quadrilateral::GeneratePdfObject(const vec3& o)
 {
 	vec3 c = 0.25 * (v[0]+v[1]+v[2]+v[3]);
 	vec3 vec = c - o;

@@ -50,7 +50,7 @@ bool henyey_greenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& w
 
 std::vector<std::shared_ptr<Hittable> > Material::lights;
 
-vec3 random_in_unit_sphere(void)
+vec3 random_in_unit_Sphere(void)
 {
 	vec3 p;
 	do {
@@ -151,7 +151,7 @@ bool Metal::scatter(const ray& r_in, const HitRecord& rec, vec3& attenuation, ra
 {
 	vec3 v = unit_vector(r_in.direction());
 	vec3 reflected = reflect(v, rec.normal);
-	scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
+	scattered = ray(rec.p, reflected + fuzz*random_in_unit_Sphere());
 	attenuation = albedo;
 	//return (dot(scattered.direction(), rec.normal) > 0);
 	return true;

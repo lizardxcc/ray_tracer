@@ -178,10 +178,10 @@ void Scene::Load(const char *objfilename, const char *matfilename)
 
 		glBindVertexArray(VAOs[o]);
 
-		int triangle_num = renderer.obj_loader.objects[o]->f.size();
-		vertices_num.push_back(triangle_num*3);
+		int Triangle_num = renderer.obj_loader.objects[o]->f.size();
+		vertices_num.push_back(Triangle_num*3);
 		vertices_array.push_back(new float[vertices_num[o]*6]);
-		for (int i = 0; i < triangle_num; i++) {
+		for (int i = 0; i < Triangle_num; i++) {
 			auto& face = renderer.obj_loader.objects[o]->f[i];
 			if (face.size() != 3) {
 				std::cout << "Error!! unsupported vertex size" << std::endl;
@@ -406,7 +406,7 @@ void Scene::RenderScene(void)
 			activeObjectIndex = index;
 			if (index != 0) {
 				aabb box;
-				if (renderer.world->models[index-1]->bounding_box(box)) {
+				if (renderer.world->models[index-1]->BoundingBox(box)) {
 					glm::vec3 v(box.center[0], box.center[1], box.center[2]);
 					float a = glm::length(v-cameraPos);
 					d = 1.0/(1.0/focal_length-1.0/a);
