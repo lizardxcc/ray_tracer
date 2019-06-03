@@ -1,4 +1,4 @@
-CXX = g++-8
+CXX = g++-9
 
 TARGET = renderer
 SRCS = $(wildcard *.cpp)
@@ -29,7 +29,7 @@ DEBUG_DEPS += $(DEBUG_OBJS_DIR)/gl3w.d
 DEBUG_FLAGS = -g3 -O0
 RELEASE_FLAGS = -O3
 
-INCLUDE += -I/usr/local/Cellar/boost/1.69.0/include
+INCLUDE += -I/usr/local/Cellar/boost/1.69.0_2/include
 INCLUDE += -I./
 INCLUDE += `pkg-config glfw3 --cflags`
 INCLUDE += `pkg-config glm --cflags`
@@ -43,7 +43,7 @@ CXXFLAGS += -MMD -MP
 CXXFLAGS += $(INCLUDE)
 CFLAGS += $(INCLUDE)
 
-LDFLAGS = -L/usr/local/Cellar/boost/1.69.0/lib
+LDFLAGS = -L/usr/local/Cellar/boost/1.69.0_2/lib
 LDLIBS += `pkg-config glfw3 --libs`
 LDLIBS += `pkg-config glm --libs`
 LDLIBS += -framework OpenGL -framework CoreFoundation
