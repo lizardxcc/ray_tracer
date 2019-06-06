@@ -1,5 +1,5 @@
-#ifndef MaterialFILE_H
-#define MaterialFILE_H
+#ifndef MATERIALFILE_H
+#define MATERIALFILE_H
 
 #include <fstream>
 #include <map>

@@ -1,5 +1,5 @@
-#ifndef Material_H
-#define Material_H
+#ifndef MATERIAL_H
+#define MATERIAL_H
 
 #include <vector>
 #include "vec3.h"
