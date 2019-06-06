@@ -48,7 +48,7 @@ class RetouchWindow {
 
 class Scene {
 	public:
-		Scene(void);
+		explicit Scene(void);
 		void RenderImage(int nx, int ny, int ns, const char *filename);
 
 		void RenderSceneWindow(void);
@@ -83,7 +83,7 @@ class Scene {
 		GLuint fbo;
 		GLuint texture;
 		GLuint shaderProgram;
-		const char *vertexShaderSource = "#version 330 core\n"
+		const char * const vertexShaderSource = "#version 330 core\n"
 			"layout (location = 0) in vec3 aPos;\n"
 			"layout (location = 1) in vec3 aNormal;\n"
 			"out vec3 Normal;\n"
@@ -99,7 +99,7 @@ class Scene {
 			"	gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
 			"}\0";
 
-		const char *fragmentShaderSource = "#version 330 core\n"
+		const char * const fragmentShaderSource = "#version 330 core\n"
 			"in vec3 Normal;\n"
 			"in vec3 FragPos;\n"
 			"out vec4 FragColor;\n"
