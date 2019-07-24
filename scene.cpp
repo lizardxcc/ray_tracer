@@ -10,6 +10,7 @@
 #include "scene.h"
 #include "vec3.h"
 #include "filter.h"
+#include "filebrowser.h"
 
 
 void ImgViewer::LoadImage(const std::shared_ptr<const double[]>& img, int width, int height)
@@ -163,12 +164,15 @@ Scene::Scene(void)
 	//	1, 2, 3
 	//};
 
+	if (file_browser.OpenDir("/") == false) {
+		std::cout << "Error" << std::endl;
+	}
 }
 
 
-void Scene::Load(const char *objfilename, const char *matfilename)
+void Scene::Load(const char *objfilename)
 {
-	renderer.Load(objfilename, matfilename);
+	renderer.Load(objfilename);
 	for (size_t o = 0; o < renderer.obj_loader.objects.size(); o++) {
 		VAOs.push_back(0);
 		glGenVertexArrays(1, &VAOs[o]);
@@ -290,16 +294,19 @@ void Scene::RenderSceneWindow(void)
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Load test.obj")) {
 				if (!scene_loaded) {
-					Load("test.obj", "test.Material");
+					Load("test.obj");
 					scene_loaded = true;
 				}
 			}
 			if (ImGui::MenuItem("Load test2.obj")) {
 				if (!scene_loaded) {
-					Load("test2.obj", "test2.Material");
+					Load("test2.obj");
 					scene_loaded = true;
 				}
 			}
+			//if (ImGui::MenuItem("Open with file browser")) {
+
+			//}
 			if (ImGui::MenuItem("Close")) {
 				if (scene_loaded) {
 					ClearData();
@@ -309,6 +316,13 @@ void Scene::RenderSceneWindow(void)
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
+	}
+	if (ImGui::CollapsingHeader("Open a file using a file browser")) {
+		std::string str = file_browser.Render();
+		if (str != "") {
+			Load(str.c_str());
+			scene_loaded = true;
+		}
 	}
 	if (scene_loaded)
 		RenderScene();

@@ -12,13 +12,13 @@
 //	Load(filename);
 //}
 
-void Renderer::Load(const char *objfilename, const char *matfilename)
+void Renderer::Load(const char *objfilename)
 {
 	obj_loader.Load(objfilename);
-	//for (const auto& s : obj_loader.mtl_file) {
-	//	mtl_loader.Load(s.c_str());
-	//}
-	Material_loader.Load(matfilename);
+	for (const auto& s : obj_loader.mtl_file) {
+		Material_loader.Load(s.c_str());
+	}
+	//Material_loader.Load(matfilename);
 	//for (int i = 0; i < obj_loader.objects.size(); i++) {
 	//	std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
 	//	//std::shared_ptr<Material> mat = Material_loader.Materials.at(obj_loader.objects[i]->material_name);

@@ -5,6 +5,7 @@
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <glm/glm.hpp>
 #include "renderer.h"
+#include "filebrowser.h"
 
 
 class ImgViewer {
@@ -57,10 +58,11 @@ class Scene {
 
 		RetouchWindow retouch_window;
 	private:
-		void Load(const char *objfilename, const char *matfilename);
+		void Load(const char *objfilename);
 		void ClearData(void);
 		void RenderScene(void);
 		bool scene_loaded = false;
+		FileBrowser file_browser;
 		Renderer renderer;
 		glm::vec3 cameraPos;
 		glm::vec3 cameraFront;

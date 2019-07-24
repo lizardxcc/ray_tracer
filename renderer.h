@@ -10,7 +10,7 @@
 class Renderer {
 	public:
 		//Renderer(const char *filename);
-		void Load(const char *objfilename, const char *matfilename);
+		void Load(const char *objfilename);
 		void Clear(void);
 		void RenderImage(int nx, int ny, int ns);
 		double NaivePathTracing(const ray& r);
