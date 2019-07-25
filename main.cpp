@@ -90,13 +90,6 @@ int main(void)
 
 	ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.1f, 1.00f);
 
-        int my_image_width = 200, my_image_height = 200;
-        //unsigned char* my_image_data = stbi_load("my_image.png", &my_image_width, &my_image_height, NULL, 4);
-	unsigned char *my_image_data = new unsigned char[my_image_width*my_image_height*4];
-	for (int i = 0; i < my_image_width*my_image_height*4; i++) {
-		my_image_data[i] = 255;
-	}
-
 	Scene scene;
 	MaterialEditor Material_editor;
 
