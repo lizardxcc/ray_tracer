@@ -54,7 +54,10 @@ int main(void)
 	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-	GLFWwindow* window = glfwCreateWindow(1000, 600, "renderer", NULL, NULL);
+	const GLFWvidmode *vidmode;
+	vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+	GLFWwindow* window = glfwCreateWindow(vidmode->width, vidmode->height, "renderer", NULL, NULL);
 	if (window == NULL)
 		return 1;
 	glfwMakeContextCurrent(window);
