@@ -177,6 +177,7 @@ Scene::Scene(void)
 	//	1, 2, 3
 	//};
 
+	context = ax::NodeEditor::CreateEditor();
 }
 
 
@@ -805,6 +806,9 @@ void Scene::RenderMaterialEditorWindow(void)
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
 	ImGui::Begin("Material Node Editor");
+	ax::NodeEditor::SetCurrentEditor(context);
+	ax::NodeEditor::Begin("material node editor");
+	ax::NodeEditor::End();
 	ImGui::End();
 }
 

@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include "renderer.h"
 #include "filebrowser.h"
+#include "imgui_node_editor.h"
 
 
 extern uint8_t *env_mapping_texture;
@@ -126,6 +127,7 @@ class Scene {
 			"}\n\0";
 
 		float pitch = 0.0f, yaw = -90.0f;
+		ax::NodeEditor::EditorContext *context = nullptr;
 
 };
 
