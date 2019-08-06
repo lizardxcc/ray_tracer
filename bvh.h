@@ -5,7 +5,7 @@
 #include "vec3.h"
 #include "ray.h"
 #include "aabb.h"
-#include "Hittable.h"
+#include "hittable.h"
 
 //class Hittable;
 

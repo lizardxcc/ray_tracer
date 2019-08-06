@@ -2,7 +2,7 @@
 #define HITABLELIST_H
 
 #include <vector>
-#include "Hittable.h"
+#include "hittable.h"
 #include "bvh.h"
 
 class HittableList: public Hittable {

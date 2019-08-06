@@ -5,7 +5,7 @@
 #include "vec3.h"
 #include "onb.h"
 #include "ray.h"
-#include "Hittable.h"
+#include "hittable.h"
 #include "spectrum.h"
 
 extern const vec3 default_vt;
