@@ -105,13 +105,9 @@ int main(void)
 		ImGui::NewFrame();
 
 		if (ImGui::BeginMainMenuBar()) {
-			if (ImGui::BeginMenu("File"))
+			if (ImGui::BeginMenu("Help"))
 			{
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Render"))
-			{
-				if (ImGui::MenuItem("Render")) {
+				if (ImGui::MenuItem("Help me")) {
 				}
 				ImGui::EndMenu();
 			}
@@ -121,7 +117,8 @@ int main(void)
 		scene.RenderSceneWindow();
 		scene.RenderPreviewWindow();
 		scene.RenderMaterialEditorWindow();
-		scene.retouch_window.Render();
+		scene.RenderMaterialNodeEditorWindow();
+		//scene.retouch_window.Render();
 
 		ImGui::Render();
 		int display_w, display_h;

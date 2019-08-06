@@ -1,7 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "Hittable.h"
+#include "hittable.h"
 #include "material.h"
 #include "obj.h"
 #include "mtl.h"
@@ -151,6 +151,7 @@ class Triangle : public Hittable {
 		vec3 v[3];
 		vec3 normal[3];
 		vec3 face_normal;
+		vec3 vt[3];
 };
 
 class Quadrilateral : public Hittable {
@@ -160,6 +161,7 @@ class Quadrilateral : public Hittable {
 		std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o) override;
 		vec3 v[4];
 		vec3 normal;
+		vec3 vt[4];
 };
 
 #endif

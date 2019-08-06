@@ -86,6 +86,13 @@ bool obj::LoadObject(void)
 				v.e[2] = atof(s.c_str());
 				obj->v.push_back(v);
 			} else if (s == "vt") {
+				vec3 vt;
+				iss >> s;
+				vt.e[0] = atof(s.c_str());
+				iss >> s;
+				vt.e[1] = atof(s.c_str());
+				vt.e[2] = 0;
+				obj->vt.push_back(vt);
 			} else if (s == "vn") {
 				vec3 vn;
 				iss >> s;
@@ -101,24 +108,24 @@ bool obj::LoadObject(void)
 					iss >> s;
 					std::istringstream v(s);
 					std::string vs;
-					std::array<boost::optional<size_t>, 3> va = {boost::none, boost::none, boost::none};
+					std::array<boost::optional<size_t>, 3> vertex_info = {boost::none, boost::none, boost::none};
 
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
 						//std::cout << " AAA :" << vs << ";" << std::endl;
-						va[0] = atoi(vs.c_str());
+						vertex_info[0] = atoi(vs.c_str());
 					}
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
 						//std::cout << " AAA :" << vs << ";" << std::endl;
-						va[1] = atoi(vs.c_str());
+						vertex_info[1] = atoi(vs.c_str());
 					}
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
 						//std::cout << " AAA :" << vs << ";" << std::endl;
-						va[2] = atoi(vs.c_str());
+						vertex_info[2] = atoi(vs.c_str());
 					}
-					face.push_back(va);
+					face.push_back(vertex_info);
 				}
 				obj->f.push_back(face);
 			} else if (s == "usemtl") {
@@ -188,22 +195,22 @@ void obj::CalcIndices(void)
 	size_t v_index = 1;
 	size_t vt_index = 1;
 	size_t vn_index = 1;
-	for (auto& o : objects) {
-		for (auto& a : o->f) {
-			for (auto& b : a) {
-				if (b[0]) {
-					*b[0] -= v_index;
+	for (auto& object : objects) {
+		for (auto& face : object->f) {
+			for (auto& vertex_info : face) {
+				if (vertex_info[0]) {
+					*vertex_info[0] -= v_index;
 				}
-				if (b[1]) {
-					*b[1] -= vt_index;
+				if (vertex_info[1]) {
+					*vertex_info[1] -= vt_index;
 				}
-				if (b[2]) {
-					*b[2] -= vn_index;
+				if (vertex_info[2]) {
+					*vertex_info[2] -= vn_index;
 				}
 			}
 		}
-		v_index += o->v.size();
-		vt_index += o->vt.size();
-		vn_index += o->vn.size();
+		v_index += object->v.size();
+		vt_index += object->vt.size();
+		vn_index += object->vn.size();
 	}
 }

@@ -1,7 +1,41 @@
+#include <complex>
 #include "material.h"
 #include "onb.h"
 #include "pdf.h"
 #include "object.h"
+#include "stb_image.h"
+
+const vec3 default_vt(0, 0, 0);
+
+// the approximation of shlick assumes that n is greater than or equal to 1
+double shlick(double cos_theta, double n)
+{
+	return ((n-1)*(n-1)+4.0*n*pow(1.0-cos_theta, 5))/((n+1)*(n+1));
+}
+double rfresnel(double cos_theta, double n)
+{
+	const double sin_theta = sqrt(1.0-cos_theta*cos_theta);
+	const double sin_t = sin_theta/n;
+	if (sin_t > 1.0)
+		return 1.0;
+	const double r = (cos_theta - sqrt(n*n-sin_theta*sin_theta))/(cos_theta + sqrt(n*n-sin_theta*sin_theta));
+	return r*r;
+	//return shlick(sqrt(1-sin_beta*sin_beta), 1.0/n);
+}
+double cfresnel(double cos_theta, std::complex<double> n)
+{
+	const double sin_theta = sqrt(1.0-cos_theta*cos_theta);
+	const double sin_t = sin_theta/std::real(n);
+	if (sin_t > 1.0)
+		return 1.0;
+	const double r = std::abs((cos_theta - sqrt(n*n-sin_theta*sin_theta))/(cos_theta + sqrt(n*n-sin_theta*sin_theta)));
+	return r*r;
+}
+
+double newshlick(double cos_theta, double n, double k)
+{
+	return ((n-1.0)*(n-1.0)+4.0*n*pow(1.0-cos_theta, 5)+k*k)/((n+1)*(n+1)+k*k);
+}
 
 
 double Homogenious::Phase(const vec3& vi, double wli, const vec3& vo, double wlo) const
@@ -60,24 +94,31 @@ vec3 random_in_unit_Sphere(void)
 	return p;
 }
 
-
-
-vec3 reflect(vec3 v, vec3 normal)
+vec3 reflect2(vec3 v, vec3 normal)
 {
-	return (v - 2 * normal * dot(v, normal));
+	return (-v + 2 * normal * dot(v, normal));
 }
 
-vec3 refract(vec3 v, vec3 normal, double n_in, double n_out)
+vec3 refract(vec3 v, vec3 normal, double n) // this n is a relative refraction index
 {
 	//vec3 normal = unit_vector(rec.normal);
 	vec3 v2 = normal * dot(v, normal);
 	vec3 v1 = v - v2;
-	vec3 v1_p = (n_in / n_out) * v1.length() * unit_vector(v1);
+	vec3 v1_p = -(1.0/n) * v1.length() * unit_vector(v1);
 	vec3 v2_p = -sqrt(1-v1_p.length()*v1_p.length()) * normal;
 	return v1_p + v2_p;
 }
+//vec3 refract(vec3 v, vec3 normal, double n_in, double n_out)
+//{
+//	//vec3 normal = unit_vector(rec.normal);
+//	vec3 v2 = normal * dot(v, normal);
+//	vec3 v1 = v - v2;
+//	vec3 v1_p = (n_in / n_out) * v1.length() * unit_vector(v1);
+//	vec3 v2_p = -sqrt(1-v1_p.length()*v1_p.length()) * normal;
+//	return v1_p + v2_p;
+//}
 
-double Lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+double Lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	if (vi.z() < 0.0)
 		return 0.0;
@@ -99,7 +140,7 @@ bool Lambertian::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, do
 }
 
 
-double Metal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+double Metal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	if (vi.z() < 0.0)
 		return 0.0;
@@ -108,13 +149,41 @@ double Metal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 }
 bool Metal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
+	double ref_idx = n.get(wlo);
+	double kv = k.get(wlo);
+
+	double cos_o = vo.z();
+	double n_vacuum = 1.0;
+	std::complex<double> n1, n2;
+	if (cos_o >= 0.0) {
+		n1 = n_vacuum;
+		n2 = std::complex<double>(ref_idx, kv);
+	} else {
+		n1 = std::complex<double>(ref_idx, kv);
+		n2 = n_vacuum;
+		cos_o = abs(cos_o);
+	}
+	std::complex<double> relative_ref_idx = n2/n1;
+	const double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
+	const double fresnel = cfresnel(cos_o, relative_ref_idx);
+
 	vi[0] = -vo[0];
 	vi[1] = -vo[1];
 	vi[2] = vo[2];
+	pdfval = 1.0;
+	BxDF = fresnel/cos_o;
+
 	wli = wlo;
-	BxDF = this->BxDF(vi, wli, vo, wlo);
-	pdfval = 1;
+
 	return true;
+
+	//vi[0] = -vo[0];
+	//vi[1] = -vo[1];
+	//vi[2] = vo[2];
+	//wli = wlo;
+	//BxDF = this->BxDF(vi, wli, vo, wlo);
+	//pdfval = 1;
+	//return true;
 }
 /*
 double Metal::BxDF(const ray& r_in, const HitRecord& rec, const ray& scattered) const
@@ -159,11 +228,12 @@ bool Metal::scatter(const ray& r_in, const HitRecord& rec, vec3& attenuation, ra
 */
 
 
-double shlick(double theta, double n1, double n2)
-{
-	double R0 = pow((n1-n2)/(n1+n2), 2.0);
-	return R0 + (1-R0)*pow(1-cos(theta), 5.0);
-}
+//double shlick(double cos_theta, double n1, double n2)
+//{
+//	double R0 = pow((n1-n2)/(n1+n2), 2.0);
+//	return R0 + (1-R0)*pow(1-cos_theta, 5.0);
+//}
+
 
 
 bool Dielectric::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
@@ -171,59 +241,83 @@ bool Dielectric::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, do
 
 	//double ref_idx = ref_B + ref_C / pow(r_in.central_wl/1000.0, 2.0);
 	double ref_idx = n.get(wlo);
+	double kv = k.get(wlo);
 
 	double cos_o = vo.z();
 	double n_vacuum = 1.0;
-	double n_in, n_out;
+	std::complex<double> n1, n2;
 	double fresnel;
 	vec3 normal;
 	if (cos_o >= 0.0) {
 		// from outside to inside of object
-		n_in = ref_idx;
-		n_out = n_vacuum;
+		//n_second = ref_idx;
+		//n_first = n_vacuum;
+		n1 = n_vacuum;
+		n2 = std::complex<double>(ref_idx, kv);
 		normal = vec3(0, 0, 1);
 	} else {
 		// from inside to outside of object
-		n_in = n_vacuum;
-		n_out = ref_idx;
+		//n_second = n_vacuum;
+		//n_first = ref_idx;
+		n1 = std::complex<double>(ref_idx, kv);
+		n2 = n_vacuum;
 		cos_o = abs(cos_o);
 		normal = vec3(0, 0, -1);
 	}
-	double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
-	double sin_t = n_out/n_in * sin_o;
-	bool total_internal_reflection = false;
-	double cos_t;
-	if (sin_t >= 1.0) { // total internal reflection
-		fresnel = 1.0;
-		total_internal_reflection = true;
-	} else {
-		cos_t = sqrt(std::max(0.0, 1.0-sin_t*sin_t));
-		//double r_p = (n_in*cos_o - n_out*cos_t)/(n_in*cos_o + n_out*cos_t);
-		//double r_s = (n_out*cos_o - n_in*cos_t)/(n_out*cos_o + n_in*cos_t);
-		//fresnel = (r_p*r_p + r_s*r_s)/2.0;
-		double R0 = pow((n_out-n_in)/(n_out+n_in), 2);
-		fresnel = R0 + (1-R0) * pow(1-cos_t, 5);
-	}
+	//double relative_ref_idx = std::real(n2)/std::real(n1);
+	std::complex<double> relative_ref_idx = n2/n1;
+	fresnel = cfresnel(cos_o, relative_ref_idx);
+	//double sin_t = n_first/n_second * sin_o;
+	//bool total_internal_reflection = false;
+	//if (sin_t >= 1.0) { // total internal reflection
+	//	fresnel = 1.0;
+	//	total_internal_reflection = true;
+	//} else {
+	//	cos_t = sqrt(std::max(0.0, 1.0-sin_t*sin_t));
+	//	fresnel = shlick
+	//	//double r_p = (n_second*cos_o - n_first*cos_t)/(n_second*cos_o + n_first*cos_t);
+	//	//double r_s = (n_first*cos_o - n_second*cos_t)/(n_first*cos_o + n_second*cos_t);
+	//	//fresnel = (r_p*r_p + r_s*r_s)/2.0;
+
+	//	//if (n_first <= n_second) {
+	//	//	//fresnel = shlick(cos_o, n_first, n_second);
+	//	//	fresnel = newshlick(cos_o, ref_idx, kv);
+	//	//} else {
+	//	//	//fresnel = shlick(cos_t, n_first, n_second);
+	//	//	fresnel = newshlick(cos_t, ref_idx, kv);
+	//	//}
+	//	//double R0 = pow((n_first-n_second)/(n_first+n_second), 2);
+	//	//fresnel = R0 + (1-R0) * pow(1-cos_t, 5);
+	//}
 
 	double rand = drand48();
 	// mutiple importance sampling
-	if (rand <= fresnel || total_internal_reflection) { // reflection (includes total internal reflection)
+	//if (rand <= fresnel || total_internal_reflection) { // reflection (includes total internal reflection)
+	if (rand <= fresnel) { // reflection (includes total internal reflection)
 		vi[0] = -vo[0];
 		vi[1] = -vo[1];
 		vi[2] = vo[2];
-		pdfval = fresnel;
-		BxDF = fresnel/cos_o;
+		//pdfval = fresnel;
+		//BxDF = fresnel/cos_o;
+		pdfval = 1.0;
+		BxDF = 1.0/cos_o;
 	} else { // refraction
+		double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
+		double sin_t = sin_o / std::real(relative_ref_idx);
+		double cos_t = sqrt(1.0-sin_t*sin_t);
 		vi = (-cos_t) * normal - sin_t * unit_vector(vec3(vo[0], vo[1], 0));
-		pdfval = 1.0-fresnel;
-		BxDF = ((n_out*n_out)/(n_in*n_in)) * (1.0-fresnel) / cos_t;
+		//pdfval = 1.0-fresnel;
+		//BxDF = ((n_first*n_first)/(n_second*n_second)) * (1.0-fresnel) / cos_t;
+		pdfval = 1.0;
+		BxDF = 1.0/(pow(std::real(relative_ref_idx), 2)) / cos_t;
+		//BxDF = 1.0/(n*n) * / cos_t;
 	}
 	wli = wlo;
 
 	return true;
 }
 
-double OrenNayar::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+double OrenNayar::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	double cos_theta_i = vi.z();
 	if (cos_theta_i < 0) {
@@ -265,7 +359,122 @@ bool OrenNayar::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, dou
 }
 
 
-double TorranceSparrow::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+double Microfacet::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	double cos_theta_i = vi.z();
+	if (cos_theta_i < 0) {
+		return 0.0;
+	}
+
+	vec3 vh = (vi+vo)/2.0;
+
+	//double cos_theta_h_squared = vh.z() * vh.z();
+	//double tan_theta_h_squared = 1.0/cos_theta_h_squared - 1.0;
+	//// beckman spizzichino
+	//double d = exp(-tan_theta_h_squared/(alpha*alpha)) / (M_PI * alpha * alpha * cos_theta_h_squared * cos_theta_h_squared);
+	
+	//GGX
+	//double d = alpha * alpha / (M_PI * pow((alpha*alpha-1.0)*vh.z()*vh.z()+1.0, 2.0)
+	double d = 1.0;
+
+	//double g = 1 / (1.0 + lambda(vi) + lambda(vo));
+	double g = 1.0;
+
+	double fresnel = 1.0;
+
+
+
+	//return albedo.get(wli) * d * g * fresnel / (4.0 * vo.z() * vi.z());
+	return albedo.get(wli) * d * g * fresnel / (4.0 * vo.z() * vh.z());
+}
+
+double Microfacet::lambda(const vec3& v) const
+{
+	double cos_theta_squared = v.z()*v.z();
+	double tan_theta = sqrt(1.0/cos_theta_squared - 1.0);
+	double a = 1.0 / alpha / tan_theta;
+	return 0.5 * (std::erf(a) - 1.0 + exp(-a*a) / (a * sqrt(M_PI)));
+}
+
+
+bool Microfacet::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+{
+	//double phi = 2.0 * M_PI * drand48();
+	//double tan_theta = sqrt(-alpha*alpha*log(1.0-drand48()));
+	
+	double phi = 2 * M_PI * drand48();
+	double u = drand48();
+	double theta = acos(sqrt((1.0-u)/((alpha*alpha-1.0)*u+1)));
+	double tan_theta = tan(theta);
+	double cos_theta_squared = cos(theta)*cos(theta);
+	double sin_theta = sin(theta);
+	//double tan_theta = alpha * sqrt(u/(1.0-u));
+	//double cos_theta_squared = 1.0/(1.0+tan_theta * tan_theta);
+	//double sin_theta = sqrt(1.0 - cos_theta_squared);
+	//
+
+	vec3 micro_normal;
+	micro_normal[0] = sin_theta * cos(phi);
+	micro_normal[1] = sin_theta * sin(phi);
+	micro_normal[2] = sqrt(cos_theta_squared);
+
+
+	double ref_idx = n.get(wlo);
+	double kv = k.get(wlo);
+
+	double n_vacuum = 1.0;
+	std::complex<double> n1, n2;
+	double cos_o;
+	if (vo.z() >= 0.0) {
+		cos_o = dot(vo, micro_normal);
+		if (cos_o < 0) {
+			pdfval = 1.0;
+			BxDF = 0.0;
+			return true;
+		}
+		n1 = n_vacuum;
+		n2 = std::complex<double>(ref_idx, kv);
+	} else {
+		micro_normal = -micro_normal;
+		cos_o = dot(vo, micro_normal);
+		if (cos_o < 0) {
+			pdfval = 1.0;
+			BxDF = 0.0;
+			return true;
+		}
+		n1 = std::complex<double>(ref_idx, kv);
+		n2 = n_vacuum;
+	}
+	std::complex<double> relative_ref_idx = n2/n1;
+	double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
+	double fresnel = cfresnel(cos_o, relative_ref_idx);
+
+	if (enable_refraction) {
+		if (drand48() < fresnel) {
+			vi = reflect2(vo, micro_normal);
+			wli = wlo;
+			pdfval = 1.0;
+			double g = 1.0/(1.0+lambda(vi)) * 1.0/(1.0+lambda(vo));
+			BxDF = g * abs(dot(vo, micro_normal)) / (abs(vo.z()*vi.z()*micro_normal.z()));
+		} else {
+			vi = refract(vo, micro_normal, std::real(relative_ref_idx));
+			wli = wlo;
+			pdfval = 1.0;
+			double g = 1.0/(1.0+lambda(vi)) * 1.0/(1.0+lambda(vo));
+			BxDF = g * abs(dot(vi, micro_normal)) / (abs(vi.z()*vo.z()*micro_normal.z()));
+		}
+	} else {
+		vi = reflect2(vo, micro_normal);
+		wli = wlo;
+		pdfval = 1.0;
+		double g = 1.0/(1.0+lambda(vi)) * 1.0/(1.0+lambda(vo));
+		BxDF = fresnel * g * abs(dot(vo, micro_normal)) / (abs(vo.z()*vi.z()*micro_normal.z()));
+	}
+
+	return true;
+}
+
+double GGX::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	double cos_theta_i = vi.z();
 	if (cos_theta_i < 0) {
@@ -276,19 +485,18 @@ double TorranceSparrow::BxDF(const vec3& vi, double wli, const vec3& vo, double 
 
 	double cos_theta_h_squared = vh.z() * vh.z();
 	double tan_theta_h_squared = 1.0/cos_theta_h_squared - 1.0;
-	// beckman spizzichino
-	double d = exp(-tan_theta_h_squared/(alpha*alpha)) / (M_PI * alpha * alpha * cos_theta_h_squared * cos_theta_h_squared);
+	// GGX
+	double d = alpha*alpha/(M_PI * pow(1.0 - (1.0 - alpha*alpha)*vh.z()*vh.z(), 2.0));
 
-	double g = 1 / (1.0 + lambda(vi) + lambda(vo));
+	//double g = 1 / (1.0 + lambda(vi) + lambda(vo));
+	double g = 1.0;
 
 	double fresnel = 1.0;
-
-
 
 	return albedo.get(wli) * d * g * fresnel / (4.0 * vo.z() * vi.z());
 }
 
-double TorranceSparrow::lambda(const vec3& v) const
+double GGX::lambda(const vec3& v) const
 {
 	double cos_theta_squared = v.z()*v.z();
 	double tan_theta = sqrt(1.0/cos_theta_squared - 1.0);
@@ -296,7 +504,7 @@ double TorranceSparrow::lambda(const vec3& v) const
 	return 0.5 * (std::erf(a) - 1.0 + exp(a*a) / (a * sqrt(M_PI)));
 }
 
-bool TorranceSparrow::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool GGX::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
 	CosinePdf Pdf(rec.normal);
 
@@ -309,7 +517,6 @@ bool TorranceSparrow::Sample(const HitRecord& rec, const ONB& uvw, const vec3& v
 
 	return true;
 }
-
 
 
 bool Transparent::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
@@ -344,7 +551,7 @@ bool MixMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, d
 	}
 }
 
-double MixMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
+double MixMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	if (drand48() < fac) {
 		return mat2->BxDF(vi, wli, vo, wlo);
@@ -352,6 +559,47 @@ double MixMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo)
 		return mat1->BxDF(vi, wli, vo, wlo);
 	}
 }
+
+bool TextureMaterial::LoadImage(const char *path)
+{
+	std::cout << "Loading " << path << std::endl;
+	texture = stbi_load(path, &width, &height, &bpp, 0);
+	return true;
+}
+
+double TextureMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	if (vi.z() < 0.0)
+		return 0.0;
+
+	int x = static_cast<double>(width) * vt[0];
+	int y = static_cast<double>(height) * (1.0-vt[1]);
+	vec3 rgb;
+	rgb[0] = texture[bpp*(x+y*width)];
+	rgb[1] = texture[bpp*(x+y*width)+1];
+	rgb[2] = texture[bpp*(x+y*width)+2];
+	Spectrum spectrum = RGBtoSpectrum(rgb);
+
+	return spectrum.get(wli)/M_PI * 0.001;
+}
+
+bool TextureMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+{
+	CosinePdf Pdf(rec.normal);
+
+	vec3 generated_direction = Pdf.Generate();
+	pdfval = Pdf.PdfVal(generated_direction);
+	vi = uvw.WorldToLocal(generated_direction);
+
+	wli = wlo;
+	BxDF = this->BxDF(vi, wli, vo, wlo, rec.vt);
+	return true;
+}
+
+//double TextureMaterial::Emitted(const ray& r, const HitRecord& rec) const
+//{
+//	return 1.0;
+//}
 /*
 double straight_light::Emitted(double u, double v, const ray& r_in, const HitRecord& rec) const
 {

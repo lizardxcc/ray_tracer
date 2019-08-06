@@ -8,10 +8,15 @@
 #include "filebrowser.h"
 
 
+extern uint8_t *env_mapping_texture;
+extern int env_mapping_width, env_mapping_height, env_mapping_bpp;
+
+
 class ImgViewer {
 	public:
 		void Render(void);
-		void LoadImage(const std::shared_ptr<const double[]>& img, int width, int height);
+		//void LoadImage(const std::shared_ptr<const double[]>& img, int width, int height);
+		void LoadImage(const double *img, int width, int height);
 	private:
 		GLuint opengl_texture;
 		GLubyte *glimg = nullptr;
@@ -20,59 +25,62 @@ class ImgViewer {
 };
 
 
-class ImgRetouch {
-	public:
-		void Render(void);
-		void LoadImage(std::shared_ptr<double[]>& img, int width, int height);
-		std::shared_ptr<double[]> orig_img;
-		std::shared_ptr<double[]> retouched;
-		int width;
-		int height;
-	private:
-		ImgViewer original_viewer;
-		ImgViewer retouched_viewer;
-		double sigma_d = 1.0;
-		double sigma_r = 1.0;
-		uint64_t window = 2;
-};
-
-class RetouchWindow {
-	public:
-		void Render(void);
-		void AddImage(std::shared_ptr<double[]>& img, int width, int height);
-		void AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height);
-	private:
-		std::vector<std::string> img_names;
-		std::vector<ImgRetouch> tabs;
-};
+//class ImgRetouch {
+//	public:
+//		void Render(void);
+//		void LoadImage(std::shared_ptr<double[]>& img, int width, int height);
+//		std::shared_ptr<double[]> orig_img;
+//		std::shared_ptr<double[]> retouched;
+//		int width;
+//		int height;
+//	private:
+//		ImgViewer original_viewer;
+//		ImgViewer retouched_viewer;
+//		double sigma_d = 1.0;
+//		double sigma_r = 1.0;
+//		uint64_t window = 2;
+//};
+//
+//class RetouchWindow {
+//	public:
+//		void Render(void);
+//		void AddImage(std::shared_ptr<double[]>& img, int width, int height);
+//		void AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height);
+//	private:
+//		std::vector<std::string> img_names;
+//		std::vector<ImgRetouch> tabs;
+//};
 
 
 class Scene {
 	public:
 		explicit Scene(void);
-		void RenderImage(int nx, int ny, int ns, const char *filename);
 
 		void RenderSceneWindow(void);
 		void RenderPreviewWindow(void);
 		void RenderMaterialEditorWindow(void);
+		void RenderMaterialNodeEditorWindow(void);
+		void RenderLog(void);
 
-		RetouchWindow retouch_window;
+		//RetouchWindow retouch_window;
 	private:
 		void Load(const char *objfilename);
 		void ClearData(void);
 		void RenderScene(void);
 		bool scene_loaded = false;
-		FileBrowser file_browser;
 		Renderer renderer;
 		glm::vec3 cameraPos;
 		glm::vec3 cameraFront;
 		glm::vec3 cameraUp;
-		float d, focal_length, aperture;
+		float d = 0.45, focal_length=0.4, aperture = 0.0;
+		float vfov = 60;
 		unsigned int activeObjectIndex = 0;
 		GLubyte *img = nullptr;
 		int img_width = 500;
 		int img_height = 500;
 		int img_Samples = 100;
+		int img_spectral_samples = N_SAMPLE;
+		bool enable_openmp = true;
 		bool img_loaded = false;
 		GLuint my_opengl_texture;
 

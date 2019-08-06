@@ -16,6 +16,7 @@ struct HitRecord {
 	vec3 normal;
 	std::shared_ptr<Material> mat_ptr;
 	unsigned int hit_object_id;
+	vec3 vt;
 };
 
 

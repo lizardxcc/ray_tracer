@@ -49,7 +49,10 @@ class Camera {
 
 class PinholeCamera {
 	public:
-		PinholeCamera(vec3 lookfrom, vec3 lookat, vec3 vup, double aspect, double d)
+		PinholeCamera(void)
+		{
+		}
+		PinholeCamera(vec3 lookfrom, vec3 lookat, vec3 vup, double d, double aspect)
 		{
 			double half_height = 0.5;
 			double half_width = aspect * half_height;
@@ -63,10 +66,25 @@ class PinholeCamera {
 			horizontal = 2 * half_width * u;
 			vertical = 2 * half_height * v;
 		}
+		void set_Camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect)
+		{
+			double half_height = 0.5;
+			double half_width = aspect * half_height;
+			this->d = 0.5/tan(vfov/2.0);
+			origin = lookfrom;
+			vec3 w = unit_vector(lookfrom - lookat);
+			vec3 u = unit_vector(cross(vup, w));
+			vec3 v = cross(w, u);
+			film_lower_left_corner = origin - half_width * u - half_height * v + d * w;
+			pinhole = origin;
+			horizontal = 2.0 * half_width * u;
+			vertical = 2.0 * half_height * v;
+		}
 
 		ray get_ray(double u, double v)
 		{
-			return ray(origin, origin-(film_lower_left_corner + u*horizontal + v*vertical));
+			//return ray(origin, unit_vector(origin-(film_lower_left_corner + u*horizontal + v*vertical)));
+			return ray(origin, unit_vector(origin-(film_lower_left_corner + u*horizontal + v*vertical)));
 		}
 
 		vec3 origin;

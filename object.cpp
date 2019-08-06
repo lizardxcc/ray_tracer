@@ -309,6 +309,10 @@ ObjModel::ObjModel(obj& o)
 				for (size_t k = 0; k < l; k++) {
 					tri->v[k] = object->v[*f[k][0]];
 					tri->normal[k] = object->vn[*f[k][2]];
+
+					if (f[k][1]) {
+						tri->vt[k] = object->vt[*f[k][1]];
+					}
 				}
 				tri->face_normal = unit_vector(cross(tri->v[1] - tri->v[0], tri->v[2] - tri->v[1]));
 				tri->mat_ptr = nullptr;
@@ -319,6 +323,10 @@ ObjModel::ObjModel(obj& o)
 				for (size_t k = 0; k < l; k++) {
 					quad->v[k] = object->v[*f[k][0]];
 					quad->normal += object->vn[*f[k][2]];
+
+					if (f[k][1]) {
+						quad->vt[k] = object->vt[*f[k][1]];
+					}
 				}
 				//quad->normal.make_unit_vector();
 				quad->normal = unit_vector(cross(quad->v[1] - quad->v[0], quad->v[2] - quad->v[1]));
@@ -438,6 +446,8 @@ bool Triangle::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 			rec.t = t;
 			rec.p = p;
 			rec.normal = (result1.length()*normal[0]+result2.length()*normal[1]+result0.length()*normal[2])/tri_area;
+
+			rec.vt = (result1.length()*vt[0]+result2.length()*vt[1]+result0.length()*vt[2])/tri_area;
 			rec.mat_ptr = mat_ptr;
 			rec.hit_object_id = object_id;
 			return true;

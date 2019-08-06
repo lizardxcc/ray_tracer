@@ -5,6 +5,10 @@
 #include "materialfile.h"
 #include "material.h"
 #include "scene.h"
+#include "filebrowser.h"
+
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 
 void LambertianMaterialEditor(const std::shared_ptr<Lambertian>& mat_ptr)
 {
@@ -26,16 +30,29 @@ void LambertianMaterialEditor(const std::shared_ptr<Lambertian>& mat_ptr)
 void DielectricMaterialEditor(const std::shared_ptr<Dielectric>& mat_ptr)
 {
 	ImGui::Text("Dielectric");
+	ImGui::Text("n");
 	const ImVec2 slider_size(18, 160);
 	for (int i = 0; i < N_SAMPLE; i++) {
-		const double min = 1.0;
+		const double min = 0.01;
 		const double max = 5.0;
 		if (i > 0)
 			ImGui::SameLine();
 		ImGui::PushID(i);
-		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->n.data[i], &min, &max, "");
+		ImGui::VSliderScalar("##nv", slider_size, ImGuiDataType_Double, &mat_ptr->n.data[i], &min, &max, "");
 		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
 			ImGui::SetTooltip("%f", mat_ptr->n.data[i]);
+		ImGui::PopID();
+	}
+	ImGui::Text("k");
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 8.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##kv", slider_size, ImGuiDataType_Double, &mat_ptr->k.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->k.data[i]);
 		ImGui::PopID();
 	}
 }
@@ -45,40 +62,84 @@ void MetalMaterialEditor(const std::shared_ptr<Metal>& mat_ptr)
 {
 	ImGui::Text("Metal");
 	const ImVec2 slider_size(18, 160);
+	ImGui::Text("n");
 	for (int i = 0; i < N_SAMPLE; i++) {
 		const double min = 0.0;
-		const double max = 1.0;
+		const double max = 8.0;
 		if (i > 0)
 			ImGui::SameLine();
 		ImGui::PushID(i);
-		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->albedo.data[i], &min, &max, "");
+		ImGui::VSliderScalar("##nv", slider_size, ImGuiDataType_Double, &mat_ptr->n.data[i], &min, &max, "");
 		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
-			ImGui::SetTooltip("%f", mat_ptr->albedo.data[i]);
+			ImGui::SetTooltip("%f", mat_ptr->n.data[i]);
+		ImGui::PopID();
+	}
+	ImGui::Text("k");
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 8.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##kv", slider_size, ImGuiDataType_Double, &mat_ptr->k.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->k.data[i]);
 		ImGui::PopID();
 	}
 }
 
 
-void MicrofacetMaterialEditor(const std::shared_ptr<TorranceSparrow>& mat_ptr)
+void MicrofacetMaterialEditor(const std::shared_ptr<Microfacet>& mat_ptr)
 {
 	ImGui::Text("microfacet");
-	const ImVec2 slider_size(18, 160);
-	for (int i = 0; i < N_SAMPLE; i++) {
-		const double min = 0.0;
-		const double max = 1.0;
-		if (i > 0)
-			ImGui::SameLine();
-		ImGui::PushID(i);
-		ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->albedo.data[i], &min, &max, "");
-		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
-			ImGui::SetTooltip("%f", mat_ptr->albedo.data[i]);
-		ImGui::PopID();
-	}
+	//const ImVec2 slider_size(18, 160);
+	//for (int i = 0; i < N_SAMPLE; i++) {
+	//	const double min = 0.0;
+	//	const double max = 1.0;
+	//	if (i > 0)
+	//		ImGui::SameLine();
+	//	ImGui::PushID(i);
+	//	ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &mat_ptr->albedo.data[i], &min, &max, "");
+	//	if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+	//		ImGui::SetTooltip("%f", mat_ptr->albedo.data[i]);
+	//	ImGui::PopID();
+	//}
 	{
+		//const double min = 1e-3;
 		const double min = 0.0;
 		const double max = 3.0;
 		ImGui::SliderScalar("alpha", ImGuiDataType_Double, &mat_ptr->alpha, &min, &max, "%f");
+		//static double roughness = 1.0;
+		//ImGui::SliderScalar("roughness", ImGuiDataType_Double, &roughness, &min, &max, "%f");
+		//float x = std::log(roughness);
+		//mat_ptr->alpha = 1.62142 + 0.819955*x + 0.1734*x*x + 0.017201*x*x*x + 0.000640711*x*x*x*x;
 	}
+	ImGui::Text("n");
+	const ImVec2 slider_size(18, 160);
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.01;
+		const double max = 5.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##nv", slider_size, ImGuiDataType_Double, &mat_ptr->n.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->n.data[i]);
+		ImGui::PopID();
+	}
+	ImGui::Text("k");
+	for (int i = 0; i < N_SAMPLE; i++) {
+		const double min = 0.0;
+		const double max = 8.0;
+		if (i > 0)
+			ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::VSliderScalar("##kv", slider_size, ImGuiDataType_Double, &mat_ptr->k.data[i], &min, &max, "");
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+			ImGui::SetTooltip("%f", mat_ptr->k.data[i]);
+		ImGui::PopID();
+	}
+	ImGui::Checkbox("Enable Refraction", &mat_ptr->enable_refraction);
 }
 
 
@@ -110,6 +171,20 @@ void LightMaterialEditor(const std::shared_ptr<DiffuseLight>& mat_ptr)
 		ImGui::PopID();
 	}
 }
+
+void TextureMaterialEditor(const std::shared_ptr<TextureMaterial>& mat_ptr)
+{
+	ImGui::Text("texture");
+	static FileBrowser file_browser("/");
+	if (ImGui::CollapsingHeader("Open a file using a file browser")) {
+		std::string str = file_browser.Render();
+		if (str != "") {
+			//mat_ptr->texture = stbi_load(str.c_str(), &mat_ptr->width, &mat_ptr->height, &mat_ptr->bpp, 3);
+		}
+	}
+}
+
+
 void OutputMaterialNode::Render(void)
 {
 	if (output == nullptr) {
@@ -235,35 +310,58 @@ bool MaterialLoader::LoadMaterial(void)
 			}
 			mtl = std::make_shared<Lambertian>(albedo);
 		} else if (line == "dielectric") {
-			Spectrum n;
+			Spectrum n, k;
 			for (int i = 0; i < N_SAMPLE; i++) {
 				if (getline(file, line)) {
 					n.data[i] = stod(line);
 				}
 			}
-			mtl = std::make_shared<Dielectric>(n);
-			mtl->specular_flag = true;
-		} else if (line == "metal") {
-			Spectrum albedo;
 			for (int i = 0; i < N_SAMPLE; i++) {
 				if (getline(file, line)) {
-					albedo.data[i] = stod(line);
+					k.data[i] = stod(line);
 				}
 			}
-			mtl = std::make_shared<Metal>(albedo);
+			mtl = std::make_shared<Dielectric>(n, k);
 			mtl->specular_flag = true;
-		} else if (line == "microfacet") {
-			Spectrum albedo;
+		} else if (line == "metal") {
+			Spectrum n, k;
 			for (int i = 0; i < N_SAMPLE; i++) {
 				if (getline(file, line)) {
-					albedo.data[i] = stod(line);
+					n.data[i] = stod(line);
+				}
+			}
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (getline(file, line)) {
+					k.data[i] = stod(line);
+				}
+			}
+			mtl = std::make_shared<Metal>(n, k);
+			mtl->specular_flag = true;
+		} else if (line == "microfacet") {
+			Spectrum n, k;
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (getline(file, line)) {
+					n.data[i] = stod(line);
+				}
+			}
+			for (int i = 0; i < N_SAMPLE; i++) {
+				if (getline(file, line)) {
+					k.data[i] = stod(line);
 				}
 			}
 			double alpha;
 			if (getline(file, line)) {
 				alpha = stod(line);
 			}
-			mtl = std::make_shared<TorranceSparrow>(albedo, alpha);
+			mtl = std::make_shared<Microfacet>(n, k, alpha);
+			if (getline(file, line)) {
+				std::shared_ptr<Microfacet> mat_ptr = std::dynamic_pointer_cast<Microfacet>(mtl);
+				if (line == "enable_refraction_on") {
+					mat_ptr->enable_refraction = true;
+				} else if (line == "enable_refraction_off") {
+					mat_ptr->enable_refraction = false;
+				}
+			}
 		} else if (line == "transparent") {
 			mtl = std::make_shared<Transparent>();
 		} else if (line == "light") {
@@ -313,21 +411,35 @@ void MaterialLoader::WriteMaterial(std::shared_ptr<Material> mat)
 			for (const auto& d : mat_ptr->n.data) {
 				ofile << d << std::endl;
 			}
+			for (const auto& d : mat_ptr->k.data) {
+				ofile << d << std::endl;
+			}
 			ofile << std::endl;
 		} else if (id == typeid(Metal)) {
 			std::shared_ptr<Metal> mat_ptr = std::dynamic_pointer_cast<Metal>(mat);
 			ofile << "metal" << std::endl;
-			for (const auto& d : mat_ptr->albedo.data) {
+			for (const auto& d : mat_ptr->n.data) {
+				ofile << d << std::endl;
+			}
+			for (const auto& d : mat_ptr->k.data) {
 				ofile << d << std::endl;
 			}
 			ofile << std::endl;
-		} else if (id == typeid(TorranceSparrow)) {
-			std::shared_ptr<TorranceSparrow> mat_ptr = std::dynamic_pointer_cast<TorranceSparrow>(mat);
+		} else if (id == typeid(Microfacet)) {
+			std::shared_ptr<Microfacet> mat_ptr = std::dynamic_pointer_cast<Microfacet>(mat);
 			ofile << "microfacet" << std::endl;
-			for (const auto& d : mat_ptr->albedo.data) {
+			for (const auto& d : mat_ptr->n.data) {
+				ofile << d << std::endl;
+			}
+			for (const auto& d : mat_ptr->k.data) {
 				ofile << d << std::endl;
 			}
 			ofile << mat_ptr->alpha << std::endl;
+			if (mat_ptr->enable_refraction) {
+				ofile << "enable_refraction_on" << std::endl;
+			} else {
+				ofile << "enable_refraction_off" << std::endl;
+			}
 			ofile << std::endl;
 		} else if (id == typeid(Transparent)) {
 			std::shared_ptr<Transparent> mat_ptr = std::dynamic_pointer_cast<Transparent>(mat);

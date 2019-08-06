@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stack>
 #include <random>
 #ifdef _OPENMP
@@ -5,12 +6,8 @@
 #endif
 #include "renderer.h"
 #include "pdf.h"
+#include "scene.h"
 
-
-//Renderer::Renderer(const char *filename)
-//{
-//	Load(filename);
-//}
 
 void Renderer::Load(const char *objfilename)
 {
@@ -36,9 +33,11 @@ void Renderer::Clear(void)
 }
 
 
-void Renderer::RenderImage(int nx, int ny, int ns)
+void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp)
 {
-	orig_img.reset(new double[nx*ny*4]);
+	//orig_img.reset(new double[nx*ny*4]);
+
+	orig_img.resize(nx*ny*4);
 	Material::lights.clear();
 	for (size_t i = 0; i < world->models.size(); i++) {
 		//world->models[i]->SetMaterial(std::shared_ptr<Material>(Materials[i]));
@@ -50,28 +49,30 @@ void Renderer::RenderImage(int nx, int ny, int ns)
 		}
 	}
 
-
-	//std::ofstream ofs;
-	//ofs.open(filename);
-
-	//ofs << "P3\n" << nx << " " << ny << "\n255\n";
-
 	size_t count = 0;
+	rendering_runnnig = true;
 
 int i, j, s;
 #ifdef _OPENMP
-#pragma omp parallel for private(j, s) schedule(dynamic)
+#pragma omp parallel for private(j, s) schedule(dynamic) if (enable_openmp)
 #endif
+
 	for (i = 0; i < nx; i++) {
 		for (j = 0; j < ny; j++) {
 			Spectrum radiance(0.0);
+			if (stop_rendering) {
+				// get out of loop without using goto
+				i = nx+1;
+				j = ny+1;
+			}
+
 			for (s = 0; s < ns; s++) {
 				double u = (i + drand48()) / nx;
 				double v = (j + drand48()) / ny;
 				ray r = cam.get_ray(u, v);
 
 				double rand = drand48();
-				const size_t num = N_SAMPLE; // 調整
+				const size_t num = spectral_samples; // 調整
 				for (size_t k = 0; k < num; k++) {
 					if (rand <= (static_cast<double>(k+1)/ num)) {
 						double min_wl = 400.0 + 300.0/num*k;
@@ -81,7 +82,8 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						double rad = NEEVolPathTracing(r, true);
+						//double rad = NEEVolPathTracing(r, true);
+						double rad = NaivePathTracing(r);
 						if (!std::isnan(rad)) {
 							radiance.add(rad/ns, min_wl, max_wl);
 						}
@@ -105,7 +107,7 @@ int i, j, s;
 			count++;
 			if (count % 5000 == 0) {
 #ifdef _OPENMP
-				std::cout << "thread: " << omp_get_thread_num() << "  ";
+				std::cout << "thread: " << omp_get_thread_num() << " / " << omp_get_num_threads() << " ";
 #endif
 				std::cout << 100.0 * static_cast<double>(count) / (nx*ny) << "%" << std::endl;
 				img_updated = true;
@@ -114,29 +116,11 @@ int i, j, s;
 		}
 	}
 
-	//BiliteralFilter filter(orig_img, nx, ny);
-	//filter.FilterImage();
-	//for (int i = 0; i < nx*ny*4; i++) {
-	//	img[i] = static_cast<GLubyte>(std::max(0.0, std::min(255*orig_img[i], 255.0)));
-	//}
-	////img = filter.result;
-	//std::cout << "filtered" << std::endl;
-	////for (int j = ny-1; j >= 0; j--) {
-	////	for (int i = 0; i < nx; i++) {
-	//for (int j = 0; j < ny; j++) {
-	//	for (int i = nx-1; i >= 0; i--) {
-
-	//		size_t i_ = nx-i-1;
-	//		size_t j_ = ny-j-1;
-	//		int ir = img[((ny-j_-1)*nx+i_)*4];
-	//		int ig = img[((ny-j_-1)*nx+i_)*4+1];
-	//		int ib = img[((ny-j_-1)*nx+i_)*4+2];
-
-	//		ofs << ir << " " << ig << " " << ib << "\n";
-	//	}
-	//}
-
 	img_updated = true;
+	std::cout << "Completed rendering" << std::endl;
+	if (stop_rendering)
+		stop_rendering = false;
+	rendering_runnnig = false;
 }
 
 
@@ -146,13 +130,35 @@ double Renderer::NaivePathTracing(const ray& r)
 	ray _ray = r;
 	double radiance = 0.0;
 	double beta = 1.0;
+	Sphere sphere;
+	sphere.center = vec3(0.0, 0.0, 0.0);
+	sphere.radius = 100.0;
 	while (1) {
 		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
 		if (hit) {
 			radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
-		} else
+		} else {
+			if (env_mapping_texture == nullptr)
+				break;
+			bool hit = sphere.Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+			if (hit) {
+				vec3 p = unit_vector(_ray.point_at_parameter(rec.t));
+				double theta = acos(p.y());
+				double phi = atan2(p.x()/sin(theta), p.z()/sin(theta));
+				phi += M_PI;
+				int x = env_mapping_width - (int)(phi/ (2.0*M_PI) * env_mapping_width);
+				int y = (int)(theta/ M_PI * env_mapping_height);
+				vec3 rgb;
+				rgb[0] = env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)];
+				rgb[1] = env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+1];
+				rgb[2] = env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+2];
+				Spectrum spectrum = RGBtoSpectrum(rgb);
+				radiance += beta * spectrum.get(_ray.central_wl) * 0.001;
+				//radiance += 0.5;
+			}
 			break;
+		}
 
 		double bxdf, pdf;
 		ONB uvw;

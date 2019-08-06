@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -12,8 +13,20 @@
 #include "filter.h"
 #include "filebrowser.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
-void ImgViewer::LoadImage(const std::shared_ptr<const double[]>& img, int width, int height)
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#include <nfd.h>
+
+
+uint8_t *env_mapping_texture = nullptr;
+int env_mapping_width, env_mapping_height, env_mapping_bpp;
+
+void ImgViewer::LoadImage(const double *img, int width, int height)
 {
 	if (glimg != nullptr)
 		delete[] glimg;
@@ -50,78 +63,78 @@ void ImgViewer::Render(void)
 	ImGui::Image((void*)(intptr_t)opengl_texture, ImVec2(width, height));
 }
 
-void ImgRetouch::Render(void)
-{
-	ImGui::Text("Filters");
-	const double sigma_d_min = 0.0;
-	const double sigma_d_max = 20.0;
-	const double sigma_r_min = 0.0;
-	const double sigma_r_max = 1.0;
-	const uint64_t win_min = 0;
-	const uint64_t win_max = 16;
-	ImGui::SliderScalar("sigma_d", ImGuiDataType_Double, &sigma_d, &sigma_d_min, &sigma_d_max, "%f");
-	ImGui::SliderScalar("sigma_r", ImGuiDataType_Double, &sigma_r, &sigma_r_min, &sigma_r_max, "%f");
-	ImGui::SliderScalar("window", ImGuiDataType_U64, &window, &win_min, &win_max, "%d");
-	if (ImGui::Button("Apply filter")) {
-		BiliteralFilter filter(orig_img.get(), width, height);
-		filter.sigma_d = sigma_d;
-		filter.sigma_r = sigma_r;
-		filter.window = window;
-		filter.FilterImage();
-		double *n = filter.result;
-		retouched.reset(n);
-		retouched_viewer.LoadImage(retouched, width, height);
-	}
-	ImGui::Separator();
-	ImGui::Text("Tone Mapping");
-	ImGui::Separator();
-	original_viewer.Render();
-	ImGui::SameLine();
-	retouched_viewer.Render();
-}
-
-void ImgRetouch::LoadImage(std::shared_ptr<double[]>& img, int width, int height)
-{
-	orig_img = img;
-	retouched.reset(new double[width*height*4]);
-	for (size_t i = 0; i < width*height*4; i++) {
-		retouched[i] = orig_img[i];
-	}
-	this->width = width;
-	this->height = height;
-	original_viewer.LoadImage(orig_img, width, height);
-	retouched_viewer.LoadImage(retouched, width, height);
-}
-
-void RetouchWindow::Render(void)
-{
-	ImGui::Begin("Retouch");
-	if (ImGui::BeginTabBar("Tabs")) {
-		for (size_t i = 0; i < tabs.size(); i++) {
-			if (ImGui::BeginTabItem(img_names[i].c_str())) {
-				tabs[i].Render();
-				ImGui::EndTabItem();
-			}
-		}
-		ImGui::EndTabBar();
-	}
-	ImGui::End();
-}
-
-
-void RetouchWindow::AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height)
-{
-	img_names.push_back(name);
-	ImgRetouch new_retouch;
-	new_retouch.LoadImage(img, width, height);
-	tabs.push_back(new_retouch);
-}
-
-void RetouchWindow::AddImage(std::shared_ptr<double[]>& img, int width, int height)
-{
-	std::string name = "image." + std::to_string(img_names.size());
-	AddImage(name, img, width, height);
-}
+//void ImgRetouch::Render(void)
+//{
+//	ImGui::Text("Filters");
+//	const double sigma_d_min = 0.0;
+//	const double sigma_d_max = 20.0;
+//	const double sigma_r_min = 0.0;
+//	const double sigma_r_max = 1.0;
+//	const uint64_t win_min = 0;
+//	const uint64_t win_max = 16;
+//	ImGui::SliderScalar("sigma_d", ImGuiDataType_Double, &sigma_d, &sigma_d_min, &sigma_d_max, "%f");
+//	ImGui::SliderScalar("sigma_r", ImGuiDataType_Double, &sigma_r, &sigma_r_min, &sigma_r_max, "%f");
+//	ImGui::SliderScalar("window", ImGuiDataType_U64, &window, &win_min, &win_max, "%d");
+//	if (ImGui::Button("Apply filter")) {
+//		BiliteralFilter filter(orig_img.get(), width, height);
+//		filter.sigma_d = sigma_d;
+//		filter.sigma_r = sigma_r;
+//		filter.window = window;
+//		filter.FilterImage();
+//		double *n = filter.result;
+//		retouched.reset(n);
+//		retouched_viewer.LoadImage(retouched, width, height);
+//	}
+//	ImGui::Separator();
+//	ImGui::Text("Tone Mapping");
+//	ImGui::Separator();
+//	original_viewer.Render();
+//	ImGui::SameLine();
+//	retouched_viewer.Render();
+//}
+//
+//void ImgRetouch::LoadImage(std::shared_ptr<double[]>& img, int width, int height)
+//{
+//	orig_img = img;
+//	retouched.reset(new double[width*height*4]);
+//	for (size_t i = 0; i < width*height*4; i++) {
+//		retouched[i] = orig_img[i];
+//	}
+//	this->width = width;
+//	this->height = height;
+//	original_viewer.LoadImage(orig_img, width, height);
+//	retouched_viewer.LoadImage(retouched, width, height);
+//}
+//
+//void RetouchWindow::Render(void)
+//{
+//	ImGui::Begin("Retouch");
+//	if (ImGui::BeginTabBar("Tabs")) {
+//		for (size_t i = 0; i < tabs.size(); i++) {
+//			if (ImGui::BeginTabItem(img_names[i].c_str())) {
+//				tabs[i].Render();
+//				ImGui::EndTabItem();
+//			}
+//		}
+//		ImGui::EndTabBar();
+//	}
+//	ImGui::End();
+//}
+//
+//
+//void RetouchWindow::AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height)
+//{
+//	img_names.push_back(name);
+//	ImgRetouch new_retouch;
+//	new_retouch.LoadImage(img, width, height);
+//	tabs.push_back(new_retouch);
+//}
+//
+//void RetouchWindow::AddImage(std::shared_ptr<double[]>& img, int width, int height)
+//{
+//	std::string name = "image." + std::to_string(img_names.size());
+//	AddImage(name, img, width, height);
+//}
 
 Scene::Scene(void)
 {
@@ -164,9 +177,6 @@ Scene::Scene(void)
 	//	1, 2, 3
 	//};
 
-	if (file_browser.OpenDir("/") == false) {
-		std::cout << "Error" << std::endl;
-	}
 }
 
 
@@ -220,8 +230,8 @@ void Scene::Load(const char *objfilename)
 		} else if (typeid(*mat) == typeid(Metal)) {
 			vec3 col = r_rgb(std::dynamic_pointer_cast<Metal>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(TorranceSparrow)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<TorranceSparrow>(mat)->albedo);
+		} else if (typeid(*mat) == typeid(Microfacet)) {
+			vec3 col = r_rgb(std::dynamic_pointer_cast<Microfacet>(mat)->albedo);
 			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
 		} else if (typeid(*mat) == typeid(DiffuseLight)) {
 			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<DiffuseLight>(mat)->light_color));
@@ -304,10 +314,42 @@ void Scene::RenderSceneWindow(void)
 					scene_loaded = true;
 				}
 			}
-			//if (ImGui::MenuItem("Open with file browser")) {
-
-			//}
-			if (ImGui::MenuItem("Close")) {
+			if (ImGui::MenuItem("Load cubetest.obj")) {
+				if (!scene_loaded) {
+					Load("cubetest.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load suzanne.obj")) {
+				if (!scene_loaded) {
+					Load("suzanne.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load testscene.obj")) {
+				if (!scene_loaded) {
+					Load("testscene.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Open a scene file")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					Load(path);
+					scene_loaded = true;
+					free(path);
+				}
+			}
+			if (ImGui::MenuItem("Open a environment file")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					env_mapping_texture = stbi_load(path, &env_mapping_width, &env_mapping_height, &env_mapping_bpp, 3);
+					free(path);
+				}
+			}
+			if (ImGui::MenuItem("Close a scene file")) {
 				if (scene_loaded) {
 					ClearData();
 					scene_loaded = false;
@@ -317,13 +359,6 @@ void Scene::RenderSceneWindow(void)
 		}
 		ImGui::EndMenuBar();
 	}
-	if (ImGui::CollapsingHeader("Open a file using a file browser")) {
-		std::string str = file_browser.Render();
-		if (str != "") {
-			Load(str.c_str());
-			scene_loaded = true;
-		}
-	}
 	if (scene_loaded)
 		RenderScene();
 	ImGui::End();
@@ -331,9 +366,10 @@ void Scene::RenderSceneWindow(void)
 
 void Scene::RenderScene(void)
 {
-	ImGui::SliderFloat("d", &d, focal_length, focal_length+5.0);
-	ImGui::SliderFloat("focal length", &focal_length, 0, 50);
-	ImGui::SliderFloat("aperture", &aperture, 0, 10);
+	ImGui::SliderFloat("vfov", &vfov, 0, 180);
+	//ImGui::SliderFloat("d", &d, focal_length, focal_length+5.0);
+	//ImGui::SliderFloat("focal length", &focal_length, 0, 50);
+	//ImGui::SliderFloat("aperture", &aperture, 0, 10);
 	if (ImGui::IsWindowFocused()) {
 		float cameraSpeed = 0.02f;
 		if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
@@ -373,7 +409,8 @@ void Scene::RenderScene(void)
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 	glm::mat4 projection;
-	projection = glm::perspective(glm::radians(60.0f), 640.0f/480.0f, 0.1f, 100.0f);
+	//projection = glm::perspective(glm::radians(60.0f), 640.0f/480.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(vfov), 640.0f/480.0f, 0.1f, 100.0f);
 
 
 	int modelLocation = glGetUniformLocation(shaderProgram, "model");
@@ -449,34 +486,72 @@ void Scene::RenderPreviewWindow(void)
 	ImGui::Begin("Render", nullptr, ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Save an image")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					//Load(path);
+					//scene_loaded = true;
+					std::ofstream ofs;
+					ofs.open(path, std::ios::out);
+					ofs << "P3\n" << img_width << " " << img_height << std::endl << 255 << std::endl;
+					for (int j = img_height-1; j >= 0; j--) {
+						for (int i = 0; i < img_width; i++) {
+							ofs << (int)img[((img_height-j-1)*img_width+i)*4] << " ";
+							ofs << (int)img[((img_height-j-1)*img_width+i)*4+1] << " ";
+							ofs << (int)img[((img_height-j-1)*img_width+i)*4+2] << std::endl;
+						}
+					}
+					ofs.close();
+					free(path);
+				}
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Render")) {
-			if (ImGui::MenuItem("Render Image")) {
-				std::cout << img_width << " " << img_height << std::endl;
-				img = new GLubyte[img_width*img_height*4];
-				vec3 veccameraPos = vec3(cameraPos.x, cameraPos.y, cameraPos.z);
-				vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
-				glm::vec3 lookat = cameraPos + cameraFront;
-				vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
-				//cam.set_Camera(cameraPos, vlookat, cameraUp, 60, (double)img_width/img_height);
-				renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
-				std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_Samples);
-				t.detach();
+			if (ImGui::MenuItem("Render Image", nullptr, false, !renderer.rendering_runnnig)) {
+				if (!renderer.rendering_runnnig) {
+					img = new GLubyte[img_width*img_height*4];
+					vec3 veccameraPos = vec3(cameraPos.x, cameraPos.y, cameraPos.z);
+					vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
+					glm::vec3 lookat = cameraPos + cameraFront;
+					vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
+					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(img_width)/img_height);
+					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
+					std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_Samples, img_spectral_samples, enable_openmp);
+					t.detach();
+				}
 			}
+			if (renderer.rendering_runnnig) {
+				if (ImGui::MenuItem("Terminate Rendering")) {
+					renderer.stop_rendering = true;
+				}
+			}
+#ifdef _OPENMP
+			if (ImGui::MenuItem("Enable OpenMP", nullptr, enable_openmp, !renderer.rendering_runnnig)) {
+				enable_openmp = !enable_openmp;
+			}
+			//std::cout << omp_get_max_threads() << " " << omp_get_thread_limit() << std::endl;
+			//omp_set_dynamic(0);
+			//static int threads_num = omp_get_max_threads();
+			//ImGui::SliderInt("Thread number", &threads_num, 1, 100);            // Edit 1 float using a slider from 0.0f to 1.0f
+			//omp_set_num_threads(threads_num);
+
+#endif
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Retouch")) {
 			if (ImGui::MenuItem("Add to Retouch Window")) {
-				retouch_window.AddImage(renderer.orig_img, img_width, img_height);
+				//retouch_window.AddImage(renderer.orig_img, img_width, img_height);
 			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
 	}
-	ImGui::SliderInt("Image Width", &img_width, 0, 2000);            // Edit 1 float using a slider from 0.0f to 1.0f
-	ImGui::SliderInt("Image Height", &img_height, 0, 2000);            // Edit 1 float using a slider from 0.0f to 1.0f
-	ImGui::SliderInt("Image Samples", &img_Samples, 0, 1000);            // Edit 1 float using a slider from 0.0f to 1.0f
+	ImGui::SliderInt("Image Width", &img_width, 1, 2000);
+	ImGui::SliderInt("Image Height", &img_height, 1, 2000);
+	ImGui::SliderInt("Image Samples", &img_Samples, 1, 1000);
+	ImGui::SliderInt("Spectral samples", &img_spectral_samples, 1, N_SAMPLE);
 	if (renderer.img_updated) {
 		int nx = img_width;
 		int ny = img_height;
@@ -550,7 +625,7 @@ void Scene::RenderMaterialEditorWindow(void)
 	}
 
 	if (cur_item != -1) {
-		const char *model_items[] = {"Lambertian", "Dielectric", "Metal", "Microfacet", "Transparent", "Light"};
+		const char *model_items[] = {"Lambertian", "Dielectric", "Metal", "Microfacet", "Transparent", "Light", "TextureMaterial"};
 		static int cur_model_item = -1;
 		static int last_model_item = -1;
 		if (cur_item != last_item)
@@ -564,12 +639,14 @@ void Scene::RenderMaterialEditorWindow(void)
 			cur_model_item = 1;
 		else if (id == typeid(Metal))
 			cur_model_item = 2;
-		else if (id == typeid(TorranceSparrow))
+		else if (id == typeid(Microfacet))
 			cur_model_item = 3;
 		else if (id == typeid(Transparent))
 			cur_model_item = 4;
 		else if (id == typeid(DiffuseLight))
 			cur_model_item = 5;
+		else if (id == typeid(TextureMaterial))
+			cur_model_item = 6;
 
 		ImGui::Combo("select model", &cur_model_item, model_items, sizeof(model_items)/sizeof(const char *));
 		if (cur_model_item == 0) {
@@ -587,7 +664,7 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 1) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<Dielectric>(Spectrum(1.33333));
+				mat = std::make_shared<Dielectric>(Spectrum(1.33333), Spectrum(0.0));
 				it->second = mat;
 			}
 			std::shared_ptr<Dielectric> mat_ptr = std::dynamic_pointer_cast<Dielectric>(mat);
@@ -597,7 +674,7 @@ void Scene::RenderMaterialEditorWindow(void)
 			colors[objecti][2] = 1.0;
 		} else if (cur_model_item == 2) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<Metal>(Spectrum(1));
+				mat = std::make_shared<Metal>(Spectrum(0.1), Spectrum(3));
 				it->second = mat;
 			}
 			std::shared_ptr<Metal> mat_ptr = std::dynamic_pointer_cast<Metal>(mat);
@@ -610,10 +687,10 @@ void Scene::RenderMaterialEditorWindow(void)
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 3) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
-				mat = std::make_shared<TorranceSparrow>(Spectrum(1), 1.0);
+				mat = std::make_shared<Microfacet>(Spectrum(1.3333), Spectrum(0.0), 1.0);
 				it->second = mat;
 			}
-			std::shared_ptr<TorranceSparrow> mat_ptr = std::dynamic_pointer_cast<TorranceSparrow>(mat);
+			std::shared_ptr<Microfacet> mat_ptr = std::dynamic_pointer_cast<Microfacet>(mat);
 			MicrofacetMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
@@ -647,6 +724,21 @@ void Scene::RenderMaterialEditorWindow(void)
 			colors[objecti][1] = col[1];
 			colors[objecti][2] = col[2];
 			ImGui::ColorButton("Light color", color, ImGuiColorEditFlags_DisplayRGB);
+		} else if (cur_model_item == 6) {
+			if (cur_model_item != last_model_item && last_model_item != -1) {
+				std::shared_ptr<TextureMaterial> p = std::make_shared<TextureMaterial>();
+				p->LoadImage("desk.png");
+				mat = p;
+				it->second = mat;
+			}
+			//std::shared_ptr<DiffuseLight> mat_ptr = std::dynamic_pointer_cast<DiffuseLight>(mat);
+			//LightMaterialEditor(mat_ptr);
+			//vec3 col = unit_vector(r_rgb(mat_ptr->light_color));
+			//ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
+			//colors[objecti][0] = col[0];
+			//colors[objecti][1] = col[1];
+			//colors[objecti][2] = col[2];
+			//ImGui::ColorButton("Light color", color, ImGuiColorEditFlags_DisplayRGB);
 		} else {
 		}
 
@@ -708,4 +800,14 @@ void Scene::RenderMaterialEditorWindow(void)
 	last_item = cur_item;
 
 	ImGui::End();
+}
+
+void Scene::RenderMaterialNodeEditorWindow(void)
+{
+	ImGui::Begin("Material Node Editor");
+	ImGui::End();
+}
+
+void Scene::RenderLog(void)
+{
 }

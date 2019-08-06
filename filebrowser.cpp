@@ -22,7 +22,7 @@ FileBrowser::~FileBrowser(void)
 }
 
 static bool comp(const std::string &lh, const std::string &rh) {
-	return lh.compare(rh) <= 0;
+	return lh.substr(3).compare(rh.substr(3)) <= 0;
 }
 
 bool FileBrowser::OpenDir(const char *dir)
@@ -40,7 +40,7 @@ bool FileBrowser::OpenDir(const char *dir)
 					entries.push_back(std::string("D: ") + ent->d_name);
 					break;
 				case DT_REG:
-					entries.push_back(std::string("R: ") + ent->d_name);
+					entries.push_back(std::string("   ") + ent->d_name);
 					break;
 				default:
 					break;
@@ -66,7 +66,7 @@ std::string FileBrowser::Render(void)
 					selected_dir = current_dir + "/" + e.substr(3);;
 				}
 				break;
-			case 'R':
+			case ' ':
 				if (ImGui::Selectable(e.c_str())) {
 					selected_file = current_dir + "/" + e.substr(3);
 				}
