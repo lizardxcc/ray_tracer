@@ -1,4 +1,5 @@
-CXX = g++-9
+#CXX = g++-9
+CXX = g++
 
 TARGET = renderer
 SRCS = $(wildcard *.cpp)
@@ -33,6 +34,7 @@ INCLUDE += -I/usr/local/Cellar/boost/1.70.0/include
 INCLUDE += -I./
 INCLUDE += `pkg-config glfw3 --cflags`
 INCLUDE += `pkg-config glm --cflags`
+INCLUDE += -I../nativefiledialog-master/src/include
 
 CFLAGS = -Wall -Wextra
 CFLAGS += -Wno-unused-parameter
@@ -46,10 +48,15 @@ CXXFLAGS += $(INCLUDE)
 CFLAGS += $(INCLUDE)
 
 LDFLAGS = -L/usr/local/Cellar/boost/1.70.0/lib
+LDFLAGS += -L../nativefiledialog-master/build/lib/Release/x64
 LDLIBS += `pkg-config glfw3 --libs`
 LDLIBS += `pkg-config glm --libs`
 LDLIBS += -framework OpenGL -framework CoreFoundation
-OPENMPFLAGS = -fopenmp
+LDLIBS += -framework Cocoa
+LDLIBS += -lnfd
+#OPENMPFLAGS = -fopenmp
+OPENMPFLAGS = -Xpreprocessor -fopenmp
+OPENMPLDLIBS = -lomp
 
 
 .PHONY: all debug release clean
@@ -64,7 +71,7 @@ release: $(RELEASE_TARGET)
 debug: $(DEBUG_TARGET)
 	
 $(RELEASE_TARGET) : $(RELEASE_OBJS) Makefile | $(RELEASE_BIN_DIR)
-	$(CXX) $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) -o $@ $(RELEASE_OBJS)
+	$(CXX) $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS)
 
 $(DEBUG_TARGET) : $(DEBUG_OBJS) Makefile | $(DEBUG_BIN_DIR)
 	$(CXX) $(LDFLAGS) $(LDLIBS) -o $@ $(DEBUG_OBJS)
@@ -89,7 +96,7 @@ $(RELEASE_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_D
 $(DEBUG_OBJS_DIR)/%.o: %.cpp Makefile | $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
 
-$(DEBUG_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
+$(DEBUG_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR)
 	g++ $(CFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
 
 -include $(RELEASE_DEPS)
