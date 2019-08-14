@@ -202,6 +202,33 @@ class AdditionNode : public MaterialNode {
 		void Compute(Spectrum& data) const override;
 };
 
+class MultiplicationNode : public MaterialNode {
+	public:
+		MultiplicationNode(int &unique_id, const char *name = "Multiply") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinUniversal, "->In0");
+			AddInput(unique_id, PinUniversal, "->In1");
+			AddOutput(unique_id, PinUniversal, "Out->");
+		}
+		void Compute(double& data) const override;
+		void Compute(vec3& data) const override;
+		void Compute(Spectrum& data) const override;
+};
+
+class ScalarMultiplicationNode : public MaterialNode {
+	public:
+		ScalarMultiplicationNode(int &unique_id, const char *name = "Multiply Scalar") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinUniversal, "->In");
+			AddOutput(unique_id, PinUniversal, "Out->");
+		}
+		void Compute(double& data) const override;
+		void Compute(vec3& data) const override;
+		void Compute(Spectrum& data) const override;
+		void Render(void) override;
+		double scale;
+};
+
 class NodeMaterial : public Material {
 	public:
 		NodeMaterial(void)

@@ -367,6 +367,7 @@ void CheckerboardNode::Compute(vec3& data) const
 
 void CheckerboardNode::Render(void)
 {
+	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text(name.c_str());
 	const double min = 0.001;
@@ -376,6 +377,7 @@ void CheckerboardNode::Render(void)
 	ImGui::PopItemWidth();
 	RenderPins();
 	ax::NodeEditor::EndNode();
+	ImGui::PopID();
 }
 
 
@@ -416,6 +418,94 @@ void AdditionNode::Compute(Spectrum& data) const
 		Spectrum d;
 		inputs[i].connected_links[0]->input->parent_node->Compute(d);
 		data = data + d;
+	}
+}
+
+void ScalarMultiplicationNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text(name.c_str());
+	const double min = -100.0;
+	const double max = 100.0;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("scale", ImGuiDataType_Double, &scale, &min, &max, "%f");
+	ImGui::PopItemWidth();
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+void ScalarMultiplicationNode::Compute(double &data) const
+{
+	assert(inputs[0].connected_links.size() == 1);
+	if (inputs[0].connected_links[0]->input->type != PinDouble) {
+		std::cout << "Error" << std::endl;
+	}
+	double d;
+	inputs[0].connected_links[0]->input->parent_node->Compute(d);
+	data = d * scale;
+}
+void ScalarMultiplicationNode::Compute(vec3& data) const
+{
+	assert(inputs[0].connected_links.size() == 1);
+	if (inputs[0].connected_links[0]->input->type != PinVec3) {
+		std::cout << "Error" << std::endl;
+	}
+	vec3 d;
+	inputs[0].connected_links[0]->input->parent_node->Compute(d);
+	data = d * scale;
+}
+void ScalarMultiplicationNode::Compute(Spectrum& data) const
+{
+	assert(inputs[0].connected_links.size() == 1);
+	if (inputs[0].connected_links[0]->input->type != PinSpectrum) {
+		std::cout << "Error" << std::endl;
+	}
+	Spectrum d;
+	inputs[0].connected_links[0]->input->parent_node->Compute(d);
+	data = d * scale;
+}
+
+void MultiplicationNode::Compute(double &data) const
+{
+	data = 1.0;
+	for (size_t i = 0; i < 2; i++) {
+		assert(inputs[i].connected_links.size() == 1);
+		if (inputs[i].connected_links[0]->input->type != PinDouble) {
+			std::cout << "Error" << std::endl;
+		}
+		double d;
+		inputs[i].connected_links[0]->input->parent_node->Compute(d);
+		data *= d;
+	}
+}
+void MultiplicationNode::Compute(vec3& data) const
+{
+	data = vec3(1.0, 1.0, 1.0);
+	for (size_t i = 0; i < 2; i++) {
+		assert(inputs[i].connected_links.size() == 1);
+		if (inputs[i].connected_links[0]->input->type != PinVec3) {
+			std::cout << "Error" << std::endl;
+		}
+		vec3 d;
+		inputs[i].connected_links[0]->input->parent_node->Compute(d);
+		data *= d;
+	}
+}
+void MultiplicationNode::Compute(Spectrum& data) const
+{
+	data = Spectrum(1.0);
+	for (size_t i = 0; i < 2; i++) {
+		assert(inputs[i].connected_links.size() == 1);
+		if (inputs[i].connected_links[0]->input->type != PinSpectrum) {
+			std::cout << "Error" << std::endl;
+		}
+		Spectrum d;
+		inputs[i].connected_links[0]->input->parent_node->Compute(d);
+		for (size_t i = 0; i < data.data.size(); i++) {
+			data.data[i] *= d.data[i];
+		}
 	}
 }
 
@@ -551,8 +641,12 @@ void NodeMaterial::Render(void)
 			node = new TextureNode(unique_id);
 		} else if (ImGui::MenuItem("Checkerboard Node")) {
 			node = new CheckerboardNode(unique_id);
-		} else if (ImGui::MenuItem("Addition Double Node")) {
+		} else if (ImGui::MenuItem("Addition Node")) {
 			node = new AdditionNode(unique_id);
+		} else if (ImGui::MenuItem("Multiplication Node")) {
+			node = new MultiplicationNode(unique_id);
+		} else if (ImGui::MenuItem("Scalar Multiplication Node")) {
+			node = new ScalarMultiplicationNode(unique_id);
 		}
 		if (node != nullptr)
 			material_nodes.push_back(node);
