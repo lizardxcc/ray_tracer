@@ -130,9 +130,9 @@ void LambertianNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text("Lambertian");
 	ImGui::Text(name.c_str());
-	RenderSpectrum(albedo, 0.0, 1.0);
+	if (albedo_pin->connected_links.empty())
+		RenderSpectrum(albedo, 0.0, 1.0);
 
 	RenderPins();
 	ax::NodeEditor::EndNode();
@@ -160,16 +160,15 @@ double LambertianNode::BxDF(const vec3& vi, double wli, const vec3& vo, double w
 {
 	if (vi.z() < 0.0)
 		return 0.0;
-	const auto& albedo_pin = inputs[0];
-	if (albedo_pin.connected_links.size() == 0)
+	if (albedo_pin->connected_links.empty())
 		return albedo.get(wli)/M_PI;
 	else {
-		if (albedo_pin.connected_links.size() != 1) {
+		if (albedo_pin->connected_links.size() != 1) {
 			std::cout << "node connection error" << std::endl;
 			return 0.0;
 		}
 
-		const PinInfo *connected_pin = albedo_pin.connected_links[0]->input;
+		const PinInfo *connected_pin = albedo_pin->connected_links[0]->input;
 		assert(connected_pin != nullptr);
 		const MaterialNode *parent = connected_pin->parent_node;
 		Spectrum albedo;
@@ -279,6 +278,28 @@ void FixedValueNode::Compute(Spectrum& data) const
 }
 
 
+void RGBColorNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text(name.c_str());
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.15f);
+	ImGui::ColorPicker3("Color", col);
+	ImGui::PopItemWidth();
+
+	RenderPins();
+
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+void RGBColorNode::Compute(vec3& data) const
+{
+	data[0] = col[0];
+	data[1] = col[1];
+	data[2] = col[2];
+}
+
 void RGBtoSpectrumNode::Compute(Spectrum& data) const
 {
 	vec3 RGB;
@@ -288,7 +309,7 @@ void RGBtoSpectrumNode::Compute(Spectrum& data) const
 	data = RGBtoSpectrum(RGB);
 }
 
-void ColorTextureNode::Render(void)
+void TextureNode::Render(void)
 {
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Color Texture Node");
@@ -309,7 +330,7 @@ void ColorTextureNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 }
-void ColorTextureNode::Compute(vec3& data) const
+void TextureNode::Compute(vec3& data) const
 {
 	if (texture == nullptr)
 		return;
@@ -329,6 +350,74 @@ void ColorTextureNode::Compute(vec3& data) const
 }
 
 
+void CheckerboardNode::Compute(vec3& data) const
+{
+	assert(inputs[0].connected_links.size() == 1);
+	assert(inputs[0].connected_links[0]->input != nullptr);
+	vec3 vt;
+	inputs[0].connected_links[0]->input->parent_node->Compute(vt);
+	int x = (vt[0] - fmod(vt[0], size))/size;
+	int y = (vt[1] - fmod(vt[1], size))/size;
+	if (x%2 == y%2)
+		data = vec3(1.0, 1.0, 1.0);
+	else
+		data = vec3(0.0, 0.0, 0.0);
+}
+
+
+void CheckerboardNode::Render(void)
+{
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text(name.c_str());
+	const double min = 0.001;
+	const double max = 1.0;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("size", ImGuiDataType_Double, &size, &min, &max, "%f");
+	ImGui::PopItemWidth();
+	RenderPins();
+	ax::NodeEditor::EndNode();
+}
+
+
+void AdditionNode::Compute(double &data) const
+{
+	data = 0;
+	for (size_t i = 0; i < 2; i++) {
+		assert(inputs[i].connected_links.size() == 1);
+		if (inputs[i].connected_links[0]->input->type != PinDouble) {
+			std::cout << "Error" << std::endl;
+		}
+		double d;
+		inputs[i].connected_links[0]->input->parent_node->Compute(d);
+		data += d;
+	}
+}
+void AdditionNode::Compute(vec3& data) const
+{
+	data = vec3(0.0, 0.0, 0.0);
+	for (size_t i = 0; i < 2; i++) {
+		assert(inputs[i].connected_links.size() == 1);
+		if (inputs[i].connected_links[0]->input->type != PinVec3) {
+			std::cout << "Error" << std::endl;
+		}
+		vec3 d;
+		inputs[i].connected_links[0]->input->parent_node->Compute(d);
+		data += d;
+	}
+}
+void AdditionNode::Compute(Spectrum& data) const
+{
+	data = Spectrum(0.0);
+	for (size_t i = 0; i < 2; i++) {
+		assert(inputs[i].connected_links.size() == 1);
+		if (inputs[i].connected_links[0]->input->type != PinSpectrum) {
+			std::cout << "Error" << std::endl;
+		}
+		Spectrum d;
+		inputs[i].connected_links[0]->input->parent_node->Compute(d);
+		data = data + d;
+	}
+}
 
 void NodeMaterial::Render(void)
 {
@@ -351,7 +440,9 @@ void NodeMaterial::Render(void)
 				auto output = FindPin(outputpin_id);
 				if (inputpin_id == outputpin_id) {
 					ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
-				} else if (input->type != output->type) {
+				} else if (input->type != PinUniversal &&
+						output->type != PinUniversal &&
+						input->type != output->type) {
 					ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
 				} else if (input->io_type == output->io_type) {
 					ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
@@ -452,10 +543,16 @@ void NodeMaterial::Render(void)
 			node = new OutputNode(unique_id);
 		} else if (ImGui::MenuItem("Spectrum Node")) {
 			node = new SpectrumNode(unique_id);
+		} else if (ImGui::MenuItem("RGB Color Node")) {
+			node = new RGBColorNode(unique_id);
 		} else if (ImGui::MenuItem("RGBtoSpectrum Node")) {
 			node = new RGBtoSpectrumNode(unique_id);
-		} else if (ImGui::MenuItem("Color Texture Node")) {
-			node = new ColorTextureNode(unique_id);
+		} else if (ImGui::MenuItem("Texture Node")) {
+			node = new TextureNode(unique_id);
+		} else if (ImGui::MenuItem("Checkerboard Node")) {
+			node = new CheckerboardNode(unique_id);
+		} else if (ImGui::MenuItem("Addition Double Node")) {
+			node = new AdditionNode(unique_id);
 		}
 		if (node != nullptr)
 			material_nodes.push_back(node);

@@ -21,7 +21,8 @@ struct LinkInfo {
 enum PinType {
 	PinDouble,
 	PinVec3,
-	PinSpectrum
+	PinSpectrum,
+	PinUniversal,
 };
 
 enum PinIOType {
@@ -42,6 +43,10 @@ struct PinInfo {
 
 class MaterialNode {
 	public:
+		MaterialNode(int &unique_id, const char *name = "") : id(unique_id), iid(unique_id), name(name)
+		{
+			unique_id++;
+		}
 		virtual void Render(void);
 		void RenderPins(void);
 		void RenderSpectrum(Spectrum& data, double min, double max);
@@ -58,55 +63,45 @@ class MaterialNode {
 		void AddOutput(int &unique_id, PinType type, const char *name);
 		std::string name;
 		ed::NodeId id;
+		int iid;
 		std::vector<PinInfo> inputs;
 		std::vector<PinInfo> outputs;
 		const static ImVec4 pin_colors[];
 };
 class SpectrumNode : public MaterialNode {
 	public:
-		SpectrumNode(int &unique_id, const char *name = "Spectrum")
+		SpectrumNode(int &unique_id, const char *name = "Spectrum") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id++;
-			iid = unique_id;
-
 			AddOutput(unique_id, PinSpectrum, "Out->");
 		}
 		void Render(void);
 		void Compute(Spectrum& data) const override;
 	private:
 		Spectrum data = Spectrum(1.0);
-		int iid;
 };
 
 class LambertianNode : public MaterialNode, public Material {
 	public:
-		LambertianNode(int &unique_id, const char *name = "Lambertian")
+		LambertianNode(int &unique_id, const char *name = "Lambertian") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id;
-			iid = unique_id;
-			unique_id++;
-
 			AddInput(unique_id, PinSpectrum, "->Albedo");
+			albedo_pin = &inputs[0];
 			AddOutput(unique_id, PinDouble, "BSDF->");
 		}
 		void Render(void);
-		//void PreProcess(void);
 		bool PreProcess(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		//double Emitted(const ray& r, const HitRecord& rec) const override;
 		Spectrum albedo = Spectrum(1.0);
+		const PinInfo *albedo_pin;
 		int iid;
 };
 
 class ConductorNode : public MaterialNode, public Material {
 	public:
-		ConductorNode(int &unique_id, const char *name = "Conductor")
+		ConductorNode(int &unique_id, const char *name = "Conductor") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id;
-			iid = unique_id;
-			unique_id++;
-
 			AddInput(unique_id, PinSpectrum, "->n");
 			AddInput(unique_id, PinSpectrum, "->k");
 			AddOutput(unique_id, PinDouble, "BSDF->");
@@ -122,9 +117,8 @@ class ConductorNode : public MaterialNode, public Material {
 
 class OutputNode : public MaterialNode {
 	public:
-		OutputNode(int &unique_id, const char *name = "Output")
+		OutputNode(int &unique_id, const char *name = "Output") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id++;
 			AddInput(unique_id, PinDouble, "->BSDF");
 			AddInput(unique_id, PinDouble, "->Emission");
 		}
@@ -133,10 +127,8 @@ class OutputNode : public MaterialNode {
 
 class FixedValueNode : public MaterialNode {
 	public:
-		FixedValueNode(int &unique_id, PinType type, const char *name = "")
+		FixedValueNode(int &unique_id, PinType type, const char *name = "") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id++;
-			this->name = name;
 			AddOutput(unique_id, type, "Out->");
 		}
 		double dvalue;
@@ -147,24 +139,33 @@ class FixedValueNode : public MaterialNode {
 		void Compute(Spectrum& data) const override;
 };
 
+
+class RGBColorNode : public MaterialNode {
+	public:
+		RGBColorNode(int &unique_id, const char *name = "RGB Color") : MaterialNode(unique_id, name)
+		{
+			AddOutput(unique_id, PinVec3, "RGB->");
+		}
+		void Render(void) override;
+		void Compute(vec3& data) const override;
+		float col[3] = {0.0f, 0.0f, 0.0f};
+};
+
 class RGBtoSpectrumNode : public MaterialNode {
 	public:
-		RGBtoSpectrumNode(int &unique_id, const char *name = "RGBtoSpectrumNode")
+		RGBtoSpectrumNode(int &unique_id, const char *name = "RGBtoSpectrumNode") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id++;
 			AddInput(unique_id, PinVec3, "->RGB");
 			AddOutput(unique_id, PinSpectrum, "Spectrum->");
 		}
 		void Compute(Spectrum& data) const override;
 };
 
-class ColorTextureNode : public MaterialNode {
+class TextureNode : public MaterialNode {
 	public:
-		ColorTextureNode(int &unique_id, const char *path = "")
+		TextureNode(int &unique_id, const char *path = "", const char *name = "Texture") : MaterialNode(unique_id, name)
 		{
-			this->id = unique_id++;
 			this->path = std::string(path);
-
 			AddInput(unique_id, PinVec3, "->UV");
 			AddOutput(unique_id, PinVec3, "Out->");
 		}
@@ -174,6 +175,31 @@ class ColorTextureNode : public MaterialNode {
 
 		void Render(void) override;
 		void Compute(vec3& data) const override;
+};
+
+class CheckerboardNode : public MaterialNode {
+	public:
+		CheckerboardNode(int &unique_id, const char *name = "Checkerboard") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinVec3, "UV->");
+			AddOutput(unique_id, PinVec3, "Out->");
+		}
+		void Compute(vec3& data) const override;
+		void Render(void) override;
+		double size = 0.5;
+};
+
+class AdditionNode : public MaterialNode {
+	public:
+		AdditionNode(int &unique_id, const char *name = "Add") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinUniversal, "->In0");
+			AddInput(unique_id, PinUniversal, "->In1");
+			AddOutput(unique_id, PinUniversal, "Out->");
+		}
+		void Compute(double& data) const override;
+		void Compute(vec3& data) const override;
+		void Compute(Spectrum& data) const override;
 };
 
 class NodeMaterial : public Material {
