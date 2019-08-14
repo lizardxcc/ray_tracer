@@ -1,18 +1,18 @@
 #include <cmath>
 #include "filter.h"
 
-Filter::Filter(double *img, int width, int height) : orig_img(img),
+Filter::Filter(const std::vector<double>& img, int width, int height) : orig_img(img),
 	img_width(width), img_height(height)
 {
 }
 
-BiliteralFilter::BiliteralFilter(double *img, int width, int height) : Filter(img, width, height)
+BiliteralFilter::BiliteralFilter(const std::vector<double>& img, int width, int height) : Filter(img, width, height)
 {
 }
 
 void BiliteralFilter::FilterImage(void)
 {
-	result = new double[img_width*img_height*4];
+	result.resize(img_width*img_height*4);
 
 	for (int x = 0; x < img_width; x++) {
 		for (int y = 0; y < img_height; y++) {

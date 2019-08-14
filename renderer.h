@@ -7,9 +7,11 @@
 #include "camera.h"
 #include "materialfile.h"
 
+class NodeMaterial;
 class Renderer {
 	public:
 		void Load(const char *objfilename);
+		void LoadMaterials(const std::vector<NodeMaterial *>& materials);
 		void Clear(void);
 		void RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp);
 		double NaivePathTracing(const ray& r);

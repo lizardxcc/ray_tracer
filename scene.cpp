@@ -12,6 +12,7 @@
 #include "vec3.h"
 #include "filter.h"
 #include "filebrowser.h"
+#include "pdf.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -26,7 +27,8 @@
 uint8_t *env_mapping_texture = nullptr;
 int env_mapping_width, env_mapping_height, env_mapping_bpp;
 
-void ImgViewer::LoadImage(const double *img, int width, int height)
+
+void ImgViewer::LoadImage(const std::vector<double>& img, int width, int height)
 {
 	if (glimg != nullptr)
 		delete[] glimg;
@@ -63,74 +65,73 @@ void ImgViewer::Render(void)
 	ImGui::Image((void*)(intptr_t)opengl_texture, ImVec2(width, height));
 }
 
-//void ImgRetouch::Render(void)
-//{
-//	ImGui::Text("Filters");
-//	const double sigma_d_min = 0.0;
-//	const double sigma_d_max = 20.0;
-//	const double sigma_r_min = 0.0;
-//	const double sigma_r_max = 1.0;
-//	const uint64_t win_min = 0;
-//	const uint64_t win_max = 16;
-//	ImGui::SliderScalar("sigma_d", ImGuiDataType_Double, &sigma_d, &sigma_d_min, &sigma_d_max, "%f");
-//	ImGui::SliderScalar("sigma_r", ImGuiDataType_Double, &sigma_r, &sigma_r_min, &sigma_r_max, "%f");
-//	ImGui::SliderScalar("window", ImGuiDataType_U64, &window, &win_min, &win_max, "%d");
-//	if (ImGui::Button("Apply filter")) {
-//		BiliteralFilter filter(orig_img.get(), width, height);
-//		filter.sigma_d = sigma_d;
-//		filter.sigma_r = sigma_r;
-//		filter.window = window;
-//		filter.FilterImage();
-//		double *n = filter.result;
-//		retouched.reset(n);
-//		retouched_viewer.LoadImage(retouched, width, height);
-//	}
-//	ImGui::Separator();
-//	ImGui::Text("Tone Mapping");
-//	ImGui::Separator();
-//	original_viewer.Render();
-//	ImGui::SameLine();
-//	retouched_viewer.Render();
-//}
-//
-//void ImgRetouch::LoadImage(std::shared_ptr<double[]>& img, int width, int height)
-//{
-//	orig_img = img;
-//	retouched.reset(new double[width*height*4]);
-//	for (size_t i = 0; i < width*height*4; i++) {
-//		retouched[i] = orig_img[i];
-//	}
-//	this->width = width;
-//	this->height = height;
-//	original_viewer.LoadImage(orig_img, width, height);
-//	retouched_viewer.LoadImage(retouched, width, height);
-//}
-//
-//void RetouchWindow::Render(void)
-//{
-//	ImGui::Begin("Retouch");
-//	if (ImGui::BeginTabBar("Tabs")) {
-//		for (size_t i = 0; i < tabs.size(); i++) {
-//			if (ImGui::BeginTabItem(img_names[i].c_str())) {
-//				tabs[i].Render();
-//				ImGui::EndTabItem();
-//			}
-//		}
-//		ImGui::EndTabBar();
-//	}
-//	ImGui::End();
-//}
-//
-//
-//void RetouchWindow::AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height)
-//{
-//	img_names.push_back(name);
-//	ImgRetouch new_retouch;
-//	new_retouch.LoadImage(img, width, height);
-//	tabs.push_back(new_retouch);
-//}
-//
-//void RetouchWindow::AddImage(std::shared_ptr<double[]>& img, int width, int height)
+void ImgRetouch::Render(void)
+{
+	ImGui::Text("Filters");
+	const double sigma_d_min = 0.0;
+	const double sigma_d_max = 20.0;
+	const double sigma_r_min = 0.0;
+	const double sigma_r_max = 1.0;
+	const uint64_t win_min = 0;
+	const uint64_t win_max = 16;
+	ImGui::SliderScalar("sigma_d", ImGuiDataType_Double, &sigma_d, &sigma_d_min, &sigma_d_max, "%f");
+	ImGui::SliderScalar("sigma_r", ImGuiDataType_Double, &sigma_r, &sigma_r_min, &sigma_r_max, "%f");
+	ImGui::SliderScalar("window", ImGuiDataType_U64, &window, &win_min, &win_max, "%d");
+	if (ImGui::Button("Apply filter")) {
+		BiliteralFilter filter(orig_img, width, height);
+		filter.sigma_d = sigma_d;
+		filter.sigma_r = sigma_r;
+		filter.window = window;
+		filter.FilterImage();
+		retouched = filter.result;
+		retouched_viewer.LoadImage(retouched, width, height);
+	}
+	ImGui::Separator();
+	ImGui::Text("Tone Mapping");
+	ImGui::Separator();
+	original_viewer.Render();
+	ImGui::SameLine();
+	retouched_viewer.Render();
+}
+
+void ImgRetouch::LoadImage(const std::vector<double>& img, int width, int height)
+{
+	orig_img = img;
+	retouched = img;
+	this->width = width;
+	this->height = height;
+	original_viewer.LoadImage(orig_img, width, height);
+	retouched_viewer.LoadImage(retouched, width, height);
+}
+
+void RetouchWindow::Render(void)
+{
+	ImGui::Begin("Retouch");
+	if (ImGui::BeginTabBar("Tabs")) {
+		for (size_t i = 0; i < tabs.size(); i++) {
+			if (ImGui::BeginTabItem(img_names[i].c_str())) {
+				tabs[i].Render();
+				ImGui::EndTabItem();
+			}
+		}
+		ImGui::EndTabBar();
+	}
+	ImGui::End();
+}
+
+
+void RetouchWindow::AddImage(const std::vector<double>& img, int width, int height, const char *name)
+{
+	std::string s = name;
+	if (s == "")
+		s = std::string("image.") + std::to_string(img_names.size());
+	img_names.push_back(s);
+	ImgRetouch new_retouch;
+	new_retouch.LoadImage(img, width, height);
+	tabs.push_back(new_retouch);
+}
+
+//void RetouchWindow::AddImage(double *img, int width, int height)
 //{
 //	std::string name = "image." + std::to_string(img_names.size());
 //	AddImage(name, img, width, height);
@@ -177,7 +178,29 @@ Scene::Scene(void)
 	//	1, 2, 3
 	//};
 
-	context = ax::NodeEditor::CreateEditor();
+	NodeMaterial test_material;
+	test_material.context = ax::NodeEditor::CreateEditor();
+	LambertianNode *nodea = new LambertianNode(test_material.unique_id);
+	nodea->name = "Node A";
+	LambertianNode *nodeb = new LambertianNode(test_material.unique_id);
+	nodeb->name = "Node B";
+	//OutputNode *nodeo = new OutputNode(test_material.unique_id);
+	//nodeb->name = "Final Output";
+	test_material.material_nodes.push_back(nodea);
+	test_material.material_nodes.push_back(nodeb);
+	//test_material.material_nodes.push_back(nodeo);
+	test_material.name = "test material";
+	materials.push_back(test_material);
+
+	NodeMaterial test_material2;
+	test_material2.context = ax::NodeEditor::CreateEditor();
+	LambertianNode *nodec = new LambertianNode(test_material2.unique_id);
+	nodea->name = "Node C";
+	//OutputNode *noded = new OutputNode(test_material2.unique_id);
+	test_material2.material_nodes.push_back(nodec);
+	//test_material2.material_nodes.push_back(noded);
+	test_material2.name = "test material2";
+	materials.push_back(test_material2);
 }
 
 
@@ -220,26 +243,27 @@ void Scene::Load(const char *objfilename)
 				//std::cout << x << " " << y << " " << z << std::endl;
 			}
 		}
-		std::shared_ptr<Material> mat = renderer.Material_loader.Materials[renderer.Material_loader.obj_mat_names[o]];
-		if (mat == nullptr)
-			std::cout << "WARNING" << std::endl;
-		if (typeid(*mat) == typeid(Lambertian)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<Lambertian>(mat)->albedo);
-			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(Dielectric)) {
-			colors.push_back(std::array<float, 3>({1.0f, 1.0f, 1.0f}));
-		} else if (typeid(*mat) == typeid(Metal)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<Metal>(mat)->albedo);
-			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(Microfacet)) {
-			vec3 col = r_rgb(std::dynamic_pointer_cast<Microfacet>(mat)->albedo);
-			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else if (typeid(*mat) == typeid(DiffuseLight)) {
-			vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<DiffuseLight>(mat)->light_color));
-			colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		} else {
-			colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
-		}
+		//std::shared_ptr<Material> mat = renderer.Material_loader.Materials[renderer.Material_loader.obj_mat_names[o]];
+		//if (mat == nullptr)
+		//	std::cout << "WARNING" << std::endl;
+		//if (typeid(*mat) == typeid(Lambertian)) {
+		//	vec3 col = r_rgb(std::dynamic_pointer_cast<Lambertian>(mat)->albedo);
+		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
+		//} else if (typeid(*mat) == typeid(Dielectric)) {
+		//	colors.push_back(std::array<float, 3>({1.0f, 1.0f, 1.0f}));
+		//} else if (typeid(*mat) == typeid(Metal)) {
+		//	vec3 col = r_rgb(std::dynamic_pointer_cast<Metal>(mat)->albedo);
+		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
+		//} else if (typeid(*mat) == typeid(Microfacet)) {
+		//	vec3 col = r_rgb(std::dynamic_pointer_cast<Microfacet>(mat)->albedo);
+		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
+		//} else if (typeid(*mat) == typeid(DiffuseLight)) {
+		//	vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<DiffuseLight>(mat)->light_color));
+		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
+		//} else {
+		//	colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
+		//}
+		colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices_num[o]*6, vertices_array[o], GL_STATIC_DRAW);
@@ -255,6 +279,10 @@ void Scene::Load(const char *objfilename)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		// do not unbind the EBO while a VAO is active.
 		glBindVertexArray(0);
+	}
+	obj_materials.resize(renderer.obj_loader.objects.size());
+	for (size_t i = 0; i < obj_materials.size(); i++) {
+		obj_materials[i] = nullptr;
 	}
 
 	glGenFramebuffers(1, &fbo);
@@ -346,7 +374,7 @@ void Scene::RenderSceneWindow(void)
 				nfdchar_t *path = nullptr;
 				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
 				if (result == NFD_OKAY) {
-					env_mapping_texture = stbi_load(path, &env_mapping_width, &env_mapping_height, &env_mapping_bpp, 3);
+					env_mapping_texture = stbi_load(path, &env_mapping_width, &env_mapping_height, &env_mapping_bpp, 0);
 					free(path);
 				}
 			}
@@ -519,6 +547,7 @@ void Scene::RenderPreviewWindow(void)
 					vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
 					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(img_width)/img_height);
 					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
+					renderer.LoadMaterials(obj_materials);
 					std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_Samples, img_spectral_samples, enable_openmp);
 					t.detach();
 				}
@@ -543,7 +572,7 @@ void Scene::RenderPreviewWindow(void)
 		}
 		if (ImGui::BeginMenu("Retouch")) {
 			if (ImGui::MenuItem("Add to Retouch Window")) {
-				//retouch_window.AddImage(renderer.orig_img, img_width, img_height);
+				retouch_window.AddImage(renderer.orig_img, img_width, img_height);
 			}
 			ImGui::EndMenu();
 		}
@@ -803,12 +832,37 @@ void Scene::RenderMaterialEditorWindow(void)
 	ImGui::End();
 }
 
+
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
-	ImGui::Begin("Material Node Editor");
-	ax::NodeEditor::SetCurrentEditor(context);
-	ax::NodeEditor::Begin("material node editor");
-	ax::NodeEditor::End();
+	ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse);
+	if (activeObjectIndex == 0) {
+		ImGui::End();
+		return;
+	}
+
+	NodeMaterial *selected_material = obj_materials[activeObjectIndex-1];
+	const char *preview_name = "";
+	if (selected_material != nullptr)
+		preview_name = selected_material->name.c_str();
+	if (ImGui::BeginCombo("Select Material", preview_name)) {
+		for (int i = 0; i < materials.size(); i++) {
+			bool is_selected = (selected_material == &materials[i]);
+			if (ImGui::Selectable(materials[i].name.c_str(), is_selected)) {
+				selected_material = &materials[i];
+				obj_materials[activeObjectIndex-1] = &materials[i];
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	if (selected_material != nullptr){
+		ax::NodeEditor::SetCurrentEditor(selected_material->context);
+		ax::NodeEditor::Begin("material node editor##tmp");
+		selected_material->Render();
+
+		ax::NodeEditor::End();
+	}
 	ImGui::End();
 }
 

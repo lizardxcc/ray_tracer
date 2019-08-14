@@ -94,7 +94,6 @@ int main(void)
 	ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.1f, 1.00f);
 
 	Scene scene;
-	MaterialEditor Material_editor;
 
 
 	while (!glfwWindowShouldClose(window))
@@ -116,9 +115,9 @@ int main(void)
 
 		scene.RenderSceneWindow();
 		scene.RenderPreviewWindow();
-		scene.RenderMaterialEditorWindow();
+		//scene.RenderMaterialEditorWindow();
 		scene.RenderMaterialNodeEditorWindow();
-		//scene.retouch_window.Render();
+		scene.retouch_window.Render();
 
 		ImGui::Render();
 		int display_w, display_h;

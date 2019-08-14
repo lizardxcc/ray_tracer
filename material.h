@@ -2,6 +2,7 @@
 #define MATERIAL_H
 
 #include <vector>
+#include <complex>
 #include "vec3.h"
 #include "onb.h"
 #include "ray.h"
@@ -9,6 +10,7 @@
 #include "spectrum.h"
 
 extern const vec3 default_vt;
+double cfresnel(double cos_theta, std::complex<double> n);
 
 class MediumMaterial {
 	public:

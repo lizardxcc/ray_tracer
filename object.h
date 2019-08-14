@@ -13,7 +13,8 @@ class Sphere: public Hittable {
 	public:
 		Sphere() { }
 		Sphere(vec3 center, double r, Material *mat_ptr) : center(center), radius(r) {
-			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
+			//this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
+			this->mat_ptr = mat_ptr;
 		};
 		bool Hit(const ray& r, double tmin, double tmux, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
@@ -26,7 +27,8 @@ class Plane: public Hittable {
 	public:
 		Plane() { }
 		Plane(vec3 somewhere, vec3 normal, Material *mat_ptr) : somewhere(somewhere), normal(normal) {
-			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
+			//this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
+			this->mat_ptr = mat_ptr;
 		};
 		bool Hit(const ray& r, double tmin, double tmux, HitRecord& rec) const override;
 		vec3 somewhere;
@@ -37,7 +39,8 @@ class Rectangle : public Hittable {
 	public:
 		Rectangle() { }
 		Rectangle(vec3 center, vec3 normal, vec3 width_dir, double width, double height, Material *mat_ptr) : center(center), normal(normal), width_dir(width_dir), width(width), height(height) {
-			this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
+			//this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
+			this->mat_ptr = mat_ptr;
 		};
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o) override;
@@ -54,7 +57,8 @@ class XYRect : public Hittable {
 		XYRect() { }
 		XYRect(double x0, double y0, double x1, double y1, double k, Material *mat) :
 		x0(x0), x1(x1), y0(y0), y1(y1), k(k) {
-			mat_ptr = std::shared_ptr<Material>(mat);
+			//mat_ptr = std::shared_ptr<Material>(mat);
+			mat_ptr = mat;
 		};
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
@@ -67,7 +71,8 @@ class YZRect : public Hittable {
 		YZRect() { }
 		YZRect(double y0, double z0, double y1, double z1, double k, Material *mat) :
 		y0(y0), y1(y1), z0(z0), z1(z1), k(k) {
-			mat_ptr = std::shared_ptr<Material>(mat);
+			//mat_ptr = std::shared_ptr<Material>(mat);
+			mat_ptr = mat;
 		};
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
@@ -80,7 +85,8 @@ class ZXRect : public Hittable {
 		ZXRect() { }
 		ZXRect(double z0, double x0, double z1, double x1, double k, Material *mat) :
 		z0(z0), z1(z1), x0(x0), x1(x1), k(k) {
-			mat_ptr = std::shared_ptr<Material>(mat);
+			//mat_ptr = std::shared_ptr<Material>(mat);
+			mat_ptr = mat;
 		};
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;

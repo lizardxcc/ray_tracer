@@ -18,7 +18,8 @@ class BVHNode : public Hittable {
 		BVHNode(std::vector<std::shared_ptr<Hittable> >& l);
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const;
 		bool BoundingBox(AABB& box) const;
-		void SetMaterial(std::shared_ptr<Material> mat);
+		//void SetMaterial(std::shared_ptr<Material> mat);
+		void SetMaterial(Material *mat);
 		std::shared_ptr<Hittable> left;
 		std::shared_ptr<Hittable> right;
 		AABB box;

@@ -24,7 +24,7 @@ std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 }
 
 
-void Hittable::SetMaterial(std::shared_ptr<Material> mat)
+void Hittable::SetMaterial(Material *mat)
 {
 	mat_ptr = mat;
 }
@@ -373,7 +373,8 @@ PlyModel::PlyModel(const char *filename, Material *mat)
 				tri->v[j] = p.vertices[p.faces[i][j]][0];
 			}
 			//tri->normal = p.vertices[p.faces[i][0]][1];
-			tri->mat_ptr = std::shared_ptr<Material>(mat);
+			//tri->mat_ptr = std::shared_ptr<Material>(mat);
+			tri->mat_ptr = mat;
 			tmp_polygon = tri;
 		}
 		else if (l == 4) {
@@ -382,7 +383,8 @@ PlyModel::PlyModel(const char *filename, Material *mat)
 				quad->v[j] = p.vertices[p.faces[i][j]][0];
 			}
 			quad->normal = p.vertices[p.faces[i][0]][1];
-			quad->mat_ptr = std::shared_ptr<Material>(mat);
+			//quad->mat_ptr = std::shared_ptr<Material>(mat);
+			quad->mat_ptr = mat;
 			tmp_polygon = quad;
 
 		}

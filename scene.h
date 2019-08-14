@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include "renderer.h"
 #include "filebrowser.h"
-#include "imgui_node_editor.h"
+#include "materialnode.h"
 
 
 extern uint8_t *env_mapping_texture;
@@ -17,7 +17,8 @@ class ImgViewer {
 	public:
 		void Render(void);
 		//void LoadImage(const std::shared_ptr<const double[]>& img, int width, int height);
-		void LoadImage(const double *img, int width, int height);
+		//void LoadImage(const double *img, int width, int height);
+		void LoadImage(const std::vector<double>& img, int width, int height);
 	private:
 		GLuint opengl_texture;
 		GLubyte *glimg = nullptr;
@@ -26,31 +27,30 @@ class ImgViewer {
 };
 
 
-//class ImgRetouch {
-//	public:
-//		void Render(void);
-//		void LoadImage(std::shared_ptr<double[]>& img, int width, int height);
-//		std::shared_ptr<double[]> orig_img;
-//		std::shared_ptr<double[]> retouched;
-//		int width;
-//		int height;
-//	private:
-//		ImgViewer original_viewer;
-//		ImgViewer retouched_viewer;
-//		double sigma_d = 1.0;
-//		double sigma_r = 1.0;
-//		uint64_t window = 2;
-//};
-//
-//class RetouchWindow {
-//	public:
-//		void Render(void);
-//		void AddImage(std::shared_ptr<double[]>& img, int width, int height);
-//		void AddImage(std::string& name, std::shared_ptr<double[]>& img, int width, int height);
-//	private:
-//		std::vector<std::string> img_names;
-//		std::vector<ImgRetouch> tabs;
-//};
+class ImgRetouch {
+	public:
+		void Render(void);
+		void LoadImage(const std::vector<double>& img, int width, int height);
+		std::vector<double> orig_img;
+		std::vector<double> retouched;
+		int width;
+		int height;
+	private:
+		ImgViewer original_viewer;
+		ImgViewer retouched_viewer;
+		double sigma_d = 1.0;
+		double sigma_r = 1.0;
+		uint64_t window = 2;
+};
+
+class RetouchWindow {
+	public:
+		void Render(void);
+		void AddImage(const std::vector<double>& img, int width, int height, const char *name = "");
+	private:
+		std::vector<std::string> img_names;
+		std::vector<ImgRetouch> tabs;
+};
 
 
 class Scene {
@@ -63,7 +63,7 @@ class Scene {
 		void RenderMaterialNodeEditorWindow(void);
 		void RenderLog(void);
 
-		//RetouchWindow retouch_window;
+		RetouchWindow retouch_window;
 	private:
 		void Load(const char *objfilename);
 		void ClearData(void);
@@ -127,7 +127,9 @@ class Scene {
 			"}\n\0";
 
 		float pitch = 0.0f, yaw = -90.0f;
-		ax::NodeEditor::EditorContext *context = nullptr;
+		//ax::NodeEditor::EditorContext *context = nullptr;
+		std::vector<NodeMaterial> materials;
+		std::vector<NodeMaterial *> obj_materials;
 
 };
 

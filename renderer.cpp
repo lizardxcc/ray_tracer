@@ -24,6 +24,21 @@ void Renderer::Load(const char *objfilename)
 	world = std::make_unique<ObjModel>(obj_loader);
 }
 
+void Renderer::LoadMaterials(const std::vector<NodeMaterial *>& materials)
+{
+	Material::lights.clear();
+	for (size_t i = 0; i < world->models.size(); i++) {
+		//world->models[i]->SetMaterial(std::shared_ptr<Material>(Materials[i]));
+		//auto mat = Material_loader.Materials[obj_loader.objects[i]->material_name];
+		//std::shared_ptr<Material> mat;// = std::make_shared<Material>(materials[i]);
+		//mat.reset(materials[i]);
+		world->models[i]->SetMaterial(materials[i]);
+		if (materials[i]->light_flag) {
+			Material::lights.push_back(world->models[i]);
+		}
+	}
+}
+
 
 void Renderer::Clear(void)
 {
@@ -38,16 +53,6 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 	//orig_img.reset(new double[nx*ny*4]);
 
 	orig_img.resize(nx*ny*4);
-	Material::lights.clear();
-	for (size_t i = 0; i < world->models.size(); i++) {
-		//world->models[i]->SetMaterial(std::shared_ptr<Material>(Materials[i]));
-		//auto mat = Material_loader.Materials[obj_loader.objects[i]->material_name];
-		auto mat = Material_loader.Materials[Material_loader.obj_mat_names[i]];
-		world->models[i]->SetMaterial(mat);
-		if (mat->light_flag) {
-			Material::lights.push_back(world->models[i]);
-		}
-	}
 
 	size_t count = 0;
 	rendering_runnnig = true;
