@@ -26,6 +26,7 @@
 
 uint8_t *env_mapping_texture = nullptr;
 int env_mapping_width, env_mapping_height, env_mapping_bpp;
+double env_brightness = 0.5;
 
 
 void ImgViewer::LoadImage(const std::vector<double>& img, int width, int height)
@@ -582,6 +583,9 @@ void Scene::RenderPreviewWindow(void)
 	ImGui::SliderInt("Image Height", &img_height, 1, 2000);
 	ImGui::SliderInt("Image Samples", &img_Samples, 1, 1000);
 	ImGui::SliderInt("Spectral samples", &img_spectral_samples, 1, N_SAMPLE);
+	const double min = 0.001;
+	const double max = 3.0;
+	ImGui::SliderScalar("Environment Brightness", ImGuiDataType_Double, &env_brightness, &min, &max, "%f");
 	if (renderer.img_updated) {
 		int nx = img_width;
 		int ny = img_height;

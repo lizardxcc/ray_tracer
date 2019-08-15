@@ -343,10 +343,9 @@ void TextureNode::Compute(vec3& data) const
 
 	int x = static_cast<double>(width) * vt[0];
 	int y = static_cast<double>(height) * (1.0-vt[1]);
-	data[0] = texture[bpp*(x+y*width)];
-	data[1] = texture[bpp*(x+y*width)+1];
-	data[2] = texture[bpp*(x+y*width)+2];
-	data *= 0.001;
+	data[0] = static_cast<double>(texture[bpp*(x+y*width)])/255.0;
+	data[1] = static_cast<double>(texture[bpp*(x+y*width)+1])/255.0;
+	data[2] = static_cast<double>(texture[bpp*(x+y*width)+2])/255.0;
 }
 
 

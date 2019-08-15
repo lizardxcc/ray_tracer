@@ -155,12 +155,11 @@ double Renderer::NaivePathTracing(const ray& r)
 				int x = env_mapping_width - (int)(phi/ (2.0*M_PI) * env_mapping_width);
 				int y = (int)(theta/ M_PI * env_mapping_height);
 				vec3 rgb;
-				rgb[0] = env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)];
-				rgb[1] = env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+1];
-				rgb[2] = env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+2];
-				Spectrum spectrum = RGBtoSpectrum(rgb);
-				radiance += beta * spectrum.get(_ray.central_wl) * 0.001;
-				//radiance += 0.5;
+				rgb[0] = static_cast<double>(env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)])/255.0;
+				rgb[1] = static_cast<double>(env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+1])/255.0;
+				rgb[2] = static_cast<double>(env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+2])/255.0;
+				Spectrum spectrum = RGBtoSpectrum(rgb * env_brightness);
+				radiance += beta * spectrum.get(_ray.central_wl);
 			}
 			break;
 		}

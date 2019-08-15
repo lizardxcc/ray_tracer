@@ -11,6 +11,7 @@
 
 extern uint8_t *env_mapping_texture;
 extern int env_mapping_width, env_mapping_height, env_mapping_bpp;
+extern double env_brightness;
 
 
 class ImgViewer {
