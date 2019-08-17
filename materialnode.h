@@ -23,6 +23,7 @@ enum PinType {
 	PinVec3,
 	PinSpectrum,
 	PinUniversal,
+	PinBSDF,
 };
 
 enum PinIOType {
@@ -67,6 +68,26 @@ class MaterialNode {
 		std::vector<PinInfo> inputs;
 		std::vector<PinInfo> outputs;
 		const static ImVec4 pin_colors[];
+	protected:
+		void UpdateNormal(const PinInfo *normal_pin, const vec3& orig_normal, vec3& new_normal) const
+		{
+			new_normal = orig_normal;
+			if (!normal_pin->connected_links.empty()) {
+				if (normal_pin->connected_links.size() != 1) {
+					std::cout << "node connection error" << std::endl;
+					return;
+				}
+				const PinInfo *connected_pin = normal_pin->connected_links[0]->input;
+				assert(connected_pin != nullptr);
+				const MaterialNode *parent = connected_pin->parent_node;
+				vec3 normal;
+				parent->Compute(normal);
+				normal = unit_vector(normal*2-vec3(1.0, 1.0, 1.0));
+				ONB uvw;
+				uvw.BuildFromW(orig_normal);
+				new_normal = uvw.LocalToWorld(normal);
+			}
+		};
 };
 class SpectrumNode : public MaterialNode {
 	public:
@@ -85,17 +106,19 @@ class LambertianNode : public MaterialNode, public Material {
 		LambertianNode(int &unique_id, const char *name = "Lambertian") : MaterialNode(unique_id, name)
 		{
 			AddInput(unique_id, PinSpectrum, "->Albedo");
+			AddInput(unique_id, PinVec3, "->Normal");
+			AddOutput(unique_id, PinBSDF, "BSDF->");
 			albedo_pin = &inputs[0];
-			AddOutput(unique_id, PinDouble, "BSDF->");
+			normal_pin = &inputs[1];
 		}
 		void Render(void);
-		bool PreProcess(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
+		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		//double Emitted(const ray& r, const HitRecord& rec) const override;
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
-		int iid;
+		const PinInfo *normal_pin;
 };
 
 class ConductorNode : public MaterialNode, public Material {
@@ -104,22 +127,61 @@ class ConductorNode : public MaterialNode, public Material {
 		{
 			AddInput(unique_id, PinSpectrum, "->n");
 			AddInput(unique_id, PinSpectrum, "->k");
-			AddOutput(unique_id, PinDouble, "BSDF->");
+			AddInput(unique_id, PinVec3, "->normal");
+			AddOutput(unique_id, PinBSDF, "BSDF->");
+			normal_pin = &inputs[2];
 		}
 		void Render(void);
-		bool PreProcess(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const;
+		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		Spectrum n = Spectrum(0.2);
 		Spectrum k = Spectrum(1.0);
-		int iid;
+		const PinInfo *normal_pin;
+};
+
+
+class ColoredMetal : public MaterialNode, public Material {
+	public:
+		ColoredMetal(int &unique_id, const char *name = "Colored Metal") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinSpectrum, "->albedo");
+			AddInput(unique_id, PinVec3, "->normal");
+			AddOutput(unique_id, PinBSDF, "BSDF->");
+			albedo_pin = &inputs[0];
+			normal_pin = &inputs[1];
+		}
+		void Render(void);
+		void PreProcess(HitRecord& rec) const override;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		Spectrum albedo = Spectrum(1.0);
+		const PinInfo *albedo_pin;
+		const PinInfo *normal_pin;
+};
+
+class MixBSDFNode : public MaterialNode, public Material {
+	public:
+		MixBSDFNode(int &unique_id, const char *name = "Mix BSDF Node") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinBSDF, "->In0");
+			AddInput(unique_id, PinBSDF, "->In1");
+			AddOutput(unique_id, PinBSDF, "Out->");
+		}
+		void Render(void) override;
+		void PreProcess(HitRecord& rec) const override;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		double ratio = 0.5;
+	private:
+		size_t selected_node;
 };
 
 class OutputNode : public MaterialNode {
 	public:
 		OutputNode(int &unique_id, const char *name = "Output") : MaterialNode(unique_id, name)
 		{
-			AddInput(unique_id, PinDouble, "->BSDF");
+			AddInput(unique_id, PinBSDF, "->BSDF");
 			AddInput(unique_id, PinDouble, "->Emission");
 		}
 		void Render(void);
@@ -229,11 +291,26 @@ class ScalarMultiplicationNode : public MaterialNode {
 		double scale;
 };
 
+class RandomSamplingNode : public MaterialNode {
+	public:
+		RandomSamplingNode(int &unique_id, const char *name = "Multiply Scalar") : MaterialNode(unique_id, name)
+		{
+			AddInput(unique_id, PinUniversal, "->In0");
+			AddInput(unique_id, PinUniversal, "->In1");
+			AddOutput(unique_id, PinUniversal, "Out->");
+		}
+		void Compute(double& data) const override;
+		void Compute(vec3& data) const override;
+		void Compute(Spectrum& data) const override;
+		void Render(void) override;
+		double ratio;
+};
+
+
 class NodeMaterial : public Material {
 	public:
 		NodeMaterial(void)
 		{
-			material_nodes.push_back(new FixedValueNode(unique_id, PinDouble, "wave length"));
 			material_nodes.push_back(new FixedValueNode(unique_id, PinVec3, "UV"));
 			material_nodes.push_back(new OutputNode(unique_id));
 		}
@@ -247,13 +324,13 @@ class NodeMaterial : public Material {
 		std::vector<LinkInfo *> links;
 		std::vector<MaterialNode *> material_nodes;
 		ax::NodeEditor::EditorContext *context = nullptr;
+		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		double Emitted(const ray& r, const HitRecord& rec) const override;
 
-		size_t wl_i = 0;
-		size_t uv_i = 1;
-		size_t Output_i = 2;
+		size_t uv_i = 0;
+		size_t Output_i = 1;
 
 	private:
 };

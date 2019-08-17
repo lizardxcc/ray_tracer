@@ -12,9 +12,9 @@
 void Renderer::Load(const char *objfilename)
 {
 	obj_loader.Load(objfilename);
-	for (const auto& s : obj_loader.mtl_file) {
-		Material_loader.Load(s.c_str());
-	}
+	//for (const auto& s : obj_loader.mtl_file) {
+	//	Material_loader.Load(s.c_str());
+	//}
 	//Material_loader.Load(matfilename);
 	//for (int i = 0; i < obj_loader.objects.size(); i++) {
 	//	std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
@@ -165,6 +165,7 @@ double Renderer::NaivePathTracing(const ray& r)
 		}
 
 		double bxdf, pdf;
+		rec.mat_ptr->PreProcess(rec);
 		ONB uvw;
 		uvw.BuildFromW(rec.normal);
 		vec3 generated_vi;

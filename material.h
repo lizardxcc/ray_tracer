@@ -41,6 +41,9 @@ class HenyeyGreenstein : public MediumMaterial {
 
 class Material {
 	public:
+		virtual void PreProcess(HitRecord &rec) const
+		{
+		}
 		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const {
 			return false;
 		}

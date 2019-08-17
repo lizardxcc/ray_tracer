@@ -9,6 +9,7 @@ const ImVec4 MaterialNode::pin_colors[] = {
 	ImVec4(0.2f, 1.0f, 0.2f, 1.0f),
 	ImVec4(0.4f, 0.4f, 1.0f, 1.0f),
 	ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
+	ImVec4(0.7f, 0.8f, 0.5f, 1.0f),
 };
 
 
@@ -139,7 +140,15 @@ void LambertianNode::Render(void)
 	ImGui::PopID();
 }
 
-bool LambertianNode::PreProcess(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+
+void LambertianNode::PreProcess(HitRecord& rec) const
+{
+	vec3 new_normal;
+	UpdateNormal(normal_pin, rec.normal, new_normal);
+	rec.normal = new_normal;
+}
+
+bool LambertianNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
 	CosinePdf Pdf(rec.normal);
 
@@ -147,11 +156,6 @@ bool LambertianNode::PreProcess(const HitRecord& rec, const ONB& uvw, const vec3
 	pdfval = Pdf.PdfVal(generated_direction);
 	vi = uvw.WorldToLocal(generated_direction);
 	wli = wlo;
-	return true;
-}
-
-bool LambertianNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
-{
 	BxDF = this->BxDF(vi, wli, vo, wlo);
 	return true;
 }
@@ -196,13 +200,16 @@ void ConductorNode::Render(void)
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 }
-bool ConductorNode::PreProcess(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+void ConductorNode::PreProcess(HitRecord& rec) const
 {
-	wli = wlo;
-	return true;
+	vec3 new_normal;
+	UpdateNormal(normal_pin, rec.normal, new_normal);
+	rec.normal = new_normal;
 }
+
 bool ConductorNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
+	wli = wlo;
 	double ref_idx = n.get(wlo);
 	double kv = k.get(wlo);
 
@@ -233,6 +240,119 @@ bool ConductorNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo,
 double ConductorNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	return 0.0;
+}
+
+
+void ColoredMetal::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text(name.c_str());
+	if (albedo_pin->connected_links.empty()) {
+		ImGui::Text("albedo");
+		RenderSpectrum(albedo, 0.0, 1.0);
+	}
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+void ColoredMetal::PreProcess(HitRecord& rec) const
+{
+	vec3 new_normal;
+	UpdateNormal(normal_pin, rec.normal, new_normal);
+	rec.normal = new_normal;
+}
+
+bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+{
+	wli = wlo;
+
+	vi[0] = -vo[0];
+	vi[1] = -vo[1];
+	vi[2] = vo[2];
+	pdfval = 1.0;
+	if (albedo_pin->connected_links.empty()) {
+		BxDF = albedo.get(wli)/abs(vo.z());
+	} else {
+
+		if (albedo_pin->connected_links.size() != 1) {
+			std::cout << "node connection error" << std::endl;
+			return 0.0;
+		}
+
+		const PinInfo *connected_pin = albedo_pin->connected_links[0]->input;
+		assert(connected_pin != nullptr);
+		const MaterialNode *parent = connected_pin->parent_node;
+		Spectrum albedo;
+		parent->Compute(albedo);
+		BxDF = albedo.get(wli)/M_PI;
+	}
+
+	return true;
+}
+double ColoredMetal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	return 0.0;
+}
+
+void MixBSDFNode::PreProcess(HitRecord& rec) const
+{
+	size_t i;
+	if (drand48() < ratio) {
+		i = 0;
+	} else {
+		i = 1;
+	}
+	assert(inputs[i].connected_links.size() == 1);
+	if (inputs[i].connected_links[0]->input->type != PinBSDF) {
+		std::cout << "Error" << std::endl;
+	}
+	dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->PreProcess(rec);
+}
+
+bool MixBSDFNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+{
+	size_t i;
+	if (drand48() < ratio) {
+		i = 0;
+	} else {
+		i = 1;
+	}
+	assert(inputs[i].connected_links.size() == 1);
+	if (inputs[i].connected_links[0]->input->type != PinBSDF) {
+		std::cout << "Error" << std::endl;
+	}
+	return dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
+}
+
+double MixBSDFNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	size_t i;
+	if (drand48() < ratio) {
+		i = 0;
+	} else {
+		i = 1;
+	}
+	assert(inputs[i].connected_links.size() == 1);
+	if (inputs[i].connected_links[0]->input->type != PinBSDF) {
+		std::cout << "Error" << std::endl;
+	}
+	return dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->BxDF(vi, wli, vo, wlo, vt);
+}
+
+void MixBSDFNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text(name.c_str());
+	const double min = 0.0;
+	const double max = 1.0;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("ratio", ImGuiDataType_Double, &ratio, &min, &max, "%f");
+	ImGui::PopItemWidth();
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
 }
 
 void OutputNode::Render(void)
@@ -311,6 +431,7 @@ void RGBtoSpectrumNode::Compute(Spectrum& data) const
 
 void TextureNode::Render(void)
 {
+	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Color Texture Node");
 	if (path == "") {
@@ -329,6 +450,7 @@ void TextureNode::Render(void)
 	}
 	RenderPins();
 	ax::NodeEditor::EndNode();
+	ImGui::PopID();
 }
 void TextureNode::Compute(vec3& data) const
 {
@@ -508,6 +630,67 @@ void MultiplicationNode::Compute(Spectrum& data) const
 	}
 }
 
+
+void RandomSamplingNode::Compute(double &data) const
+{
+	size_t i;
+	if (drand48() < ratio) {
+		i = 0;
+	} else {
+		i = 1;
+	}
+	assert(inputs[i].connected_links.size() == 1);
+	if (inputs[i].connected_links[0]->input->type != PinDouble) {
+		std::cout << "Error" << std::endl;
+	}
+	inputs[i].connected_links[0]->input->parent_node->Compute(data);
+}
+void RandomSamplingNode::Compute(vec3& data) const
+{
+	size_t i;
+	if (drand48() < ratio) {
+		i = 0;
+	} else {
+		i = 1;
+	}
+	assert(inputs[i].connected_links.size() == 1);
+	if (inputs[i].connected_links[0]->input->type != PinVec3) {
+		std::cout << "Error" << std::endl;
+	}
+	inputs[i].connected_links[0]->input->parent_node->Compute(data);
+}
+void RandomSamplingNode::Compute(Spectrum& data) const
+{
+	size_t i;
+	if (drand48() < ratio) {
+		i = 0;
+	} else {
+		i = 1;
+	}
+	assert(inputs[i].connected_links.size() == 1);
+	if (inputs[i].connected_links[0]->input->type != PinSpectrum) {
+		std::cout << "Error" << std::endl;
+	}
+	inputs[i].connected_links[0]->input->parent_node->Compute(data);
+}
+
+void RandomSamplingNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text(name.c_str());
+	const double min = 0.0;
+	const double max = 1.0;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("ratio", ImGuiDataType_Double, &ratio, &min, &max, "%f");
+	ImGui::PopItemWidth();
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+
+
 void NodeMaterial::Render(void)
 {
 
@@ -628,6 +811,10 @@ void NodeMaterial::Render(void)
 			node = new LambertianNode(unique_id);
 		} else if (ImGui::MenuItem("Conductor")) {
 			node = new ConductorNode(unique_id);
+		} else if (ImGui::MenuItem("Colored Metal")) {
+			node = new ColoredMetal(unique_id);
+		} else if (ImGui::MenuItem("Mix BSDF")) {
+			node = new MixBSDFNode(unique_id);
 		} else if (ImGui::MenuItem("Output")) {
 			node = new OutputNode(unique_id);
 		} else if (ImGui::MenuItem("Spectrum Node")) {
@@ -646,6 +833,8 @@ void NodeMaterial::Render(void)
 			node = new MultiplicationNode(unique_id);
 		} else if (ImGui::MenuItem("Scalar Multiplication Node")) {
 			node = new ScalarMultiplicationNode(unique_id);
+		} else if (ImGui::MenuItem("Random Sampling Node")) {
+			node = new RandomSamplingNode(unique_id);
 		}
 		if (node != nullptr)
 			material_nodes.push_back(node);
@@ -657,6 +846,22 @@ void NodeMaterial::Render(void)
 }
 
 
+void NodeMaterial::PreProcess(HitRecord& rec) const
+{
+	dynamic_cast<FixedValueNode *>(material_nodes[uv_i])->vvalue = rec.vt;
+
+	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
+	if (bsdf_pin->connected_links.size() != 1) {
+		std::cout << "node connection error" << std::endl;
+		return;
+	}
+	const PinInfo *connected_pin = bsdf_pin->connected_links[0]->input;
+	assert(connected_pin != nullptr);
+	const MaterialNode *parent = connected_pin->parent_node;
+
+	auto p = dynamic_cast<const Material *>(parent);
+	p->PreProcess(rec);
+}
 bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
@@ -668,26 +873,12 @@ bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 	assert(connected_pin != nullptr);
 	const MaterialNode *parent = connected_pin->parent_node;
 
-	if (typeid(*parent) == typeid(LambertianNode)) {
-		auto p = dynamic_cast<const LambertianNode *>(parent);
-		p->PreProcess(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
-		dynamic_cast<FixedValueNode *>(material_nodes[wl_i])->dvalue = wli;
-		dynamic_cast<FixedValueNode *>(material_nodes[uv_i])->vvalue = rec.vt;
-		return p->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
-	} else if (typeid(*parent) == typeid(ConductorNode)) {
-		auto p = dynamic_cast<const ConductorNode *>(parent);
-		p->PreProcess(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
-		dynamic_cast<FixedValueNode *>(material_nodes[wl_i])->dvalue = wli;
-		dynamic_cast<FixedValueNode *>(material_nodes[uv_i])->vvalue = rec.vt;
-		return p->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
-	} else {
-		return false;
-	}
+	auto p = dynamic_cast<const Material *>(parent);
+	return p->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
 }
 double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 
-	dynamic_cast<FixedValueNode *>(material_nodes[wl_i])->dvalue = wli;
 	dynamic_cast<FixedValueNode *>(material_nodes[uv_i])->vvalue = vt;
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	if (bsdf_pin->connected_links.size() != 1) {
@@ -699,12 +890,8 @@ double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo
 	assert(connected_pin != nullptr);
 	const MaterialNode *parent = connected_pin->parent_node;
 
-	if (typeid(*parent) == typeid(LambertianNode)) {
-		return dynamic_cast<const LambertianNode *>(parent)->BxDF(vi, wli, vo, wlo, vt);
-	} else {
-		return 0.0;
-	}
-	return 0.0;
+	auto p = dynamic_cast<const Material *>(parent);
+	return p->BxDF(vi, wli, vo, wlo, vt);
 }
 double NodeMaterial::Emitted(const ray& r, const HitRecord& rec) const
 {
