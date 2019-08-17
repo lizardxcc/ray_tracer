@@ -69,9 +69,9 @@ class MaterialNode {
 		std::vector<PinInfo> outputs;
 		const static ImVec4 pin_colors[];
 	protected:
-		void UpdateNormal(const PinInfo *normal_pin, const vec3& orig_normal, vec3& new_normal) const
+		void UpdateNormal(const PinInfo *normal_pin, const ONB& tbn, vec3& new_normal) const
 		{
-			new_normal = orig_normal;
+			new_normal = tbn.w();
 			if (!normal_pin->connected_links.empty()) {
 				if (normal_pin->connected_links.size() != 1) {
 					std::cout << "node connection error" << std::endl;
@@ -83,9 +83,7 @@ class MaterialNode {
 				vec3 normal;
 				parent->Compute(normal);
 				normal = unit_vector(normal*2-vec3(1.0, 1.0, 1.0));
-				ONB uvw;
-				uvw.BuildFromW(orig_normal);
-				new_normal = uvw.LocalToWorld(normal);
+				new_normal = tbn.LocalToWorld(normal);
 			}
 		};
 };

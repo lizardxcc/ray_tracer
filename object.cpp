@@ -452,6 +452,20 @@ bool Triangle::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) con
 			rec.vt = (result1.length()*vt[0]+result2.length()*vt[1]+result0.length()*vt[2])/tri_area;
 			rec.mat_ptr = mat_ptr;
 			rec.hit_object_id = object_id;
+
+			const double deltau1 = vt[1].x() - vt[0].x();
+			const double deltav1 = vt[1].y() - vt[0].y();
+			const double deltau2 = vt[2].x() - vt[1].x();
+			const double deltav2 = vt[2].y() - vt[1].y();
+			vec3 e1 = v[1] - v[0];
+			vec3 e2 = v[2] - v[1];
+			double denom = deltau1*deltav2-deltav1*deltau2;
+			vec3 t = (deltav2*e1 - deltav1*e2)/denom;
+			vec3 b = (deltau2*e1 + deltau1*e2)/denom;
+			rec.tbn.axis[0] = unit_vector(t);
+			rec.tbn.axis[1] = unit_vector(b);
+			rec.tbn.axis[2] = face_normal;
+
 			return true;
 		}
 	}

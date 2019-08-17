@@ -4,6 +4,7 @@
 #include <memory>
 #include "ray.h"
 #include "aabb.h"
+#include "onb.h"
 //#include "pdf.h"
 
 class Material;
@@ -18,6 +19,7 @@ struct HitRecord {
 	Material *mat_ptr;
 	unsigned int hit_object_id;
 	vec3 vt;
+	ONB tbn;
 };
 
 
