@@ -429,11 +429,11 @@ void RGBtoSpectrumNode::Compute(Spectrum& data) const
 	data = RGBtoSpectrum(RGB);
 }
 
-void TextureNode::Render(void)
+void ImageTextureNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text("Color Texture Node");
+	ImGui::Text("Image Texture Node");
 	if (path == "") {
 		ImGui::Text("texture is not loaded yet");
 	} else {
@@ -452,7 +452,7 @@ void TextureNode::Render(void)
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 }
-void TextureNode::Compute(vec3& data) const
+void ImageTextureNode::Compute(vec3& data) const
 {
 	if (texture == nullptr)
 		return;
@@ -823,8 +823,8 @@ void NodeMaterial::Render(void)
 			node = new RGBColorNode(unique_id);
 		} else if (ImGui::MenuItem("RGBtoSpectrum Node")) {
 			node = new RGBtoSpectrumNode(unique_id);
-		} else if (ImGui::MenuItem("Texture Node")) {
-			node = new TextureNode(unique_id);
+		} else if (ImGui::MenuItem("ImageTexture Node")) {
+			node = new ImageTextureNode(unique_id);
 		} else if (ImGui::MenuItem("Checkerboard Node")) {
 			node = new CheckerboardNode(unique_id);
 		} else if (ImGui::MenuItem("Addition Node")) {

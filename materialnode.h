@@ -228,9 +228,9 @@ class RGBtoSpectrumNode : public MaterialNode {
 		void Compute(Spectrum& data) const override;
 };
 
-class TextureNode : public MaterialNode {
+class ImageTextureNode : public MaterialNode {
 	public:
-		TextureNode(int &unique_id, const char *path = "", const char *name = "Texture") : MaterialNode(unique_id, name)
+		ImageTextureNode(int &unique_id, const char *path = "", const char *name = "Image Texture") : MaterialNode(unique_id, name)
 		{
 			this->path = std::string(path);
 			AddInput(unique_id, PinVec3, "->UV");
