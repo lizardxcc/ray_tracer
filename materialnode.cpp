@@ -144,7 +144,7 @@ void LambertianNode::Render(void)
 void LambertianNode::PreProcess(HitRecord& rec) const
 {
 	vec3 new_normal;
-	UpdateNormal(normal_pin, rec.tbn, new_normal);
+	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 
@@ -203,7 +203,7 @@ void ConductorNode::Render(void)
 void ConductorNode::PreProcess(HitRecord& rec) const
 {
 	vec3 new_normal;
-	UpdateNormal(normal_pin, rec.tbn, new_normal);
+	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 
@@ -259,7 +259,7 @@ void ColoredMetal::Render(void)
 void ColoredMetal::PreProcess(HitRecord& rec) const
 {
 	vec3 new_normal;
-	UpdateNormal(normal_pin, rec.tbn, new_normal);
+	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 

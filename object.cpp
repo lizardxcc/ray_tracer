@@ -524,12 +524,6 @@ bool HitTriangle(const ray& r, double t_min, double t_max,
 		rec.tbn.axis[0] = unit_vector(t);
 		rec.tbn.axis[1] = unit_vector(b);
 		rec.tbn.axis[2] = unit_vector(cross(rec.tbn.axis[0], rec.tbn.axis[1]));
-		if (dot(rec.normal, rec.tbn.axis[2]) < 0.0) {
-			std::cout << "Warning 0" << std::endl;
-		}
-		if (dot(face_normal, rec.tbn.axis[2]) < 0.0) {
-			std::cout << "Warning 1" << std::endl;
-		}
 		//rec.tbn.axis[2] = unit_vector(cross(t, b));
 		//rec.tbn.axis[2] = rec.normal;
 		//rec.tbn.axis[2] = face_normal;

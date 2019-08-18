@@ -69,9 +69,9 @@ class MaterialNode {
 		std::vector<PinInfo> outputs;
 		const static ImVec4 pin_colors[];
 	protected:
-		void UpdateNormal(const PinInfo *normal_pin, const ONB& tbn, vec3& new_normal) const
+		void UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, vec3& new_normal) const
 		{
-			new_normal = tbn.w();
+			new_normal = rec.normal;
 			if (!normal_pin->connected_links.empty()) {
 				if (normal_pin->connected_links.size() != 1) {
 					std::cout << "node connection error" << std::endl;
@@ -83,7 +83,14 @@ class MaterialNode {
 				vec3 normal;
 				parent->Compute(normal);
 				normal = unit_vector(normal*2-vec3(1.0, 1.0, 1.0));
-				new_normal = tbn.LocalToWorld(normal);
+				new_normal = rec.tbn.LocalToWorld(normal);
+
+				if (dot(rec.normal, rec.tbn.axis[2]) < 0.0) {
+					std::cout << "Warning 0: UV mapping may be incorrect" << std::endl;
+				}
+				//if (dot(face_normal, rec.tbn.axis[2]) < 0.0) {
+				//	std::cout << "Warning 1: UV mapping may be incorrect" << std::endl;
+				//}
 			}
 		};
 };
