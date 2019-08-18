@@ -174,10 +174,6 @@ Scene::Scene(void)
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	//unsigned int indices[] = {
-	//	0, 1, 3,
-	//	1, 2, 3
-	//};
 
 	NodeMaterial test_material;
 	test_material.context = ax::NodeEditor::CreateEditor();
@@ -205,82 +201,63 @@ Scene::Scene(void)
 }
 
 
+
 void Scene::Load(const char *objfilename)
 {
 	renderer.Load(objfilename);
-	for (size_t o = 0; o < renderer.obj_loader.objects.size(); o++) {
-		VAOs.push_back(0);
-		glGenVertexArrays(1, &VAOs[o]);
-		GLuint VBO;
-		glGenBuffers(1, &VBO);
-		//glGenBuffers(1, &EBO);
-
-		glBindVertexArray(VAOs[o]);
-
-		int Triangle_num = renderer.obj_loader.objects[o]->f.size();
-		vertices_num.push_back(Triangle_num*3);
-		vertices_array.push_back(new float[vertices_num[o]*6]);
-		for (int i = 0; i < Triangle_num; i++) {
-			auto& face = renderer.obj_loader.objects[o]->f[i];
-			if (face.size() != 3) {
-				std::cout << "Error!! unsupported vertex size" << std::endl;
-			}
-			vec3 normal, v[3];
-			for (size_t j = 0; j < face.size(); j++) {
-				v[j] = renderer.obj_loader.objects[o]->v[*face[j][0]];
-			}
-			normal = unit_vector(cross(v[1] - v[0], v[2] - v[1]));
-			for (size_t j = 0; j < face.size(); j++) {
-
-				//vertex
-				vertices_array[o][i*18+j*6] = v[j].x();
-				vertices_array[o][i*18+j*6+1] = v[j].y();
-				vertices_array[o][i*18+j*6+2] = v[j].z();;
-
-				//normal
-				vertices_array[o][i*18+j*6+3] = normal.x();
-				vertices_array[o][i*18+j*6+4] = normal.y();
-				vertices_array[o][i*18+j*6+5] = normal.z();;
-				//std::cout << x << " " << y << " " << z << std::endl;
+	for (size_t vertices_i = 0; vertices_i < renderer.obj_loader.v.size(); vertices_i++) {
+		Vertex v = {
+			{
+				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].x()),
+				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].y()),
+				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].z()),
+			},
+			{
+				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].x()),
+				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].x()),
+				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].y()),
+			},
+		};
+		vertices.push_back(v);
+	}
+	for (size_t object_i = 0; object_i < renderer.obj_loader.objects.size(); object_i++) {
+		colors.push_back(vec3(drand48(), drand48(), drand48()));
+		auto& object = renderer.obj_loader.objects[object_i];
+		size_t index_num = 0;
+		for (size_t faces_i = 0; faces_i < object->faces.size(); faces_i++) {
+			auto& face = object->faces[faces_i];
+			for (size_t v_i = 1; v_i < face.size()-1; v_i++) {
+				indices.push_back(*face[0][0]);
+				indices.push_back(*face[v_i][0]);
+				indices.push_back(*face[v_i+1][0]);
+				index_num += 3;
 			}
 		}
-		//std::shared_ptr<Material> mat = renderer.Material_loader.Materials[renderer.Material_loader.obj_mat_names[o]];
-		//if (mat == nullptr)
-		//	std::cout << "WARNING" << std::endl;
-		//if (typeid(*mat) == typeid(Lambertian)) {
-		//	vec3 col = r_rgb(std::dynamic_pointer_cast<Lambertian>(mat)->albedo);
-		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		//} else if (typeid(*mat) == typeid(Dielectric)) {
-		//	colors.push_back(std::array<float, 3>({1.0f, 1.0f, 1.0f}));
-		//} else if (typeid(*mat) == typeid(Metal)) {
-		//	vec3 col = r_rgb(std::dynamic_pointer_cast<Metal>(mat)->albedo);
-		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		//} else if (typeid(*mat) == typeid(Microfacet)) {
-		//	vec3 col = r_rgb(std::dynamic_pointer_cast<Microfacet>(mat)->albedo);
-		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		//} else if (typeid(*mat) == typeid(DiffuseLight)) {
-		//	vec3 col = unit_vector(r_rgb(std::dynamic_pointer_cast<DiffuseLight>(mat)->light_color));
-		//	colors.push_back(std::array<float, 3>({(float)col[0], (float)col[1], (float)col[2]}));
-		//} else {
-		//	colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
-		//}
-		colors.push_back(std::array<float, 3>({(float)drand48(), (float)drand48(), (float)drand48()}));
 
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices_num[o]*6, vertices_array[o], GL_STATIC_DRAW);
-
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float) ,(void*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float) ,(void*)(3*sizeof(float)));
-		glEnableVertexAttribArray(1);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		// do not unbind the EBO while a VAO is active.
-		glBindVertexArray(0);
+		if (index_partial_sums.empty())
+			index_partial_sums.push_back(0);
+		else
+			index_partial_sums.push_back(index_partial_sums.back()+index_nums.back());
+		index_nums.push_back(index_num);
 	}
+	glGenVertexArrays(1, &vao_id);
+	glBindVertexArray(vao_id);
+
+	glGenBuffers(1, &vbo_id);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &index_buffer_id);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(struct Vertex, xyz)); // positions
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(struct Vertex, rgb)); // rgb colors
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
 	obj_materials.resize(renderer.obj_loader.objects.size());
 	for (size_t i = 0; i < obj_materials.size(); i++) {
 		obj_materials[i] = nullptr;
@@ -315,12 +292,9 @@ void Scene::Load(const char *objfilename)
 	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
+
 void Scene::ClearData(void)
 {
-	VAOs.clear();
-	vertices_array.clear();
-	vertices_num.clear();
-	colors.clear();
 	renderer.Clear();
 	activeObjectIndex = 0;
 	img_loaded = false;
@@ -451,33 +425,28 @@ void Scene::RenderScene(void)
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
 
-	for (size_t o = 0; o < VAOs.size(); o++) {
-		glStencilFunc(GL_ALWAYS, o+1, -1);
-		glBindVertexArray(VAOs[o]);
-		glm::mat4 tmpModel = model;
-		//model = glm::Translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
-		//glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glm::mat4 tmpModel = model;
+	glm::mat3 normalModel = glm::mat3(model);
+	normalModel = glm::inverse(normalModel);
+	normalModel = glm::transpose(normalModel);
+	glUniformMatrix3fv(glGetUniformLocation(shaderProgram, "normalmodel"), 1, GL_FALSE, glm::value_ptr(normalModel));
+	glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), 1.0f, 1.0f, 1.0f);
+	glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 0.9, 0.9, 0.9);
 
-		glm::mat3 normalModel = glm::mat3(model);
-		normalModel = glm::inverse(normalModel);
-		normalModel = glm::transpose(normalModel);
-		glUniformMatrix3fv(glGetUniformLocation(shaderProgram, "normalmodel"), 1, GL_FALSE, glm::value_ptr(normalModel));
-
-		glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), 1.0f, 1.0f, 1.0f);
-		glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 0.9*colors[o][0], 0.9*colors[o][1], 0.9*colors[o][2]);
-		if (activeObjectIndex != 0 && o == (activeObjectIndex-1)) {
-			//glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 0.8f, 0.8f, 0.8f);
-			glDrawArrays(GL_TRIANGLES, 0, vertices_num[o]);
+	for (size_t o_i = 0; o_i < renderer.obj_loader.objects.size(); o_i++) {
+		glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 0.9*colors[o_i][0], 0.9*colors[o_i][1], 0.9*colors[o_i][2]);
+		glStencilFunc(GL_ALWAYS, o_i+1, -1);
+		if (activeObjectIndex != 0 && o_i == (activeObjectIndex-1)) {
+			glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 0.9f, 0.9f, 0.9f);
+			glDrawElements(GL_TRIANGLES, index_nums[o_i], GL_UNSIGNED_INT, (void *)(sizeof(GLuint)*index_partial_sums[o_i]));
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 1.0f, 0.0f, 0.0f);
-			glDrawArrays(GL_TRIANGLES, 0, vertices_num[o]);
+			glDrawElements(GL_TRIANGLES, index_nums[o_i], GL_UNSIGNED_INT, (void *)(sizeof(GLuint)*index_partial_sums[o_i]));
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		} else {
-			glDrawArrays(GL_TRIANGLES, 0, vertices_num[o]);
-		}
-		glBindVertexArray(0);
-		model = tmpModel;
+		} else
+			glDrawElements(GL_TRIANGLES, index_nums[o_i], GL_UNSIGNED_INT, (void *)(sizeof(GLuint)*index_partial_sums[o_i]));
 	}
+	model = tmpModel;
 	if (ImGui::IsWindowFocused() && ImGui::IsMouseClicked(0, false)) {
 		auto x = ImGui::GetMousePos().x - ImGui::GetCursorScreenPos().x;
 		auto y = ImGui::GetMousePos().y - ImGui::GetCursorScreenPos().y;
@@ -692,9 +661,9 @@ void Scene::RenderMaterialEditorWindow(void)
 			LambertianMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
-			colors[objecti][0] = col[0];
-			colors[objecti][1] = col[1];
-			colors[objecti][2] = col[2];
+			//colors[objecti][0] = col[0];
+			//colors[objecti][1] = col[1];
+			//colors[objecti][2] = col[2];
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 1) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
@@ -703,9 +672,9 @@ void Scene::RenderMaterialEditorWindow(void)
 			}
 			std::shared_ptr<Dielectric> mat_ptr = std::dynamic_pointer_cast<Dielectric>(mat);
 			DielectricMaterialEditor(mat_ptr);
-			colors[objecti][0] = 1.0;
-			colors[objecti][1] = 1.0;
-			colors[objecti][2] = 1.0;
+			//colors[objecti][0] = 1.0;
+			//colors[objecti][1] = 1.0;
+			//colors[objecti][2] = 1.0;
 		} else if (cur_model_item == 2) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
 				mat = std::make_shared<Metal>(Spectrum(0.1), Spectrum(3));
@@ -715,9 +684,9 @@ void Scene::RenderMaterialEditorWindow(void)
 			MetalMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
-			colors[objecti][0] = col[0];
-			colors[objecti][1] = col[1];
-			colors[objecti][2] = col[2];
+			//colors[objecti][0] = col[0];
+			//colors[objecti][1] = col[1];
+			//colors[objecti][2] = col[2];
 			ImGui::ColorButton("Albedo", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 3) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
@@ -728,9 +697,9 @@ void Scene::RenderMaterialEditorWindow(void)
 			MicrofacetMaterialEditor(mat_ptr);
 			vec3 col = r_rgb(mat_ptr->albedo);
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
-			colors[objecti][0] = col[0];
-			colors[objecti][1] = col[1];
-			colors[objecti][2] = col[2];
+			//colors[objecti][0] = col[0];
+			//colors[objecti][1] = col[1];
+			//colors[objecti][2] = col[2];
 			ImGui::ColorButton("Microfacet", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 4) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {
@@ -754,9 +723,9 @@ void Scene::RenderMaterialEditorWindow(void)
 			LightMaterialEditor(mat_ptr);
 			vec3 col = unit_vector(r_rgb(mat_ptr->light_color));
 			ImVec4 color = ImVec4(col[0], col[1], col[2], 1.0f);
-			colors[objecti][0] = col[0];
-			colors[objecti][1] = col[1];
-			colors[objecti][2] = col[2];
+			//colors[objecti][0] = col[0];
+			//colors[objecti][1] = col[1];
+			//colors[objecti][2] = col[2];
 			ImGui::ColorButton("Light color", color, ImGuiColorEditFlags_DisplayRGB);
 		} else if (cur_model_item == 6) {
 			if (cur_model_item != last_model_item && last_model_item != -1) {

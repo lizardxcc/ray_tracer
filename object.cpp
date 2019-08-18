@@ -293,48 +293,29 @@ ObjModel::ObjModel(obj& o)
 	for (size_t i = 0; i < o.objects.size(); i++) {
 		const auto& object = o.objects[i];
 		std::vector<std::shared_ptr<Hittable> > model;
-		model.resize(object->f.size());
-		std::cout << "f: " << object->f.size() << std::endl;
+		model.resize(object->faces.size());
+		std::cout << "f: " << object->faces.size() << std::endl;
 
-		for (size_t j = 0; j < o.objects[i]->f.size(); j++) {
-			auto& f = o.objects[i]->f[j];
-			size_t l = f.size();
-			if (l != 3 && l != 4) {
-				std::cerr << "Error: " << l << " sided polygon is unsupported" << std::endl;
-				return;
+		for (size_t j = 0; j < o.objects[i]->faces.size(); j++) {
+			const auto& face = o.objects[i]->faces[j];
+			size_t l = face.size();
+			std::shared_ptr<ConvexPolygon> pol = std::make_shared<ConvexPolygon>();
+			pol->v.resize(l);
+			pol->vt.resize(l);
+			pol->normal.resize(l);
+			for (size_t k = 0; k < l; k++) {
+				pol->v[k] = o.v[*face[k][0]];
+				if (face[k][1])
+					pol->vt[k] = o.vt[*face[k][1]];
+				pol->normal[k] = unit_vector(o.vn[*face[k][2]]);
 			}
-			std::shared_ptr<Hittable> tmp_model;
-			if (l == 3) {
-				std::shared_ptr<Triangle> tri = std::make_shared<Triangle>();
-				for (size_t k = 0; k < l; k++) {
-					tri->v[k] = object->v[*f[k][0]];
-					tri->normal[k] = object->vn[*f[k][2]];
-
-					if (f[k][1]) {
-						tri->vt[k] = object->vt[*f[k][1]];
-					}
-				}
-				tri->face_normal = unit_vector(cross(tri->v[1] - tri->v[0], tri->v[2] - tri->v[1]));
-				tri->mat_ptr = nullptr;
-				tmp_model = tri;
-			} else if (l == 4) {
-				std::shared_ptr<Quadrilateral> quad = std::make_shared<Quadrilateral>();
-				quad->normal = vec3(0, 0, 0);
-				for (size_t k = 0; k < l; k++) {
-					quad->v[k] = object->v[*f[k][0]];
-					quad->normal += object->vn[*f[k][2]];
-
-					if (f[k][1]) {
-						quad->vt[k] = object->vt[*f[k][1]];
-					}
-				}
-				//quad->normal.make_unit_vector();
-				quad->normal = unit_vector(cross(quad->v[1] - quad->v[0], quad->v[2] - quad->v[1]));
-				quad->mat_ptr = nullptr;
-				tmp_model = quad;
-			}
-			tmp_model->object_id = i;
-			model[j] = tmp_model;
+			pol->face_normal = unit_vector(cross(
+						pol->v[1] - pol->v[0],
+						pol->v[2] - pol->v[1]
+						));
+			pol->mat_ptr = nullptr;
+			pol->object_id = i;
+			model[j] = pol;
 		}
 		std::shared_ptr<Hittable> b = std::make_shared<BVHNode>(model);
 		models[i] = b;
@@ -505,6 +486,109 @@ std::unique_ptr<Pdf> Triangle::GeneratePdfObject(const vec3& o)
 	vec3 vec = c - o;
 	double r = ((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length())/3.0;
 	return std::make_unique<toward_object_Pdf>(unit_vector(vec), atan2(r, vec.length()));
+}
+
+bool HitTriangle(const ray& r, double t_min, double t_max,
+		const vec3& v0, const vec3& v1, const vec3& v2,
+		const vec3& vt0, const vec3& vt1, const vec3& vt2,
+		const vec3& n0, const vec3& n1, const vec3& n2,
+		const vec3& face_normal, HitRecord& rec)
+{
+	double t = dot(v0 - r.origin(), face_normal) / dot(r.direction(), face_normal);
+	if (!(t >= t_min && t <= t_max)) {
+		return false;
+	}
+	vec3 p = r.point_at_parameter(t);
+	double tri_area = cross(v1-v0, v2-v1).length();
+	vec3 result0 = cross(v1-v0, p-v1);
+	vec3 result1 = cross(v2-v1, p-v2);
+	vec3 result2 = cross(v0-v2, p-v0);
+	if (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0) {
+		rec.t = t;
+		rec.p = p;
+		rec.normal = (result1.length()*n0+result2.length()*n1+result0.length()*n2)/tri_area;
+
+		rec.vt = (result1.length()*vt0+result2.length()*vt1+result0.length()*vt2)/tri_area;
+
+		const vec3 deltauv1 = vt1 - vt0;
+		const vec3 deltauv2 = vt2 - vt1;
+		const vec3 e1 = v1 - v0;
+		const vec3 e2 = v2 - v1;
+		const double denom = deltauv1.x()*deltauv2.y() - deltauv1.y()*deltauv2.x();
+		if (denom == 0.0) {
+			std::cout << "Warning: an inverse matrix doesn't exit" << std::endl;
+		}
+		const double fraction = 1.0/denom;
+		const vec3 t = ((deltauv2.y()*e1) - (deltauv1.y()*e2))*fraction;
+		const vec3 b = ((-deltauv2.x()*e1) + (deltauv1.x()*e2))*fraction;
+		rec.tbn.axis[0] = unit_vector(t);
+		rec.tbn.axis[1] = unit_vector(b);
+		rec.tbn.axis[2] = unit_vector(cross(rec.tbn.axis[0], rec.tbn.axis[1]));
+		if (dot(rec.normal, rec.tbn.axis[2]) < 0.0) {
+			std::cout << "Warning 0" << std::endl;
+		}
+		if (dot(face_normal, rec.tbn.axis[2]) < 0.0) {
+			std::cout << "Warning 1" << std::endl;
+		}
+		//rec.tbn.axis[2] = unit_vector(cross(t, b));
+		//rec.tbn.axis[2] = rec.normal;
+		//rec.tbn.axis[2] = face_normal;
+
+		return true;
+	}
+	return false;
+}
+
+bool ConvexPolygon::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
+{
+	for (size_t i = 0; i < normal.size(); i++)
+		assert(dot(face_normal, normal[i]) > 0.0);
+	for (size_t i = 1; i < v.size()-1; i++) {
+		bool hit = HitTriangle(r, t_min, t_max,
+				v[0], v[i], v[i+1],
+				vt[0], vt[i], vt[i+1],
+				normal[0], normal[i], normal[i+1],
+				face_normal,
+				rec);
+		if (hit) {
+			rec.mat_ptr = mat_ptr;
+			rec.hit_object_id = object_id;
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+bool ConvexPolygon::BoundingBox(AABB& box) const
+{
+	vec3 minp = v[0];
+	vec3 maxp = v[0];
+	for (size_t i = 1; i < v.size(); i++) {
+		for (size_t j = 0; j < 3; j++) {
+			minp.e[j] = std::min(minp.e[j], v[i][j]);
+			maxp.e[j] = std::max(maxp.e[j], v[i][j]);
+		}
+	}
+
+	for (size_t i = 0; i < 3; i++) {
+		if (minp.e[i] == maxp.e[i]) {
+			minp.e[i] -= 0.0001;
+			maxp.e[i] += 0.0001;
+		}
+	}
+	box = AABB(minp, maxp);
+	return true;
+}
+
+
+
+std::unique_ptr<Pdf> ConvexPolygon::GeneratePdfObject(const vec3& o)
+{
+	std::cout << "Error: Unimplemented" << std::endl;
+	assert(false);
+	return nullptr;
 }
 
 bool Quadrilateral::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const

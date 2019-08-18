@@ -160,6 +160,17 @@ class Triangle : public Hittable {
 		vec3 vt[3];
 };
 
+class ConvexPolygon : public Hittable {
+	public:
+		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
+		bool BoundingBox(AABB& box) const override;
+		std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o) override;
+		std::vector<vec3> v;
+		std::vector<vec3> vt;
+		std::vector<vec3> normal;
+		vec3 face_normal;
+};
+
 class Quadrilateral : public Hittable {
 	public:
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;

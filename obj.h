@@ -10,10 +10,7 @@
 class objobject {
 	public:
 		void PrintDebug(void);
-		std::vector<vec3> v;
-		std::vector<vec3> vt;
-		std::vector<vec3> vn;
-		std::vector<std::vector<std::array<boost::optional<size_t>, 3> > > f;
+		std::vector<std::vector<std::array<boost::optional<size_t>, 3> > > faces;
 
 		std::string name;
 		std::string material_name;
@@ -29,10 +26,12 @@ class obj {
 		std::ifstream file;
 		std::vector<std::string> mtl_file;
 		std::vector<objobject *> objects;
+		std::vector<vec3> v;
+		std::vector<vec3> vt;
+		std::vector<vec3> vn;
 
 	private:
 		bool LoadObject(void);
-		void CalcIndices(void);
 
 };
 

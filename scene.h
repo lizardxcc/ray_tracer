@@ -54,6 +54,11 @@ class RetouchWindow {
 };
 
 
+struct Vertex {
+	GLfloat xyz[3];
+	GLfloat rgb[3];
+};
+
 class Scene {
 	public:
 		explicit Scene(void);
@@ -86,19 +91,34 @@ class Scene {
 		bool img_loaded = false;
 		GLuint my_opengl_texture;
 
+		GLuint vao_id;
+		GLuint vbo_id;
+		GLuint color_buffer_id;
+		GLuint index_buffer_id;
 
-		std::vector<GLuint> VAOs;
-		std::vector<float *>vertices_array;
-		std::vector<int> vertices_num;
-		std::vector<std::array<float, 3>> colors;
+		//std::vector<struct Vertex> vertices;
+		std::vector<struct Vertex> vertices;
+		//std::vector<float> colors;
+		std::vector<GLuint> indices;
+		std::vector<size_t> index_nums;
+		std::vector<size_t> index_partial_sums;
+		std::vector<vec3> colors;
+
+
+		//std::vector<GLuint> VAOs;
+		//std::vector<float *>vertices_array;
+		//std::vector<int> vertices_num;
+		//std::vector<std::array<float, 3>> colors;
 		GLuint rbo;
 		GLuint fbo;
 		GLuint texture;
 		GLuint shaderProgram;
 		const char * const vertexShaderSource = "#version 330 core\n"
 			"layout (location = 0) in vec3 aPos;\n"
-			"layout (location = 1) in vec3 aNormal;\n"
-			"out vec3 Normal;\n"
+			//"layout (location = 1) in vec3 aNormal;\n"
+			"layout (location = 1) in vec3 aColor;\n"
+			//"out vec3 Normal;\n"
+			"out vec3 Color;\n"
 			"out vec3 FragPos;\n"
 			"uniform mat3 normalmodel;\n"
 			"uniform mat4 model;\n"
@@ -106,25 +126,29 @@ class Scene {
 			"uniform mat4 projection;\n"
 			"void main()\n"
 			"{\n"
-			"	Normal = normalize(normalmodel * aNormal);\n"
+			//"	Normal = normalize(normalmodel * aNormal);\n"
+			//"	Normal = normalize(vec3(1.0, 1.0, 1.0));\n"
+			"	Color = aColor;\n"
 			"	FragPos = vec3(model * vec4(aPos, 1.0));\n"
 			"	gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
 			"}\0";
 
 		const char * const fragmentShaderSource = "#version 330 core\n"
-			"in vec3 Normal;\n"
+			//"in vec3 Normal;\n"
+			"in vec3 Color;\n"
 			"in vec3 FragPos;\n"
 			"out vec4 FragColor;\n"
 			"uniform vec3 lightColor;\n"
 			"uniform vec3 objectColor;\n"
 			"void main()\n"
 			"{\n"
-			"	vec3 lightPos = vec3(0.0f, 0.0f, 1.0f);\n"
-			"	float ambientStrength = 0.3;\n"
+			//"	vec3 lightPos = vec3(0.0f, 0.0f, 1.0f);\n"
+			"	float ambientStrength = 0.7;\n"
 			"	vec3 ambient = ambientStrength * lightColor;\n"
-			"	float diff = max(dot(Normal, normalize(lightPos - FragPos)), 0.0);\n"
-			"	vec3 diffuse = diff * lightColor;\n"
-			"	FragColor = vec4((ambient + diffuse) * objectColor, 1.0f);"
+			//"	float diff = max(dot(Normal, normalize(lightPos - FragPos)), 0.0);\n"
+			//"	vec3 diffuse = diff * lightColor;\n"
+			//"	FragColor = vec4((ambient + diffuse) * objectColor, 1.0f);"
+			"	FragColor = vec4((ambient) * objectColor, 1.0f);"
 			"}\n\0";
 
 		float pitch = 0.0f, yaw = -90.0f;

@@ -31,8 +31,6 @@ bool obj::Load(const char *filename)
 
 	file.close();
 
-	CalcIndices();
-
 	return true;
 }
 
@@ -84,7 +82,7 @@ bool obj::LoadObject(void)
 				v.e[1] = atof(s.c_str());
 				iss >> s;
 				v.e[2] = atof(s.c_str());
-				obj->v.push_back(v);
+				this->v.push_back(v);
 			} else if (s == "vt") {
 				vec3 vt;
 				iss >> s;
@@ -92,7 +90,7 @@ bool obj::LoadObject(void)
 				iss >> s;
 				vt.e[1] = atof(s.c_str());
 				vt.e[2] = 0;
-				obj->vt.push_back(vt);
+				this->vt.push_back(vt);
 			} else if (s == "vn") {
 				vec3 vn;
 				iss >> s;
@@ -101,7 +99,7 @@ bool obj::LoadObject(void)
 				vn.e[1] = atof(s.c_str());
 				iss >> s;
 				vn.e[2] = atof(s.c_str());
-				obj->vn.push_back(vn);
+				this->vn.push_back(vn);
 			} else if (s == "f") {
 				std::vector<std::array<boost::optional<size_t>, 3> > face;
 				while (!iss.eof()) {
@@ -113,21 +111,21 @@ bool obj::LoadObject(void)
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
 						//std::cout << " AAA :" << vs << ";" << std::endl;
-						vertex_info[0] = atoi(vs.c_str());
+						vertex_info[0] = atoi(vs.c_str())-1;
 					}
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
 						//std::cout << " AAA :" << vs << ";" << std::endl;
-						vertex_info[1] = atoi(vs.c_str());
+						vertex_info[1] = atoi(vs.c_str())-1;
 					}
 					getline(v, vs, '/');
 					if (!std::all_of(vs.begin(), vs.end(), isspace)) {
 						//std::cout << " AAA :" << vs << ";" << std::endl;
-						vertex_info[2] = atoi(vs.c_str());
+						vertex_info[2] = atoi(vs.c_str())-1;
 					}
 					face.push_back(vertex_info);
 				}
-				obj->f.push_back(face);
+				obj->faces.push_back(face);
 			} else if (s == "usemtl") {
 				iss >> s;
 				obj->material_name = s;
@@ -163,7 +161,7 @@ void objobject::PrintDebug(void)
 	//for (const auto& vne : vn) {
 	//	std::cout << vne.x() << ", " << vne.y() << ", " << vne.z() << std::endl;
 	//}
-	for (const auto& a : f) {
+	for (const auto& a : faces) {
 		for (const auto& b : a) {
 			if (b[0])
 				std::cout << *b[0];
@@ -188,29 +186,3 @@ void obj::PrintDebug(void)
 }
 
 
-void obj::CalcIndices(void)
-{
-	if (objects.size() == 0)
-		return;
-	size_t v_index = 1;
-	size_t vt_index = 1;
-	size_t vn_index = 1;
-	for (auto& object : objects) {
-		for (auto& face : object->f) {
-			for (auto& vertex_info : face) {
-				if (vertex_info[0]) {
-					*vertex_info[0] -= v_index;
-				}
-				if (vertex_info[1]) {
-					*vertex_info[1] -= vt_index;
-				}
-				if (vertex_info[2]) {
-					*vertex_info[2] -= vn_index;
-				}
-			}
-		}
-		v_index += object->v.size();
-		vt_index += object->vt.size();
-		vn_index += object->vn.size();
-	}
-}
