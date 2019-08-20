@@ -13,6 +13,29 @@ const ImVec4 MaterialNode::pin_colors[] = {
 };
 
 
+void LinkInfo::DumpJson(json& j) const
+{
+	j["id"] = iid;
+	j["input_id"] = input->iid;
+	j["output_id"] = output->iid;
+}
+
+
+struct PinInfo *NodeMaterial::FindPin(int iid)
+{
+	for (auto& node : material_nodes) {
+		for (auto& pin : node->inputs) {
+			if (pin.iid == iid)
+				return &pin;
+		}
+		for (auto& pin : node->outputs) {
+			if (pin.iid == iid)
+				return &pin;
+		}
+	}
+	return nullptr;
+}
+
 struct PinInfo *NodeMaterial::FindPin(const ed::PinId& id)
 {
 	for (auto& node : material_nodes) {
@@ -61,6 +84,17 @@ const struct LinkInfo *NodeMaterial::FindLinkConst(const ed::LinkId& id) const
 	return nullptr;
 }
 
+
+void NodeMaterial::AddLink(PinInfo *input, PinInfo *output)
+{
+	assert(input != nullptr);
+	assert(output != nullptr);
+	struct LinkInfo *new_link = new LinkInfo(unique_id, input->id, output->id, input, output);
+	links.push_back(new_link);
+	input->connected_links.push_back(new_link);
+	output->connected_links.push_back(new_link);
+}
+
 void MaterialNode::RenderPins(void)
 {
 	for (size_t i = 0; i < inputs.size() || i < outputs.size(); i++) {
@@ -106,24 +140,14 @@ void MaterialNode::Render(void)
 
 void MaterialNode::AddInput(int &unique_id, PinType type, const char *name)
 {
-	PinInfo input;
-	input.id = unique_id++;
-	input.type = type;
-	input.io_type = PinInput;
-	input.name = name;
-	input.parent_node = this;
+	PinInfo input(unique_id, PinInput, type, name, this);
 	inputs.push_back(input);
 }
 
 
 void MaterialNode::AddOutput(int &unique_id, PinType type, const char *name)
 {
-	PinInfo output;
-	output.id = unique_id++;
-	output.type = type;
-	output.io_type = PinOutput;
-	output.name = name;
-	output.parent_node = this;
+	PinInfo output(unique_id, PinOutput, type, name, this);
 	outputs.push_back(output);
 }
 
@@ -429,6 +453,14 @@ void RGBtoSpectrumNode::Compute(Spectrum& data) const
 	data = RGBtoSpectrum(RGB);
 }
 
+ImageTextureNode::ImageTextureNode(const json& j) : MaterialNode(j)
+{
+	type = ImageTextureType;
+	path = j["path"].get<std::string>();
+	if (path != "")
+		texture = stbi_load(path.c_str(), &width, &height, &bpp, 0);
+}
+
 void ImageTextureNode::Render(void)
 {
 	ImGui::PushID(iid);
@@ -694,7 +726,6 @@ void RandomSamplingNode::Render(void)
 void NodeMaterial::Render(void)
 {
 
-
 	for (auto& node : material_nodes) {
 		node->Render();
 	}
@@ -727,20 +758,8 @@ void NodeMaterial::Render(void)
 					if (!output->connected_links.empty()) {
 						ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
 					} else if (ed::AcceptNewItem()) {
-
-						assert(input != nullptr);
-						assert(output != nullptr);
-						struct LinkInfo *new_link = new LinkInfo;
-						//*newlink = {ed::LinkId(unique_id++), inputpin_id, outputpin_id, input_p, output_p};
-						new_link->id = ed::LinkId(unique_id++);
-						new_link->input_id = inputpin_id;
-						new_link->output_id = outputpin_id;
-						new_link->input = input;
-						new_link->output = output;
-						links.push_back(new_link);
-						input->connected_links.push_back(new_link);
-						output->connected_links.push_back(new_link);
-						ed::Link(new_link->id, new_link->input_id, new_link->output_id);
+						AddLink(input, output);
+						ed::Link(links.back()->id, links.back()->input_id, links.back()->output_id);
 					}
 				}
 			}

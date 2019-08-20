@@ -23,6 +23,9 @@
 
 #include <nfd.h>
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 
 uint8_t *env_mapping_texture = nullptr;
 int env_mapping_width, env_mapping_height, env_mapping_bpp;
@@ -140,6 +143,97 @@ void RetouchWindow::AddImage(const std::vector<double>& img, int width, int heig
 
 Scene::Scene(void)
 {
+
+	OpenGLInitShader();
+
+
+	NodeMaterial test_material;
+	//test_material.context = ax::NodeEditor::CreateEditor();
+	LambertianNode *node = new LambertianNode(test_material.unique_id);
+	test_material.material_nodes.push_back(node);
+	test_material.name = "lambertian";
+	test_material.AddLink(&node->outputs[0], &test_material.material_nodes[1]->inputs[0]);
+	materials.push_back(test_material);
+
+	NodeMaterial test_material2;
+	//test_material2.context = ax::NodeEditor::CreateEditor();
+	ColoredMetal *nodec = new ColoredMetal(test_material2.unique_id);
+	test_material2.material_nodes.push_back(nodec);
+	test_material2.name = "metal";
+	materials.push_back(test_material2);
+}
+
+
+void Scene::LoadProject(const char *path)
+{
+	std::ifstream i(path);
+	json j;
+	i >> j;
+	LoadModel(j["model"].get<std::string>().c_str());
+	LoadEnvTexture(j["env"].get<std::string>().c_str());
+	LoadMaterial(j["mat"].get<std::string>().c_str());
+}
+
+void Scene::LoadModel(const char *obj_path)
+{
+	if (obj_path == nullptr)
+		return;
+	renderer.Load(obj_path);
+	obj_materials.resize(renderer.obj_loader.objects.size());
+	for (size_t i = 0; i < obj_materials.size(); i++) {
+		obj_materials[i] = nullptr;
+	}
+
+
+	cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+	//cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	OpenGLLoadModel();
+}
+
+void Scene::LoadEnvTexture(const char *path)
+{
+	if (path == nullptr)
+		return;
+	env_mapping_texture = stbi_load(path, &env_mapping_width, &env_mapping_height, &env_mapping_bpp, 0);
+}
+
+
+void Scene::LoadMaterial(const char *path)
+{
+	if (path == nullptr)
+		return;
+	std::ifstream i(path);
+	json j;
+	i >> j;
+
+	for (const auto& material_j : j) {
+		NodeMaterial mat(material_j);
+		materials.push_back(mat);
+	}
+	i.close();
+}
+
+
+void Scene::WriteMaterial(const char *path)
+{
+	if (path == nullptr)
+		return;
+	std::ofstream o(path);
+	json j;
+	for (const auto& mat : materials) {
+		json mat_j;
+		mat.DumpJson(mat_j);
+		j.push_back(mat_j);
+	}
+	o << j;
+	o.close();
+}
+
+
+
+void Scene::OpenGLInitShader(void)
+{
 	int success;
 	char infoLog[512];
 
@@ -173,38 +267,9 @@ Scene::Scene(void)
 	}
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
-
-
-	NodeMaterial test_material;
-	test_material.context = ax::NodeEditor::CreateEditor();
-	LambertianNode *nodea = new LambertianNode(test_material.unique_id);
-	nodea->name = "Node A";
-	LambertianNode *nodeb = new LambertianNode(test_material.unique_id);
-	nodeb->name = "Node B";
-	//OutputNode *nodeo = new OutputNode(test_material.unique_id);
-	//nodeb->name = "Final Output";
-	test_material.material_nodes.push_back(nodea);
-	test_material.material_nodes.push_back(nodeb);
-	//test_material.material_nodes.push_back(nodeo);
-	test_material.name = "test material";
-	materials.push_back(test_material);
-
-	NodeMaterial test_material2;
-	test_material2.context = ax::NodeEditor::CreateEditor();
-	LambertianNode *nodec = new LambertianNode(test_material2.unique_id);
-	nodea->name = "Node C";
-	//OutputNode *noded = new OutputNode(test_material2.unique_id);
-	test_material2.material_nodes.push_back(nodec);
-	//test_material2.material_nodes.push_back(noded);
-	test_material2.name = "test material2";
-	materials.push_back(test_material2);
 }
-
-
-
-void Scene::Load(const char *objfilename)
+void Scene::OpenGLLoadModel(void)
 {
-	renderer.Load(objfilename);
 	for (size_t vertices_i = 0; vertices_i < renderer.obj_loader.v.size(); vertices_i++) {
 		Vertex v = {
 			{
@@ -258,11 +323,6 @@ void Scene::Load(const char *objfilename)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 
-	obj_materials.resize(renderer.obj_loader.objects.size());
-	for (size_t i = 0; i < obj_materials.size(); i++) {
-		obj_materials[i] = nullptr;
-	}
-
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glGenTextures(1, &texture);
@@ -286,10 +346,6 @@ void Scene::Load(const char *objfilename)
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-	//cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 
@@ -306,41 +362,20 @@ void Scene::RenderSceneWindow(void)
 	ImGui::Begin("3D Scene", nullptr, ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("Load test.obj")) {
-				if (!scene_loaded) {
-					Load("test.obj");
+			if (ImGui::MenuItem("Load Project")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					LoadProject(path);
 					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load test2.obj")) {
-				if (!scene_loaded) {
-					Load("test2.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load cubetest.obj")) {
-				if (!scene_loaded) {
-					Load("cubetest.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load suzanne.obj")) {
-				if (!scene_loaded) {
-					Load("suzanne.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load testscene.obj")) {
-				if (!scene_loaded) {
-					Load("testscene.obj");
-					scene_loaded = true;
+					free(path);
 				}
 			}
 			if (ImGui::MenuItem("Open a scene file")) {
 				nfdchar_t *path = nullptr;
 				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
 				if (result == NFD_OKAY) {
-					Load(path);
+					LoadModel(path);
 					scene_loaded = true;
 					free(path);
 				}
@@ -349,7 +384,7 @@ void Scene::RenderSceneWindow(void)
 				nfdchar_t *path = nullptr;
 				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
 				if (result == NFD_OKAY) {
-					env_mapping_texture = stbi_load(path, &env_mapping_width, &env_mapping_height, &env_mapping_bpp, 0);
+					LoadEnvTexture(path);
 					free(path);
 				}
 			}
@@ -357,6 +392,36 @@ void Scene::RenderSceneWindow(void)
 				if (scene_loaded) {
 					ClearData();
 					scene_loaded = false;
+				}
+			}
+			if (ImGui::MenuItem("Load test.obj")) {
+				if (!scene_loaded) {
+					LoadModel("test.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load test2.obj")) {
+				if (!scene_loaded) {
+					LoadModel("test2.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load cubetest.obj")) {
+				if (!scene_loaded) {
+					LoadModel("cubetest.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load suzanne.obj")) {
+				if (!scene_loaded) {
+					LoadModel("suzanne.obj");
+					scene_loaded = true;
+				}
+			}
+			if (ImGui::MenuItem("Load testscene.obj")) {
+				if (!scene_loaded) {
+					LoadModel("testscene.obj");
+					scene_loaded = true;
 				}
 			}
 			ImGui::EndMenu();

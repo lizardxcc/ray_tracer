@@ -71,9 +71,16 @@ class Scene {
 
 		RetouchWindow retouch_window;
 	private:
-		void Load(const char *objfilename);
+		void LoadProject(const char *path);
+		void LoadModel(const char *obj_path);
+		void LoadEnvTexture(const char *path);
+		void LoadMaterial(const char *path);
+		void WriteMaterial(const char *path);
 		void ClearData(void);
 		void RenderScene(void);
+
+		void OpenGLInitShader(void);
+		void OpenGLLoadModel(void);
 		bool scene_loaded = false;
 		Renderer renderer;
 		glm::vec3 cameraPos;
