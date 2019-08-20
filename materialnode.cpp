@@ -12,12 +12,51 @@ const ImVec4 MaterialNode::pin_colors[] = {
 	ImVec4(0.7f, 0.8f, 0.5f, 1.0f),
 };
 
+LinkInfo::LinkInfo(int &unique_id, ed::PinId input_id, ed::PinId output_id, PinInfo *input, PinInfo *output) :
+	id(unique_id),
+	iid(unique_id),
+	input_id(input_id),
+	output_id(output_id),
+	input(input),
+	output(output)
+{
+	unique_id++;
+}
+
+LinkInfo::LinkInfo(const json& j, PinInfo *input, PinInfo *output) :
+	id(j["id"]),
+	iid(j["id"]),
+	input_id(j["input_id"]),
+	output_id(j["output_id"]),
+	input(input),
+	output(output)
+{
+}
 
 void LinkInfo::DumpJson(json& j) const
 {
 	j["id"] = iid;
 	j["input_id"] = input->iid;
 	j["output_id"] = output->iid;
+}
+
+PinInfo::PinInfo(int &unique_id, PinIOType io_type, PinType type, const char *name, const MaterialNode *parent_node) :
+	id(unique_id), iid(unique_id),
+	io_type(io_type),
+	type(type),
+	name(name),
+	parent_node(parent_node)
+{
+	unique_id++;
+}
+PinInfo::PinInfo(const json& j, const MaterialNode *parent_node) :
+	id(j["id"]),
+	iid(j["id"]),
+	name(j["name"]),
+	io_type(static_cast<PinIOType>(j["io_type"])),
+	type(static_cast<PinType>(j["type"])),
+	parent_node(parent_node)
+{
 }
 
 
@@ -84,7 +123,87 @@ const struct LinkInfo *NodeMaterial::FindLinkConst(const ed::LinkId& id) const
 	return nullptr;
 }
 
+MaterialNode::MaterialNode(int &unique_id, const char *name) : id(unique_id), iid(unique_id), name(name)
+{
+	unique_id++;
+}
+MaterialNode::MaterialNode(const json& j) : name(j["name"].get<std::string>()), id(j["id"]), iid(j["id"])
+{
+	for (const auto& input_j : j["inputs"]) {
+		PinInfo new_pin(input_j, this);
+		inputs.push_back(new_pin);
+	}
+	for (const auto& output_j : j["outputs"]) {
+		PinInfo new_pin(output_j, this);
+		outputs.push_back(new_pin);
+	}
+}
+void MaterialNode::Compute(double& data) const
+{
+}
+void MaterialNode::Compute(Spectrum& data) const
+{
+}
+void MaterialNode::Compute(vec3& data) const
+{
+}
 
+void MaterialNode::DumpJson(json& j) const
+{
+	DumpIO(j);
+};
+void MaterialNode::DumpIO(json &j) const
+{
+	j["name"] = name;
+	j["id"] = iid;
+	j["type"] = static_cast<int>(type);
+	std::cout << "type: " << static_cast<int>(type) << std::endl;
+	j["inputs"] = json::array();
+	j["outputs"] = json::array();
+	for (size_t i = 0; i < inputs.size(); i++) {
+		j["inputs"][i]["id"] = inputs[i].iid;
+		j["inputs"][i]["name"] = inputs[i].name;
+		j["inputs"][i]["io_type"] = inputs[i].io_type;
+		j["inputs"][i]["type"] = inputs[i].type;
+	}
+	for (size_t i = 0; i < outputs.size(); i++) {
+		j["outputs"][i]["id"] = outputs[i].iid;
+		j["outputs"][i]["name"] = outputs[i].name;
+		j["outputs"][i]["io_type"] = outputs[i].io_type;
+		j["outputs"][i]["type"] = outputs[i].type;
+	}
+};
+void MaterialNode::DumpSpectrum(json& j, const Spectrum& s, const char *name) const
+{
+	for (const auto& d : s.data) {
+		j[name].push_back(d);
+	}
+}
+
+void MaterialNode::UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, vec3& new_normal) const
+{
+	new_normal = rec.normal;
+	if (!normal_pin->connected_links.empty()) {
+		if (normal_pin->connected_links.size() != 1) {
+			std::cout << "node connection error" << std::endl;
+			return;
+		}
+		const PinInfo *connected_pin = normal_pin->connected_links[0]->input;
+		assert(connected_pin != nullptr);
+		const MaterialNode *parent = connected_pin->parent_node;
+		vec3 normal;
+		parent->Compute(normal);
+		normal = unit_vector(normal*2-vec3(1.0, 1.0, 1.0));
+		new_normal = rec.tbn.LocalToWorld(normal);
+
+		if (dot(rec.normal, rec.tbn.axis[2]) < 0.0) {
+			std::cout << "Warning 0: UV mapping may be incorrect" << std::endl;
+		}
+		//if (dot(face_normal, rec.tbn.axis[2]) < 0.0) {
+		//	std::cout << "Warning 1: UV mapping may be incorrect" << std::endl;
+		//}
+	}
+};
 void NodeMaterial::AddLink(PinInfo *input, PinInfo *output)
 {
 	assert(input != nullptr);
@@ -151,6 +270,32 @@ void MaterialNode::AddOutput(int &unique_id, PinType type, const char *name)
 	outputs.push_back(output);
 }
 
+LambertianNode::LambertianNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = LambertianType;
+	AddInput(unique_id, PinSpectrum, "->Albedo");
+	AddInput(unique_id, PinVec3, "->Normal");
+	AddOutput(unique_id, PinBSDF, "BSDF->");
+	albedo_pin = &inputs[0];
+	normal_pin = &inputs[1];
+}
+LambertianNode::LambertianNode(const json& j) : MaterialNode(j)
+{
+	type = LambertianType;
+	albedo_pin = &inputs[0];
+	normal_pin = &inputs[1];
+	for (size_t i = 0; i < j["albedo"].size(); i++) {
+		albedo.data[i] = j["albedo"][i];
+	}
+}
+void LambertianNode::DumpJson(json& j) const
+{
+	for (const auto& d : albedo.data) {
+		j["albedo"].push_back(d);
+	}
+	DumpIO(j);
+}
+
 void LambertianNode::Render(void)
 {
 	ImGui::PushID(iid);
@@ -204,6 +349,37 @@ double LambertianNode::BxDF(const vec3& vi, double wli, const vec3& vo, double w
 		return albedo.get(wli)/M_PI;
 	}
 
+}
+ConductorNode::ConductorNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = ConductorType;
+	AddInput(unique_id, PinSpectrum, "->n");
+	AddInput(unique_id, PinSpectrum, "->k");
+	AddInput(unique_id, PinVec3, "->normal");
+	AddOutput(unique_id, PinBSDF, "BSDF->");
+	normal_pin = &inputs[2];
+}
+ConductorNode::ConductorNode(const json& j) : MaterialNode(j)
+{
+	type = ConductorType;
+	normal_pin = &inputs[2];
+
+	for (size_t i = 0; i < j["n"].size(); i++) {
+		n.data[i] = j["n"][i];
+	}
+	for (size_t i = 0; i < j["k"].size(); i++) {
+		k.data[i] = j["k"][i];
+	}
+}
+void ConductorNode::DumpJson(json& j) const
+{
+	for (const auto& d : n.data) {
+		j["n"].push_back(d);
+	}
+	for (const auto& d : k.data) {
+		j["k"].push_back(d);
+	}
+	DumpIO(j);
 }
 
 void ConductorNode::Render(void)
@@ -266,6 +442,33 @@ double ConductorNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wl
 	return 0.0;
 }
 
+ColoredMetal::ColoredMetal(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = ColoredMetalType;
+	AddInput(unique_id, PinSpectrum, "->albedo");
+	AddInput(unique_id, PinVec3, "->normal");
+	AddOutput(unique_id, PinBSDF, "BSDF->");
+	albedo_pin = &inputs[0];
+	normal_pin = &inputs[1];
+}
+
+ColoredMetal::ColoredMetal(const json& j) : MaterialNode(j)
+{
+	type = ColoredMetalType;
+	albedo_pin = &inputs[0];
+	normal_pin = &inputs[1];
+
+	for (size_t i = 0; i < j["albedo"].size(); i++) {
+		albedo.data[i] = j["albedo"][i];
+	}
+}
+void ColoredMetal::DumpJson(json& j) const
+{
+	for (const auto& d : albedo.data) {
+		j["albedo"].push_back(d);
+	}
+	DumpIO(j);
+}
 
 void ColoredMetal::Render(void)
 {
@@ -317,6 +520,24 @@ bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 double ColoredMetal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	return 0.0;
+}
+
+MixBSDFNode::MixBSDFNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = MixBSDFType;
+	AddInput(unique_id, PinBSDF, "->In0");
+	AddInput(unique_id, PinBSDF, "->In1");
+	AddOutput(unique_id, PinBSDF, "Out->");
+}
+MixBSDFNode::MixBSDFNode(const json& j) : MaterialNode(j)
+{
+	type = MixBSDFType;
+	ratio = j["ratio"];
+}
+void MixBSDFNode::DumpJson(json& j) const
+{
+	DumpIO(j);
+	j["ratio"] = ratio;
 }
 
 void MixBSDFNode::PreProcess(HitRecord& rec) const
@@ -379,6 +600,16 @@ void MixBSDFNode::Render(void)
 	ImGui::PopID();
 }
 
+OutputNode::OutputNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = OutputType;
+	AddInput(unique_id, PinBSDF, "->BSDF");
+	AddInput(unique_id, PinDouble, "->Emission");
+}
+OutputNode::OutputNode(const json& j) : MaterialNode(j)
+{
+	type = OutputType;
+}
 void OutputNode::Render(void)
 {
 	ax::NodeEditor::BeginNode(id);
@@ -388,6 +619,23 @@ void OutputNode::Render(void)
 	ax::NodeEditor::EndNode();
 }
 
+SpectrumNode::SpectrumNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = SpectrumType;
+	AddOutput(unique_id, PinSpectrum, "Out->");
+}
+SpectrumNode::SpectrumNode(const json& j) : MaterialNode(j)
+{
+	type = SpectrumType;
+	for (size_t i = 0; i < j["data"].size(); i++) {
+		data.data[i] = j["data"][i];
+	}
+}
+void SpectrumNode::DumpJson(json& j) const
+{
+	DumpSpectrum(j, data, "data");
+	DumpIO(j);
+}
 void SpectrumNode::Render(void)
 {
 	ImGui::PushID(iid);
@@ -395,7 +643,7 @@ void SpectrumNode::Render(void)
 	ImGui::Text("Spectrum");
 	ImGui::Text(name.c_str());
 	RenderSpectrum(data, 0.0, 1.0);
-	
+
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
@@ -407,6 +655,15 @@ void SpectrumNode::Compute(Spectrum& data) const
 	data = this->data;
 }
 
+FixedValueNode::FixedValueNode(int &unique_id, PinType type, const char *name) : MaterialNode(unique_id, name)
+{
+	this->type = FixedValueType;
+	AddOutput(unique_id, type, "Out->");
+}
+FixedValueNode::FixedValueNode(const json& j) : MaterialNode(j)
+{
+	this->type = FixedValueType;
+}
 
 void FixedValueNode::Compute(double& data) const
 {
@@ -422,6 +679,25 @@ void FixedValueNode::Compute(Spectrum& data) const
 }
 
 
+RGBColorNode::RGBColorNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = RGBColorType;
+	AddOutput(unique_id, PinVec3, "RGB->");
+}
+RGBColorNode::RGBColorNode(const json& j) : MaterialNode(j)
+{
+	type = RGBColorType;
+	col[0] = j["col"][0];
+	col[1] = j["col"][1];
+	col[2] = j["col"][2];
+}
+void RGBColorNode::DumpJson(json& j) const
+{
+	DumpIO(j);
+	j["col"][0] = col[0];
+	j["col"][1] = col[1];
+	j["col"][2] = col[2];
+}
 void RGBColorNode::Render(void)
 {
 	ImGui::PushID(iid);
@@ -444,6 +720,17 @@ void RGBColorNode::Compute(vec3& data) const
 	data[2] = col[2];
 }
 
+
+RGBtoSpectrumNode::RGBtoSpectrumNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = RGBtoSpectrumType;
+	AddInput(unique_id, PinVec3, "->RGB");
+	AddOutput(unique_id, PinSpectrum, "Spectrum->");
+}
+RGBtoSpectrumNode::RGBtoSpectrumNode(const json& j) : MaterialNode(j)
+{
+	type = RGBtoSpectrumType;
+}
 void RGBtoSpectrumNode::Compute(Spectrum& data) const
 {
 	vec3 RGB;
@@ -453,12 +740,24 @@ void RGBtoSpectrumNode::Compute(Spectrum& data) const
 	data = RGBtoSpectrum(RGB);
 }
 
+ImageTextureNode::ImageTextureNode(int &unique_id, const char *path, const char *name) : MaterialNode(unique_id, name)
+{
+	type = ImageTextureType;
+	this->path = std::string(path);
+	AddInput(unique_id, PinVec3, "->UV");
+	AddOutput(unique_id, PinVec3, "Out->");
+}
 ImageTextureNode::ImageTextureNode(const json& j) : MaterialNode(j)
 {
 	type = ImageTextureType;
 	path = j["path"].get<std::string>();
 	if (path != "")
 		texture = stbi_load(path.c_str(), &width, &height, &bpp, 0);
+}
+void ImageTextureNode::DumpJson(json& j) const
+{
+	j["path"] = path;
+	DumpIO(j);
 }
 
 void ImageTextureNode::Render(void)
@@ -503,6 +802,22 @@ void ImageTextureNode::Compute(vec3& data) const
 }
 
 
+CheckerboardNode::CheckerboardNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = CheckerboardType;
+	AddInput(unique_id, PinVec3, "UV->");
+	AddOutput(unique_id, PinVec3, "Out->");
+}
+CheckerboardNode::CheckerboardNode(const json& j) : MaterialNode(j)
+{
+	type = CheckerboardType;
+	size = j["size"];
+}
+void CheckerboardNode::DumpJson(json& j) const
+{
+	j["size"] = size;
+	DumpIO(j);
+}
 void CheckerboardNode::Compute(vec3& data) const
 {
 	assert(inputs[0].connected_links.size() == 1);
@@ -533,6 +848,18 @@ void CheckerboardNode::Render(void)
 	ImGui::PopID();
 }
 
+
+AdditionNode::AdditionNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = AdditionType;
+	AddInput(unique_id, PinUniversal, "->In0");
+	AddInput(unique_id, PinUniversal, "->In1");
+	AddOutput(unique_id, PinUniversal, "Out->");
+}
+AdditionNode::AdditionNode(const json& j) : MaterialNode(j)
+{
+	type = AdditionType;
+}
 
 void AdditionNode::Compute(double &data) const
 {
@@ -574,6 +901,23 @@ void AdditionNode::Compute(Spectrum& data) const
 	}
 }
 
+
+ScalarMultiplicationNode::ScalarMultiplicationNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = ScalarMultiplicationType;
+	AddInput(unique_id, PinUniversal, "->In");
+	AddOutput(unique_id, PinUniversal, "Out->");
+}
+ScalarMultiplicationNode::ScalarMultiplicationNode(const json& j) : MaterialNode(j)
+{
+	type = ScalarMultiplicationType;
+	scale = j["scale"];
+}
+void ScalarMultiplicationNode::DumpJson(json& j) const
+{
+	j["scale"] = scale;
+	DumpIO(j);
+}
 void ScalarMultiplicationNode::Render(void)
 {
 	ImGui::PushID(iid);
@@ -620,6 +964,17 @@ void ScalarMultiplicationNode::Compute(Spectrum& data) const
 	data = d * scale;
 }
 
+MultiplicationNode::MultiplicationNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = MultiplicationType;
+	AddInput(unique_id, PinUniversal, "->In0");
+	AddInput(unique_id, PinUniversal, "->In1");
+	AddOutput(unique_id, PinUniversal, "Out->");
+}
+MultiplicationNode::MultiplicationNode(const json& j) : MaterialNode(j)
+{
+	type = MultiplicationType;
+}
 void MultiplicationNode::Compute(double &data) const
 {
 	data = 1.0;
@@ -663,6 +1018,23 @@ void MultiplicationNode::Compute(Spectrum& data) const
 }
 
 
+RandomSamplingNode::RandomSamplingNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = RandomSamplingType;
+	AddInput(unique_id, PinUniversal, "->In0");
+	AddInput(unique_id, PinUniversal, "->In1");
+	AddOutput(unique_id, PinUniversal, "Out->");
+}
+RandomSamplingNode::RandomSamplingNode(const json& j) : MaterialNode(j)
+{
+	type = RandomSamplingType;
+	ratio = j["ratio"];
+}
+void RandomSamplingNode::DumpJson(json& j) const
+{
+	j["ratio"] = ratio;
+	DumpIO(j);
+}
 void RandomSamplingNode::Compute(double &data) const
 {
 	size_t i;
@@ -722,6 +1094,108 @@ void RandomSamplingNode::Render(void)
 }
 
 
+NodeMaterial::NodeMaterial(void) : context(ax::NodeEditor::CreateEditor())
+{
+	material_nodes.push_back(new FixedValueNode(unique_id, PinVec3, "UV"));
+	material_nodes.push_back(new OutputNode(unique_id));
+}
+NodeMaterial::NodeMaterial(const json& j) : context(ax::NodeEditor::CreateEditor())
+{
+	name = j["name"].get<std::string>();
+	bool is_there_any_widgets = false;
+	for (const auto& node_j : j["nodes"]) {
+		is_there_any_widgets = true;
+		MaterialNode *node = nullptr;
+		std::cout << node_j["name"] << std::endl;
+		std::cout << node_j["type"] << std::endl;
+		switch (static_cast<MaterialNodeType>(node_j["type"].get<int>())) {
+			case LambertianType:
+				node = new LambertianNode(node_j);
+				break;
+			case ConductorType:
+				node = new ConductorNode(node_j);
+				break;
+			case ColoredMetalType:
+				node = new ColoredMetal(node_j);
+				break;
+			case MixBSDFType:
+				node = new MixBSDFNode(node_j);
+				break;
+			case OutputType:
+				node = new OutputNode(node_j);
+				break;
+			case SpectrumType:
+				node = new SpectrumNode(node_j);
+				break;
+			case RGBColorType:
+				node = new RGBColorNode(node_j);
+				break;
+			case RGBtoSpectrumType:
+				node = new RGBtoSpectrumNode(node_j);
+				break;
+			case ImageTextureType:
+				node = new ImageTextureNode(node_j);
+				break;
+			case CheckerboardType:
+				node = new CheckerboardNode(node_j);
+				break;
+			case AdditionType:
+				node = new AdditionNode(node_j);
+				break;
+			case MultiplicationType:
+				node = new MultiplicationNode(node_j);
+				break;
+			case ScalarMultiplicationType:
+				node = new ScalarMultiplicationNode(node_j);
+				break;
+			case RandomSamplingType:
+				node = new RandomSamplingNode(node_j);
+				break;
+			case FixedValueType:
+				node = new FixedValueNode(node_j);
+				break;
+			default:
+				std::cout << "Error: Unimplemented" << std::endl;
+				assert(false);
+				break;
+		}
+		unique_id = std::max(unique_id, node->iid);
+		for (const auto pin : node->inputs) {
+			unique_id = std::max(unique_id, pin.iid);
+		}
+		for (const auto pin : node->outputs) {
+			unique_id = std::max(unique_id, pin.iid);
+		}
+		material_nodes.push_back(node);
+	}
+	for (const auto& link_j : j["links"]) {
+		is_there_any_widgets = true;
+		LinkInfo *new_link = new LinkInfo(link_j, FindPin(link_j["input_id"]), FindPin(link_j["output_id"]));
+		links.push_back(new_link);
+		auto input = FindPin(link_j["input_id"]);
+		auto output = FindPin(link_j["output_id"]);
+		input->connected_links.push_back(new_link);
+		output->connected_links.push_back(new_link);
+		unique_id = std::max(unique_id, new_link->iid);
+	}
+	if (is_there_any_widgets)
+		unique_id++;
+}
+
+void NodeMaterial::DumpJson(json& j) const
+{
+	j["name"] = name;
+	for (const auto& node : material_nodes) {
+		json node_j;
+		node->DumpJson(node_j);
+		j["nodes"].push_back(node_j);
+	}
+	for (const auto& link : links) {
+		json link_j;
+		link->DumpJson(link_j);
+		j["links"].push_back(link_j);
+	}
+}
 
 void NodeMaterial::Render(void)
 {
