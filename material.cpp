@@ -527,17 +527,17 @@ bool Transparent::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, d
 	return true;
 }
 
-double DiffuseLight::Emitted(const ray& r, const HitRecord& rec) const
+double DiffuseLight::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
 {
 	return light_color.integrate(r.min_wl, r.max_wl);
 }
 
-double MixMaterial::Emitted(const ray& r, const HitRecord& rec) const
+double MixMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
 {
 	if (drand48() < fac) {
-		return mat2->Emitted(r, rec);
+		return mat2->Emitted(r, rec, vt);
 	} else {
-		return mat1->Emitted(r, rec);
+		return mat1->Emitted(r, rec, vt);
 	}
 }
 

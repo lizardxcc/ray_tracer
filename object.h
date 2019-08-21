@@ -149,6 +149,8 @@ class PlyModel : public Hittable {
 		BVHNode *pol;
 };
 
+extern bool printed_warning;
+
 class Triangle : public Hittable {
 	public:
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
@@ -169,6 +171,12 @@ class ConvexPolygon : public Hittable {
 		std::vector<vec3> vt;
 		std::vector<vec3> normal;
 		vec3 face_normal;
+	private:
+		bool HitTriangle(const ray& r, double t_min, double t_max,
+				const vec3& v0, const vec3& v1, const vec3& v2,
+				const vec3& vt0, const vec3& vt1, const vec3& vt2,
+				const vec3& n0, const vec3& n1, const vec3& n2,
+				const vec3& face_normal, HitRecord& rec) const;
 };
 
 class Quadrilateral : public Hittable {

@@ -29,7 +29,7 @@ enum PinType {
 	PinVec3,
 	PinSpectrum,
 	PinUniversal,
-	PinBSDF,
+	PinBSDF
 };
 
 enum PinIOType {
@@ -56,6 +56,7 @@ enum MaterialNodeType {
 	LambertianType,
 	ConductorType,
 	ColoredMetalType,
+	DiffuseLightType,
 	MixBSDFType,
 	OutputType,
 	FixedValueType,
@@ -118,7 +119,6 @@ class LambertianNode : public MaterialNode, public Material {
 		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		//double Emitted(const ray& r, const HitRecord& rec) const override;
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
 		const PinInfo *normal_pin;
@@ -150,6 +150,20 @@ class ColoredMetal : public MaterialNode, public Material {
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
+		const PinInfo *normal_pin;
+};
+
+
+class DiffuseLightNode : public MaterialNode, public Material {
+	public:
+		DiffuseLightNode(int &unique_id, const char *name = "Diffuse Light");
+		explicit DiffuseLightNode(const json& j);
+		void DumpJson(json& j) const override;
+		void Render(void) override;
+		void PreProcess(HitRecord& rec) const override;
+		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
+		Spectrum color = Spectrum(1.0);
+		const PinInfo *color_pin;
 		const PinInfo *normal_pin;
 };
 
@@ -290,7 +304,7 @@ class NodeMaterial : public Material {
 		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double Emitted(const ray& r, const HitRecord& rec) const override;
+		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
 
 		size_t uv_i = 0;
 		size_t Output_i = 1;

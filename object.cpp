@@ -489,11 +489,14 @@ std::unique_ptr<Pdf> Triangle::GeneratePdfObject(const vec3& o)
 	return std::make_unique<toward_object_Pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
 
-bool HitTriangle(const ray& r, double t_min, double t_max,
+
+bool printed_warning = false;
+
+bool ConvexPolygon::HitTriangle(const ray& r, double t_min, double t_max,
 		const vec3& v0, const vec3& v1, const vec3& v2,
 		const vec3& vt0, const vec3& vt1, const vec3& vt2,
 		const vec3& n0, const vec3& n1, const vec3& n2,
-		const vec3& face_normal, HitRecord& rec)
+		const vec3& face_normal, HitRecord& rec) const
 {
 	double t = dot(v0 - r.origin(), face_normal) / dot(r.direction(), face_normal);
 	if (!(t >= t_min && t <= t_max)) {
@@ -516,8 +519,11 @@ bool HitTriangle(const ray& r, double t_min, double t_max,
 		const vec3 e1 = v1 - v0;
 		const vec3 e2 = v2 - v1;
 		const double denom = deltauv1.x()*deltauv2.y() - deltauv1.y()*deltauv2.x();
-		if (denom == 0.0) {
-			std::cout << "Warning: an inverse matrix doesn't exit" << std::endl;
+		if (!printed_warning) {
+			if (denom == 0.0) {
+				std::cout << "Warning: an inverse matrix doesn't exit" << std::endl;
+				printed_warning = true;
+			}
 		}
 		const double fraction = 1.0/denom;
 		const vec3 t = ((deltauv2.y()*e1) - (deltauv1.y()*e2))*fraction;

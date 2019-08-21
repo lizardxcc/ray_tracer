@@ -9,7 +9,7 @@ const ImVec4 MaterialNode::pin_colors[] = {
 	ImVec4(0.2f, 1.0f, 0.2f, 1.0f),
 	ImVec4(0.4f, 0.4f, 1.0f, 1.0f),
 	ImVec4(1.0f, 1.0f, 1.0f, 1.0f),
-	ImVec4(0.7f, 0.8f, 0.5f, 1.0f),
+	ImVec4(0.7f, 0.8f, 0.5f, 1.0f)
 };
 
 LinkInfo::LinkInfo(int &unique_id, ed::PinId input_id, ed::PinId output_id, PinInfo *input, PinInfo *output) :
@@ -522,6 +522,62 @@ double ColoredMetal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo
 	return 0.0;
 }
 
+
+DiffuseLightNode::DiffuseLightNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = DiffuseLightType;
+	AddInput(unique_id, PinSpectrum, "->color");
+	AddInput(unique_id, PinVec3, "->normal");
+	AddOutput(unique_id, PinBSDF, "BSDF->");
+	color_pin = &inputs[0];
+	normal_pin = &inputs[1];
+}
+
+DiffuseLightNode::DiffuseLightNode(const json& j) : MaterialNode(j)
+{
+	type = DiffuseLightType;
+	for (size_t i = 0; i < j["color"].size(); i++) {
+		color.data[i] = j["color"][i];
+	}
+	color_pin = &inputs[0];
+	normal_pin = &inputs[1];
+}
+void DiffuseLightNode::DumpJson(json& j) const
+{
+	DumpSpectrum(j, color, "color");
+	DumpIO(j);
+}
+void DiffuseLightNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	if (color_pin->connected_links.empty()) {
+		ImGui::Text("color");
+		RenderSpectrum(color, 0.0, 1.0);
+	}
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+void DiffuseLightNode::PreProcess(HitRecord &rec) const
+{
+	vec3 new_normal;
+	UpdateNormal(normal_pin, rec, new_normal);
+	rec.normal = new_normal;
+}
+double DiffuseLightNode::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
+{
+	if (color_pin->connected_links.empty())
+		return color.integrate(r.min_wl, r.max_wl);
+	else {
+		const MaterialNode *node = color_pin->connected_links[0]->input->parent_node;
+		Spectrum color;
+		node->Compute(color);
+		return color.integrate(r.min_wl, r.max_wl);
+	}
+}
+
 MixBSDFNode::MixBSDFNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
 {
 	type = MixBSDFType;
@@ -604,7 +660,6 @@ OutputNode::OutputNode(int &unique_id, const char *name) : MaterialNode(unique_i
 {
 	type = OutputType;
 	AddInput(unique_id, PinBSDF, "->BSDF");
-	AddInput(unique_id, PinDouble, "->Emission");
 }
 OutputNode::OutputNode(const json& j) : MaterialNode(j)
 {
@@ -1106,8 +1161,6 @@ NodeMaterial::NodeMaterial(const json& j) : context(ax::NodeEditor::CreateEditor
 	for (const auto& node_j : j["nodes"]) {
 		is_there_any_widgets = true;
 		MaterialNode *node = nullptr;
-		std::cout << node_j["name"] << std::endl;
-		std::cout << node_j["type"] << std::endl;
 		switch (static_cast<MaterialNodeType>(node_j["type"].get<int>())) {
 			case LambertianType:
 				node = new LambertianNode(node_j);
@@ -1117,6 +1170,9 @@ NodeMaterial::NodeMaterial(const json& j) : context(ax::NodeEditor::CreateEditor
 				break;
 			case ColoredMetalType:
 				node = new ColoredMetal(node_j);
+				break;
+			case DiffuseLightType:
+				node = new DiffuseLightNode(node_j);
 				break;
 			case MixBSDFType:
 				node = new MixBSDFNode(node_j);
@@ -1306,6 +1362,8 @@ void NodeMaterial::Render(void)
 			node = new ConductorNode(unique_id);
 		} else if (ImGui::MenuItem("Colored Metal")) {
 			node = new ColoredMetal(unique_id);
+		} else if (ImGui::MenuItem("Diffuse Light")) {
+			node = new DiffuseLightNode(unique_id);
 		} else if (ImGui::MenuItem("Mix BSDF")) {
 			node = new MixBSDFNode(unique_id);
 		} else if (ImGui::MenuItem("Output")) {
@@ -1386,8 +1444,20 @@ double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo
 	auto p = dynamic_cast<const Material *>(parent);
 	return p->BxDF(vi, wli, vo, wlo, vt);
 }
-double NodeMaterial::Emitted(const ray& r, const HitRecord& rec) const
+double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
 {
-	return 0.0;
+	dynamic_cast<FixedValueNode *>(material_nodes[uv_i])->vvalue = vt;
+	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
+	if (bsdf_pin->connected_links.size() != 1) {
+		std::cout << "node connection error" << std::endl;
+		return 0.0;
+	}
+
+	const PinInfo *connected_pin = FindPinConst(bsdf_pin->connected_links[0]->input_id);
+	assert(connected_pin != nullptr);
+	const MaterialNode *parent = connected_pin->parent_node;
+
+	auto p = dynamic_cast<const Material *>(parent);
+	return p->Emitted(r, rec, vt);
 }
 

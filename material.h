@@ -51,7 +51,7 @@ class Material {
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const {
 			return 0.0;
 		}
-		virtual double Emitted(const ray& r, const HitRecord& rec) const {
+		virtual double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const {
 			return 0.0;
 		}
 		//std::shared_ptr<MediumMaterial> mi;
@@ -160,7 +160,7 @@ class Transparent : public Material {
 class DiffuseLight : public Material {
 	public:
 		DiffuseLight(Spectrum color) : light_color(color) {}
-		double Emitted(const ray& r, const HitRecord& rec) const override;
+		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
 		Spectrum light_color;
 };
 
@@ -174,7 +174,7 @@ class MixMaterial : public Material {
 			this->mat2 = mat2;
 			this->fac = fac;
 		}
-		double Emitted(const ray& r, const HitRecord& rec) const override;
+		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		const Material *mat1, *mat2;

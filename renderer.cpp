@@ -141,9 +141,7 @@ double Renderer::NaivePathTracing(const ray& r)
 	while (1) {
 		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 
-		if (hit) {
-			radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
-		} else {
+		if (!hit) {
 			if (env_mapping_texture == nullptr)
 				break;
 			bool hit = sphere.Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
@@ -164,8 +162,10 @@ double Renderer::NaivePathTracing(const ray& r)
 			break;
 		}
 
-		double bxdf, pdf;
 		rec.mat_ptr->PreProcess(rec);
+		radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
+
+		double bxdf, pdf;
 		ONB uvw;
 		uvw.BuildFromW(rec.normal);
 		vec3 generated_vi;
