@@ -329,7 +329,7 @@ void MaterialLoader::Write(const char *filename)
 
 void MaterialLoader::WriteMaterial(std::shared_ptr<Material> mat)
 {
-		auto& id = typeid(*mat);
+		auto& id = typeid(mat.get());
 		if (id == typeid(Lambertian)) {
 			std::shared_ptr<Lambertian> mat_ptr = std::dynamic_pointer_cast<Lambertian>(mat);
 			ofile << "lambertian" << std::endl;

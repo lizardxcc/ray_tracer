@@ -42,9 +42,9 @@ void LinkInfo::DumpJson(json& j) const
 
 PinInfo::PinInfo(int &unique_id, PinIOType io_type, PinType type, const char *name, const MaterialNode *parent_node) :
 	id(unique_id), iid(unique_id),
+	name(name),
 	io_type(io_type),
 	type(type),
-	name(name),
 	parent_node(parent_node)
 {
 	unique_id++;
@@ -127,7 +127,7 @@ MaterialNode::MaterialNode(int &unique_id, const char *name) : id(unique_id), ii
 {
 	unique_id++;
 }
-MaterialNode::MaterialNode(const json& j) : name(j["name"].get<std::string>()), id(j["id"]), iid(j["id"])
+MaterialNode::MaterialNode(const json& j) : id(j["id"]), iid(j["id"]), name(j["name"].get<std::string>())
 {
 	for (const auto& input_j : j["inputs"]) {
 		PinInfo new_pin(input_j, this);
@@ -219,14 +219,14 @@ void MaterialNode::RenderPins(void)
 	for (size_t i = 0; i < inputs.size() || i < outputs.size(); i++) {
 		if (i < inputs.size()) {
 			ax::NodeEditor::BeginPin(inputs[i].id, ax::NodeEditor::PinKind::Input);
-			ImGui::TextColored(pin_colors[inputs[i].type], inputs[i].name.c_str());
+			ImGui::TextColored(pin_colors[inputs[i].type], "%s", inputs[i].name.c_str());
 			ax::NodeEditor::EndPin();
 		}
 		if (i < inputs.size() && i < outputs.size())
 			ImGui::SameLine();
 		if (i < outputs.size()) {
 			ax::NodeEditor::BeginPin(outputs[i].id, ax::NodeEditor::PinKind::Output);
-			ImGui::TextColored(pin_colors[outputs[i].type], outputs[i].name.c_str());
+			ImGui::TextColored(pin_colors[outputs[i].type], "%s", outputs[i].name.c_str());
 			ax::NodeEditor::EndPin();
 		}
 	}
@@ -249,7 +249,7 @@ void MaterialNode::RenderSpectrum(Spectrum &data, double min, double max)
 void MaterialNode::Render(void)
 {
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 
 	RenderPins();
 
@@ -300,7 +300,7 @@ void LambertianNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	if (albedo_pin->connected_links.empty())
 		RenderSpectrum(albedo, 0.0, 1.0);
 
@@ -387,7 +387,7 @@ void ConductorNode::Render(void)
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Conductor");
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	ImGui::PushID(0);
 	ImGui::Text("n");
 	RenderSpectrum(n, 0.0, 10.0);
@@ -474,7 +474,7 @@ void ColoredMetal::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	if (albedo_pin->connected_links.empty()) {
 		ImGui::Text("albedo");
 		RenderSpectrum(albedo, 0.0, 1.0);
@@ -589,7 +589,7 @@ void MixBSDFNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	const double min = 0.0;
 	const double max = 1.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
@@ -641,7 +641,7 @@ void SpectrumNode::Render(void)
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Spectrum");
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	RenderSpectrum(data, 0.0, 1.0);
 
 	RenderPins();
@@ -702,7 +702,7 @@ void RGBColorNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.15f);
 	ImGui::ColorPicker3("Color", col);
 	ImGui::PopItemWidth();
@@ -768,7 +768,7 @@ void ImageTextureNode::Render(void)
 	if (path == "") {
 		ImGui::Text("texture is not loaded yet");
 	} else {
-		ImGui::Text(path.c_str());
+		ImGui::Text("%s", path.c_str());
 	}
 	if (ImGui::Button("Open a texture file")) {
 		nfdchar_t *path = nullptr;
@@ -837,7 +837,7 @@ void CheckerboardNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	const double min = 0.001;
 	const double max = 1.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
@@ -922,7 +922,7 @@ void ScalarMultiplicationNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	const double min = -100.0;
 	const double max = 100.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
@@ -1082,7 +1082,7 @@ void RandomSamplingNode::Render(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
-	ImGui::Text(name.c_str());
+	ImGui::Text("%s", name.c_str());
 	const double min = 0.0;
 	const double max = 1.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);

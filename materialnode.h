@@ -44,9 +44,9 @@ struct PinInfo {
 	PinInfo(const json& j, const MaterialNode *parent_node);
 	const ed::PinId id;
 	const int iid;
+	const std::string name;
 	const PinIOType io_type;
 	const PinType type;
-	const std::string name;
 	const MaterialNode * const parent_node;
 	std::vector<const LinkInfo *> connected_links;
 };
@@ -88,9 +88,9 @@ class MaterialNode {
 		void DumpIO(json &j) const;
 		void DumpSpectrum(json& j, const Spectrum& s, const char *name) const;
 
-		std::string name;
 		ed::NodeId id;
 		int iid;
+		std::string name;
 		enum MaterialNodeType type;
 		std::vector<PinInfo> inputs;
 		std::vector<PinInfo> outputs;

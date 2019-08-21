@@ -25,6 +25,7 @@ struct HitRecord {
 
 class Hittable: public std::enable_shared_from_this<Hittable> {
 	public:
+		virtual ~Hittable(void) {}
 		virtual bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const = 0;
 		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
 		virtual bool BoundingBox(AABB& box) const = 0;

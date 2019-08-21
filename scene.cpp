@@ -535,7 +535,7 @@ void Scene::RenderScene(void)
 
 
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	ImGui::GetWindowDrawList()->AddImage((void*)texture, ImVec2(pos.x, pos.y),
+	ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<void *>(texture), ImVec2(pos.x, pos.y),
 			ImVec2(pos.x+640, pos.y+480),
 			ImVec2(0, 1), ImVec2(1, 0));
 }
@@ -700,7 +700,7 @@ void Scene::RenderMaterialEditorWindow(void)
 			last_model_item = -1;
 
 		std::shared_ptr<Material> mat = it->second;
-		auto& id = typeid(*mat);
+		auto& id = typeid(mat.get());
 		if (id == typeid(Lambertian))
 			cur_model_item = 0;
 		else if (id == typeid(Dielectric))
@@ -884,7 +884,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 	if (selected_material != nullptr)
 		preview_name = selected_material->name.c_str();
 	if (ImGui::BeginCombo("Select Material", preview_name)) {
-		for (int i = 0; i < materials.size(); i++) {
+		for (size_t i = 0; i < materials.size(); i++) {
 			bool is_selected = (selected_material == &materials[i]);
 			if (ImGui::Selectable(materials[i].name.c_str(), is_selected)) {
 				selected_material = &materials[i];

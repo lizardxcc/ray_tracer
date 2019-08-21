@@ -20,6 +20,7 @@ std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 		return std::make_unique<toward_object_Pdf>(unit_vector(v), atan2(r, v.length()));
 	} else {
 		std::cout << "Warning GeneratePdfObject" << std::endl;
+		return nullptr;
 	}
 }
 

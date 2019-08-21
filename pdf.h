@@ -12,6 +12,7 @@ class Hittable;
 
 class Pdf {
 	public:
+		virtual ~Pdf(void);
 		virtual vec3 Generate() const = 0;
 		virtual double PdfVal(const vec3& direction) const = 0;
 };

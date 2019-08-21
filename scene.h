@@ -100,7 +100,6 @@ class Scene {
 
 		GLuint vao_id;
 		GLuint vbo_id;
-		GLuint color_buffer_id;
 		GLuint index_buffer_id;
 
 		//std::vector<struct Vertex> vertices;

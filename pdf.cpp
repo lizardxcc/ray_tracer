@@ -46,6 +46,11 @@ vec3 CosineWeightedRandomOnUnitHemiSphere(void)
 }
 
 
+Pdf::~Pdf(void)
+{
+}
+
+
 vec3 UniformPdf::Generate() const
 {
 	return uvw.LocalToWorld(RandomOnUnitHemiSphere());

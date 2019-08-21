@@ -41,6 +41,7 @@ class HenyeyGreenstein : public MediumMaterial {
 
 class Material {
 	public:
+		virtual ~Material(void) {}
 		virtual void PreProcess(HitRecord &rec) const
 		{
 		}
