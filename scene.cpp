@@ -873,7 +873,21 @@ void Scene::RenderMaterialEditorWindow(void)
 
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
-	ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse);
+	ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
+	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Write Material")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					WriteMaterial(path);
+					free(path);
+				}
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
 	if (activeObjectIndex == 0) {
 		ImGui::End();
 		return;

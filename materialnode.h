@@ -126,7 +126,7 @@ class LambertianNode : public MaterialNode, public Material {
 
 class ConductorNode : public MaterialNode, public Material {
 	public:
-		ConductorNode(int &unique_id, const char *name);
+		ConductorNode(int &unique_id, const char *name = "Conductor");
 		ConductorNode(const json& j);
 		void DumpJson(json& j) const override;
 		void Render(void) override;
