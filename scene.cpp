@@ -226,7 +226,7 @@ void Scene::WriteMaterial(const char *path)
 		mat.DumpJson(mat_j);
 		j.push_back(mat_j);
 	}
-	o << j;
+	o << j.dump(4);
 	o.close();
 }
 
