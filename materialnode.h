@@ -306,6 +306,8 @@ class NodeMaterial : public Material {
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
 		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
 
+		//bool light_flag = false;
+
 		size_t uv_i = 0;
 		size_t Output_i = 1;
 

@@ -9,6 +9,9 @@
 #include "aabb.h"
 #include "bvh.h"
 
+
+bool IsOccluded(const ray& r, const Hittable *world, const Hittable *p);
+
 class Sphere: public Hittable {
 	public:
 		Sphere() { }
@@ -22,6 +25,7 @@ class Sphere: public Hittable {
 		vec3 center;
 		double radius;
 };
+/*
 
 class Plane: public Hittable {
 	public:
@@ -127,7 +131,10 @@ class Translate : public Hittable {
 		Hittable *ptr;
 		vec3 offset;
 };
+*/
 
+
+class ConvexPolygon;
 
 class ObjModel : public Hittable {
 	public:
@@ -135,10 +142,12 @@ class ObjModel : public Hittable {
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
 		//std::vector<std::vector<Hittable *>> models;
+		std::vector<std::vector<const ConvexPolygon *> > polygon_models;
 		std::vector<std::shared_ptr<Hittable> > models;
 		std::shared_ptr<BVHNode> bvh;
 };
 
+/*
 class PlyModel : public Hittable {
 	public:
 		PlyModel(const char *filename, Material *mat);
@@ -161,24 +170,30 @@ class Triangle : public Hittable {
 		vec3 face_normal;
 		vec3 vt[3];
 };
+*/
 
 class ConvexPolygon : public Hittable {
 	public:
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
 		std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o) override;
+		void GetRandomPointOnPolygon(vec3& p, double& area) const;
 		std::vector<vec3> v;
 		std::vector<vec3> vt;
 		std::vector<vec3> normal;
 		vec3 face_normal;
+		void CalcTriangleAreas(void);
 	private:
 		bool HitTriangle(const ray& r, double t_min, double t_max,
 				const vec3& v0, const vec3& v1, const vec3& v2,
 				const vec3& vt0, const vec3& vt1, const vec3& vt2,
 				const vec3& n0, const vec3& n1, const vec3& n2,
 				const vec3& face_normal, HitRecord& rec) const;
+		std::vector<double> triangle_area_cumulative_sums;
+		double polygon_area;
 };
 
+/*
 class Quadrilateral : public Hittable {
 	public:
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
@@ -188,5 +203,6 @@ class Quadrilateral : public Hittable {
 		vec3 normal;
 		vec3 vt[4];
 };
+*/
 
 #endif

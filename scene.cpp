@@ -145,22 +145,6 @@ Scene::Scene(void)
 {
 
 	OpenGLInitShader();
-
-
-	NodeMaterial test_material;
-	//test_material.context = ax::NodeEditor::CreateEditor();
-	LambertianNode *node = new LambertianNode(test_material.unique_id);
-	test_material.material_nodes.push_back(node);
-	test_material.name = "lambertian";
-	test_material.AddLink(&node->outputs[0], &test_material.material_nodes[1]->inputs[0]);
-	materials.push_back(test_material);
-
-	NodeMaterial test_material2;
-	//test_material2.context = ax::NodeEditor::CreateEditor();
-	ColoredMetal *nodec = new ColoredMetal(test_material2.unique_id);
-	test_material2.material_nodes.push_back(nodec);
-	test_material2.name = "metal";
-	materials.push_back(test_material2);
 }
 
 
@@ -208,7 +192,7 @@ void Scene::LoadMaterial(const char *path)
 	i >> j;
 
 	for (const auto& material_j : j) {
-		NodeMaterial mat(material_j);
+		std::shared_ptr<NodeMaterial> mat = std::make_shared<NodeMaterial>(material_j);
 		materials.push_back(mat);
 	}
 	i.close();
@@ -221,9 +205,9 @@ void Scene::WriteMaterial(const char *path)
 		return;
 	std::ofstream o(path);
 	json j;
-	for (const auto& mat : materials) {
+	for (std::shared_ptr<NodeMaterial>& mat : materials) {
 		json mat_j;
-		mat.DumpJson(mat_j);
+		mat->DumpJson(mat_j);
 		j.push_back(mat_j);
 	}
 	o << j.dump(4);
@@ -587,6 +571,12 @@ void Scene::RenderPreviewWindow(void)
 					t.detach();
 				}
 			}
+			if (ImGui::MenuItem("Render with Naive algorithm", nullptr, false)) {
+				renderer.algorithm_type = Naive;
+			}
+			if (ImGui::MenuItem("Render with NEE algorithm", nullptr, false)) {
+				renderer.algorithm_type = NEE;
+			}
 			if (renderer.rendering_runnnig) {
 				if (ImGui::MenuItem("Terminate Rendering")) {
 					renderer.stop_rendering = true;
@@ -876,6 +866,14 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 	ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Open Material")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					LoadMaterial(path);
+					free(path);
+				}
+			}
 			if (ImGui::MenuItem("Write Material")) {
 				nfdchar_t *path = nullptr;
 				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
@@ -893,22 +891,31 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		return;
 	}
 
-	NodeMaterial *selected_material = obj_materials[activeObjectIndex-1];
+	char str[32] = "";
+	if (ImGui::InputText("Press Enter to add new Material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
+		std::shared_ptr<NodeMaterial> new_material = std::make_shared<NodeMaterial>();
+		new_material->name = str;
+		materials.push_back(new_material);
+	}
+
+	NodeMaterial *selected_material = obj_materials[activeObjectIndex-1].get();
 	const char *preview_name = "";
 	if (selected_material != nullptr)
 		preview_name = selected_material->name.c_str();
 	if (ImGui::BeginCombo("Select Material", preview_name)) {
 		for (size_t i = 0; i < materials.size(); i++) {
-			bool is_selected = (selected_material == &materials[i]);
-			if (ImGui::Selectable(materials[i].name.c_str(), is_selected)) {
-				selected_material = &materials[i];
-				obj_materials[activeObjectIndex-1] = &materials[i];
+			bool is_selected = (selected_material == materials[i].get());
+			if (ImGui::Selectable(materials[i]->name.c_str(), is_selected)) {
+				selected_material = materials[i].get();
+				obj_materials[activeObjectIndex-1] = materials[i];
 			}
 		}
 		ImGui::EndCombo();
 	}
 
+
 	if (selected_material != nullptr){
+		ImGui::Checkbox("Light", &selected_material->light_flag);
 		ax::NodeEditor::SetCurrentEditor(selected_material->context);
 		ax::NodeEditor::Begin("material node editor##tmp");
 		selected_material->Render();

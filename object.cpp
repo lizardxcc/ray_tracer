@@ -5,6 +5,15 @@
 #include "hittablelist.h"
 #include "pdf.h"
 
+bool IsOccluded(const ray& r, const Hittable *world, const Hittable *p)
+{
+	HitRecord rec;
+	if (world->Hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
+		if (rec.hit_object == p)
+			return true;
+	}
+	return false;
+}
 
 //std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 //{
@@ -47,6 +56,7 @@ bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = unit_vector(rec.p - center);
 		rec.mat_ptr = mat_ptr;
+		rec.hit_object = this;
 		rec.hit_object_id = object_id;
 		return true;
 	}
@@ -56,6 +66,7 @@ bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 		rec.p = r.point_at_parameter(rec.t);
 		rec.normal = unit_vector(rec.p - center);
 		rec.mat_ptr = mat_ptr;
+		rec.hit_object = this;
 		rec.hit_object_id = object_id;
 		return true;
 	}
@@ -80,6 +91,7 @@ std::unique_ptr<Pdf> Sphere::GeneratePdfObject(const vec3& o)
 }
 
 
+/*
 bool Plane::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(somewhere - r.origin(), normal) / dot(r.direction(), normal);
@@ -286,6 +298,7 @@ bool Translate::BoundingBox(AABB& box) const
 		return false;
 	}
 }
+*/
 
 
 ObjModel::ObjModel(obj& o)
@@ -297,6 +310,7 @@ ObjModel::ObjModel(obj& o)
 		model.resize(object->faces.size());
 		std::cout << "f: " << object->faces.size() << std::endl;
 
+		std::vector<const ConvexPolygon *> polygons;
 		for (size_t j = 0; j < o.objects[i]->faces.size(); j++) {
 			const auto& face = o.objects[i]->faces[j];
 			size_t l = face.size();
@@ -316,8 +330,11 @@ ObjModel::ObjModel(obj& o)
 						));
 			pol->mat_ptr = nullptr;
 			pol->object_id = i;
+			pol->CalcTriangleAreas();
 			model[j] = pol;
+			polygons.push_back(pol.get());
 		}
+		polygon_models.push_back(polygons);
 		std::shared_ptr<Hittable> b = std::make_shared<BVHNode>(model);
 		models[i] = b;
 	}
@@ -337,6 +354,7 @@ bool ObjModel::BoundingBox(AABB& box) const
 	return true;
 }
 
+/*
 PlyModel::PlyModel(const char *filename, Material *mat)
 {
 	p.Load(filename);
@@ -488,6 +506,7 @@ std::unique_ptr<Pdf> Triangle::GeneratePdfObject(const vec3& o)
 	double r = ((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length())/3.0;
 	return std::make_unique<toward_object_Pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
+*/
 
 
 bool printed_warning = false;
@@ -553,6 +572,7 @@ bool ConvexPolygon::Hit(const ray& r, double t_min, double t_max, HitRecord& rec
 				rec);
 		if (hit) {
 			rec.mat_ptr = mat_ptr;
+			rec.hit_object = this;
 			rec.hit_object_id = object_id;
 			return true;
 		}
@@ -592,6 +612,57 @@ std::unique_ptr<Pdf> ConvexPolygon::GeneratePdfObject(const vec3& o)
 	return nullptr;
 }
 
+
+void ConvexPolygon::GetRandomPointOnPolygon(vec3& p, double &area) const
+{
+	double r = drand48();
+	for (size_t tri_i = 0; tri_i < triangle_area_cumulative_sums.size(); tri_i++) {
+		bool a = false;
+		if (tri_i == 0) {
+			if (r < triangle_area_cumulative_sums[tri_i])
+				a = true;
+		} else {
+			if (r >= triangle_area_cumulative_sums[tri_i-1] && r < triangle_area_cumulative_sums[tri_i])
+				a = true;
+		}
+		if (a) {
+			size_t v_i = tri_i+1;
+			vec3 va = v[v_i]-v[0];
+			vec3 vb = v[v_i+1]-v[0];
+
+			p = v[0] + drand48()*va + drand48()*vb;
+			area = polygon_area;
+			return;
+		}
+	}
+	std::cout << "GetRandomPointOnPolygon error" << std::endl;
+	assert(false);
+}
+
+
+void ConvexPolygon::CalcTriangleAreas(void)
+{
+	polygon_area = 0.0;
+	triangle_area_cumulative_sums.resize(v.size()-2);
+	for (size_t v_i = 1; v_i < v.size()-1; v_i++) {
+		const size_t tri_i = v_i-1;
+		vec3 a = v[v_i]-v[0];
+		vec3 b = v[v_i+1]-v[0];
+		double tri_area = cross(a, b).length()/2.0;
+		if (tri_i == 0)
+			triangle_area_cumulative_sums[tri_i] = tri_area;
+		else
+			triangle_area_cumulative_sums[tri_i] = triangle_area_cumulative_sums[tri_i-1] + tri_area;
+		polygon_area += tri_area;
+	}
+	for (auto& s : triangle_area_cumulative_sums) {
+		s /= polygon_area;
+	}
+	triangle_area_cumulative_sums.back() = 1.0;
+	//std::cout << "polygon area: " << polygon_area << std::endl;
+}
+
+/*
 bool Quadrilateral::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 {
 	double t = dot(v[0] - r.origin(), normal) / dot(r.direction(), normal);
@@ -653,3 +724,4 @@ std::unique_ptr<Pdf> Quadrilateral::GeneratePdfObject(const vec3& o)
 	double r = 0.25*((v[0]-c).length()+(v[1]-c).length()+(v[2]-c).length()+(v[3]-c).length());
 	return std::make_unique<toward_object_Pdf>(unit_vector(vec), atan2(r, vec.length()));
 }
+*/

@@ -254,7 +254,7 @@ bool MaterialLoader::LoadMaterial(void)
 				}
 			}
 			mtl = std::make_shared<Dielectric>(n, k);
-			mtl->specular_flag = true;
+			//mtl->specular_flag = true;
 		} else if (line == "metal") {
 			Spectrum n, k;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -268,7 +268,7 @@ bool MaterialLoader::LoadMaterial(void)
 				}
 			}
 			mtl = std::make_shared<Metal>(n, k);
-			mtl->specular_flag = true;
+			//mtl->specular_flag = true;
 		} else if (line == "microfacet") {
 			Spectrum n, k;
 			for (int i = 0; i < N_SAMPLE; i++) {
@@ -304,7 +304,7 @@ bool MaterialLoader::LoadMaterial(void)
 				}
 			}
 			mtl = std::make_shared<DiffuseLight>(light);
-			mtl->light_flag = true;
+			//mtl->light_flag = true;
 		} else {
 			std::cout << "Material " << line << " is not implemented" << std::endl;
 			return false;

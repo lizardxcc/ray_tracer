@@ -48,6 +48,10 @@ class Material {
 		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const {
 			return false;
 		}
+		virtual bool SampleLight(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, double& BxDF, double pdfval) const
+		{
+			return false;
+		}
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const {
 			return 0.0;
 		}
@@ -56,9 +60,9 @@ class Material {
 		}
 		//std::shared_ptr<MediumMaterial> mi;
 		MediumMaterial *mi = nullptr;
-		static std::vector<std::shared_ptr<Hittable> > lights;
+		//static std::vector<std::shared_ptr<Hittable> > lights;
 		bool light_flag = false;
-		bool specular_flag = false;
+		//bool specular_flag = false;
 };
 
 class Lambertian : public Material {
@@ -75,7 +79,7 @@ class Lambertian : public Material {
 class Metal : public Material {
 	public:
 		Metal(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
-			specular_flag = true;
+			//specular_flag = true;
 		}
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
@@ -96,7 +100,7 @@ class Dielectric : public Material {
 		//Dielectric(const Spectrum& albedo, double ref_B, double ref_C) : albedo(albedo), ref_B(ref_B), ref_C(ref_C) {}
 		Dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
 			// k is deprecated argument
-			specular_flag = true;
+			//specular_flag = true;
 		}
 		//Dielectric(const Spectrum& n, const Spectrum& k) : n(n), k(k) {
 		//	specular_flag = true;
@@ -137,7 +141,7 @@ class Microfacet : public Material {
 class GGX : public Material {
 	public:
 		GGX(const Spectrum& albedo, double alpha) : albedo(albedo), alpha(alpha) {
-			specular_flag = true;
+			//specular_flag = true;
 		}
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
@@ -151,7 +155,7 @@ class Transparent : public Material {
 	public:
 		Transparent(void)
 		{
-			specular_flag = true;
+			//specular_flag = true;
 		}
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
 };

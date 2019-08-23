@@ -17,6 +17,7 @@ struct HitRecord {
 	vec3 normal;
 	//std::shared_ptr<Material> mat_ptr;
 	Material *mat_ptr;
+	const Hittable *hit_object;
 	unsigned int hit_object_id;
 	vec3 vt;
 	ONB tbn;

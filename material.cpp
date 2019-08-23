@@ -81,7 +81,7 @@ bool HenyeyGreenstein::Sample_p(const vec3& vo, double wlo, vec3& vi, double& wl
 }
 
 
-std::vector<std::shared_ptr<Hittable> > Material::lights;
+//std::vector<std::shared_ptr<Hittable> > Material::lights;
 
 vec3 random_in_unit_Sphere(void)
 {
@@ -340,19 +340,19 @@ double OrenNayar::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, c
 
 bool OrenNayar::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
-	std::vector<std::unique_ptr<Pdf> > Pdf_list(lights.size()+1);
-	Pdf_list[0] = std::make_unique<UniformPdf>(rec.normal);
-	for (size_t i = 1; i < Pdf_list.size(); i++) {
-		Pdf_list[i] = std::make_unique<HittablePdf>(lights[i-1], rec.p);
-	}
-	MixturePdf Pdf(std::move(Pdf_list));
+	//std::vector<std::unique_ptr<Pdf> > Pdf_list(lights.size()+1);
+	//Pdf_list[0] = std::make_unique<UniformPdf>(rec.normal);
+	//for (size_t i = 1; i < Pdf_list.size(); i++) {
+	//	Pdf_list[i] = std::make_unique<HittablePdf>(lights[i-1], rec.p);
+	//}
+	//MixturePdf Pdf(std::move(Pdf_list));
 
-	vec3 generated_direction = Pdf.Generate();
-	pdfval = Pdf.PdfVal(generated_direction);
-	vi = uvw.WorldToLocal(generated_direction);
+	//vec3 generated_direction = Pdf.Generate();
+	//pdfval = Pdf.PdfVal(generated_direction);
+	//vi = uvw.WorldToLocal(generated_direction);
 
-	wli = wlo;
-	BxDF = this->BxDF(vi, wli, vo, wlo);
+	//wli = wlo;
+	//BxDF = this->BxDF(vi, wli, vo, wlo);
 
 	return true;
 }
