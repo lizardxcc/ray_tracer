@@ -571,11 +571,14 @@ void Scene::RenderPreviewWindow(void)
 					t.detach();
 				}
 			}
-			if (ImGui::MenuItem("Render with Naive algorithm", nullptr, false)) {
+			if (ImGui::MenuItem("Render with Naive algorithm", nullptr, renderer.algorithm_type == Naive)) {
 				renderer.algorithm_type = Naive;
 			}
-			if (ImGui::MenuItem("Render with NEE algorithm", nullptr, false)) {
+			if (ImGui::MenuItem("Render with NEE algorithm", nullptr, renderer.algorithm_type == NEE)) {
 				renderer.algorithm_type = NEE;
+			}
+			if (ImGui::MenuItem("Render with MIS algorithm", nullptr, renderer.algorithm_type == MIS)) {
+				renderer.algorithm_type = MIS;
 			}
 			if (renderer.rendering_runnnig) {
 				if (ImGui::MenuItem("Terminate Rendering")) {
@@ -644,6 +647,7 @@ void Scene::RenderPreviewWindow(void)
 }
 
 
+/*
 void Scene::RenderMaterialEditorWindow(void)
 {
 	ImGui::Begin("Material Editor");
@@ -859,6 +863,7 @@ void Scene::RenderMaterialEditorWindow(void)
 
 	ImGui::End();
 }
+*/
 
 
 void Scene::RenderMaterialNodeEditorWindow(void)

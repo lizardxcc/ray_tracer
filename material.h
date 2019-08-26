@@ -10,6 +10,7 @@
 #include "spectrum.h"
 
 extern const vec3 default_vt;
+vec3 reflect2(vec3 v, vec3 normal);
 double cfresnel(double cos_theta, std::complex<double> n);
 
 class MediumMaterial {
@@ -45,14 +46,13 @@ class Material {
 		virtual void PreProcess(HitRecord &rec) const
 		{
 		}
-		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const {
-			return false;
-		}
-		virtual bool SampleLight(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, double& BxDF, double pdfval) const
-		{
+		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const {
 			return false;
 		}
 		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const {
+			return 0.0;
+		}
+		virtual double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const {
 			return 0.0;
 		}
 		virtual double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const {
@@ -65,6 +65,7 @@ class Material {
 		//bool specular_flag = false;
 };
 
+/*
 class Lambertian : public Material {
 	public:
 		Lambertian(const Spectrum& a) : albedo(a) {}
@@ -198,6 +199,7 @@ class TextureMaterial : public Material {
 		uint8_t *texture = nullptr;
 		int width, height, bpp;
 };
+*/
 
 /*
 class straight_light : public Material {

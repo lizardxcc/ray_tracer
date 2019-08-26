@@ -183,6 +183,7 @@ class ConvexPolygon : public Hittable {
 		std::vector<vec3> normal;
 		vec3 face_normal;
 		void CalcTriangleAreas(void);
+		double polygon_area;
 	private:
 		bool HitTriangle(const ray& r, double t_min, double t_max,
 				const vec3& v0, const vec3& v1, const vec3& v2,
@@ -190,7 +191,6 @@ class ConvexPolygon : public Hittable {
 				const vec3& n0, const vec3& n1, const vec3& n2,
 				const vec3& face_normal, HitRecord& rec) const;
 		std::vector<double> triangle_area_cumulative_sums;
-		double polygon_area;
 };
 
 /*

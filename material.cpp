@@ -117,6 +117,7 @@ vec3 refract(vec3 v, vec3 normal, double n) // this n is a relative refraction i
 //	return v1_p + v2_p;
 //}
 
+/*
 double Lambertian::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
 	if (vi.z() < 0.0)
@@ -184,6 +185,7 @@ bool Metal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double 
 	//pdfval = 1;
 	//return true;
 }
+*/
 /*
 double Metal::BxDF(const ray& r_in, const HitRecord& rec, const ray& scattered) const
 {
@@ -235,6 +237,7 @@ bool Metal::scatter(const ray& r_in, const HitRecord& rec, vec3& attenuation, ra
 
 
 
+/*
 bool Dielectric::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
 
@@ -594,6 +597,8 @@ bool TextureMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& v
 	BxDF = this->BxDF(vi, wli, vo, wlo, rec.vt);
 	return true;
 }
+
+*/
 
 //double TextureMaterial::Emitted(const ray& r, const HitRecord& rec) const
 //{

@@ -317,7 +317,7 @@ void LambertianNode::PreProcess(HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool LambertianNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool LambertianNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	CosinePdf Pdf(rec.normal);
 
@@ -326,6 +326,7 @@ bool LambertianNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo
 	vi = uvw.WorldToLocal(generated_direction);
 	wli = wlo;
 	BxDF = this->BxDF(vi, wli, vo, wlo);
+	bxdf_divided_by_pdf = BxDF / pdfval;
 	return true;
 }
 
@@ -349,6 +350,13 @@ double LambertianNode::BxDF(const vec3& vi, double wli, const vec3& vo, double w
 		return albedo.get(wli)/M_PI;
 	}
 
+}
+double LambertianNode::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	if (vi.z() < 0.0)
+		return 0.0;
+	double cos_theta = vi.z();
+	return cos_theta/M_PI;
 }
 ConductorNode::ConductorNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
 {
@@ -407,7 +415,7 @@ void ConductorNode::PreProcess(HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool ConductorNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool ConductorNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -431,14 +439,22 @@ bool ConductorNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo,
 	vi[0] = -vo[0];
 	vi[1] = -vo[1];
 	vi[2] = vo[2];
-	pdfval = 1.0;
-	BxDF = fresnel/cos_o;
-
+	pdfval = std::numeric_limits<double>::infinity();
+	BxDF = std::numeric_limits<double>::infinity();
+	bxdf_divided_by_pdf = fresnel/cos_o;
 
 	return true;
 }
 double ConductorNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
+	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+		return std::numeric_limits<double>::infinity();
+	return 0.0;
+}
+double ConductorNode::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+		return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
 
@@ -490,14 +506,14 @@ void ColoredMetal::PreProcess(HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 
 	vi[0] = -vo[0];
 	vi[1] = -vo[1];
 	vi[2] = vo[2];
-	pdfval = 1.0;
+	pdfval = std::numeric_limits<double>::infinity();
 	if (albedo_pin->connected_links.empty()) {
 		BxDF = albedo.get(wli)/abs(vo.z());
 	} else {
@@ -512,16 +528,124 @@ bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 		const MaterialNode *parent = connected_pin->parent_node;
 		Spectrum albedo;
 		parent->Compute(albedo);
-		BxDF = albedo.get(wli)/M_PI;
+		BxDF = std::numeric_limits<double>::infinity();
+		bxdf_divided_by_pdf = albedo.get(wli)/M_PI;
 	}
 
 	return true;
 }
 double ColoredMetal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
+	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+		return std::numeric_limits<double>::infinity();
+	return 0.0;
+}
+double ColoredMetal::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+		return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
 
+
+GGXReflection::GGXReflection(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = GGXReflectionType;
+	AddInput(unique_id, PinSpectrum, "->n");
+	AddInput(unique_id, PinSpectrum, "->k");
+	AddInput(unique_id, PinDouble, "->roughness");
+	AddOutput(unique_id, PinBSDF, "BSDF->");
+	n_pin = &inputs[0];
+	k_pin = &inputs[1];
+}
+GGXReflection::GGXReflection(const json& j) : MaterialNode(j)
+{
+	type = GGXReflectionType;
+	for (size_t i = 0; i < j["n"]; i++) {
+		n.data[i] = j["n"][i];
+	}
+	for (size_t i = 0; i < j["k"]; i++) {
+		k.data[i] = j["k"][i];
+	}
+}
+
+void GGXReflection::DumpJson(json& j) const
+{
+	DumpSpectrum(j, n, "n");
+	DumpSpectrum(j, k, "k");
+	DumpIO(j);
+}
+
+void GGXReflection::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	if (n_pin->connected_links.empty()) {
+		ImGui::Text("n");
+		RenderSpectrum(n, 0.0, 1.0);
+	}
+	if (k_pin->connected_links.empty()) {
+		ImGui::Text("k");
+		RenderSpectrum(n, 0.0, 1.0);
+	}
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+void GGXReflection::PreProcess(HitRecord& rec) const
+{
+}
+bool GGXReflection::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+{
+	double phi = 2 * M_PI * drand48();
+	double u = drand48();
+	double theta = acos(sqrt((1.0-u)/((alpha*alpha-1.0)*u+1)));
+	double tan_theta = tan(theta);
+	double cos_theta_squared = cos(theta)*cos(theta);
+	double sin_theta = sin(theta);
+
+	vec3 micro_normal;
+	micro_normal[0] = sin_theta * cos(phi);
+	micro_normal[1] = sin_theta * sin(phi);
+	micro_normal[2] = sqrt(cos_theta_squared);
+
+
+	double ref_idx = n.get(wlo);
+	double kv = k.get(wlo);
+
+	double fresnel = 1.0;
+	double g = 1.0;
+
+
+	double d;
+	{
+		double x = dot(micro_normal, rec.normal);
+		if (x < 0.0)
+			x = 0.0;
+		d = alpha*alpha * x / (M_PI * cos_theta_squared*cos_theta_squared * pow(alpha*alpha + tan_theta*tan_theta, 2));
+	}
+	double pm = d * abs(dot(micro_normal, rec.normal));
+	double pi = pm / (4.0 * abs(dot(micro_normal, rec.normal)));
+
+	vi = reflect2(vo, micro_normal);
+	wli = wlo;
+	pdfval = pi;
+	BxDF = fresnel*g*d/(4.0 * abs(vi.z()*vo.z()));
+	//double g = 1.0/(1.0+lambda(vi)) * 1.0/(1.0+lambda(vo));
+	//BxDF = fresnel * g * abs(dot(vo, micro_normal));
+	//bxdf_divided_by_pdf = fresnel * g * abs(dot(vo, micro_normal)) / (abs(vo.z()*vi.z()*micro_normal.z()));
+	bxdf_divided_by_pdf = fresnel * g * abs(dot(vo, micro_normal)) / (abs(vo.z()*vi.z()*micro_normal.z()));
+
+	return true;
+}
+double GGXReflection::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+}
+double GGXReflection::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+}
 
 DiffuseLightNode::DiffuseLightNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
 {
@@ -578,6 +702,7 @@ double DiffuseLightNode::Emitted(const ray& r, const HitRecord& rec, const vec3&
 	}
 }
 
+/*
 MixBSDFNode::MixBSDFNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
 {
 	type = MixBSDFType;
@@ -655,6 +780,7 @@ void MixBSDFNode::Render(void)
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 }
+*/
 
 OutputNode::OutputNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
 {
@@ -1174,9 +1300,9 @@ NodeMaterial::NodeMaterial(const json& j) : context(ax::NodeEditor::CreateEditor
 			case DiffuseLightType:
 				node = new DiffuseLightNode(node_j);
 				break;
-			case MixBSDFType:
-				node = new MixBSDFNode(node_j);
-				break;
+			//case MixBSDFType:
+			//	node = new MixBSDFNode(node_j);
+			//	break;
 			case OutputType:
 				node = new OutputNode(node_j);
 				break;
@@ -1364,8 +1490,8 @@ void NodeMaterial::Render(void)
 			node = new ColoredMetal(unique_id);
 		} else if (ImGui::MenuItem("Diffuse Light")) {
 			node = new DiffuseLightNode(unique_id);
-		} else if (ImGui::MenuItem("Mix BSDF")) {
-			node = new MixBSDFNode(unique_id);
+		//} else if (ImGui::MenuItem("Mix BSDF")) {
+		//	node = new MixBSDFNode(unique_id);
 		} else if (ImGui::MenuItem("Output")) {
 			node = new OutputNode(unique_id);
 		} else if (ImGui::MenuItem("Spectrum Node")) {
@@ -1413,7 +1539,7 @@ void NodeMaterial::PreProcess(HitRecord& rec) const
 	auto p = dynamic_cast<const Material *>(parent);
 	p->PreProcess(rec);
 }
-bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	if (bsdf_pin->connected_links.size() != 1) {
@@ -1425,7 +1551,7 @@ bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 	const MaterialNode *parent = connected_pin->parent_node;
 
 	auto p = dynamic_cast<const Material *>(parent);
-	return p->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
+	return p->Sample(rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BxDF, pdfval);
 }
 double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
@@ -1443,6 +1569,23 @@ double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo
 
 	auto p = dynamic_cast<const Material *>(parent);
 	return p->BxDF(vi, wli, vo, wlo, vt);
+}
+double NodeMaterial::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+{
+
+	dynamic_cast<FixedValueNode *>(material_nodes[uv_i])->vvalue = vt;
+	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
+	if (bsdf_pin->connected_links.size() != 1) {
+		std::cout << "node connection error" << std::endl;
+		return 0.0;
+	}
+
+	const PinInfo *connected_pin = FindPinConst(bsdf_pin->connected_links[0]->input_id);
+	assert(connected_pin != nullptr);
+	const MaterialNode *parent = connected_pin->parent_node;
+
+	auto p = dynamic_cast<const Material *>(parent);
+	return p->PDF(vi, wli, vo, wlo, vt);
 }
 double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
 {

@@ -50,7 +50,7 @@ void Renderer::LoadMaterials(const std::vector<std::shared_ptr<NodeMaterial>>& m
 void Renderer::Clear(void)
 {
 	obj_loader.Clear();
-	Material_loader.Clear();
+	//Material_loader.Clear();
 	img_updated = false;
 }
 
@@ -104,6 +104,8 @@ int i, j, s;
 							case NEE:
 								rad = NEEPathTracingWithoutSpecular(r);
 								break;
+							case MIS:
+								rad = NEEMISPathTracing(r);
 						}
 						if (!std::isnan(rad)) {
 							radiance.add(rad/ns, min_wl, max_wl);
@@ -181,14 +183,15 @@ double Renderer::NaivePathTracing(const ray& r)
 		rec.mat_ptr->PreProcess(rec);
 		radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
 
+		double bxdf_divided_by_pdf;
 		double bxdf, pdf;
 		ONB uvw;
 		uvw.BuildFromW(rec.normal);
 		vec3 generated_vi;
 		double wli;
-		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
 		if (respawn)
-			beta *= (bxdf * abs(generated_vi.z()) / pdf);
+			beta *= (bxdf_divided_by_pdf * abs(generated_vi.z()));
 		double prr = 0.5;
 		double d = drand48();
 		if (d < prr)
@@ -272,14 +275,163 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 
 		vec3 generated_vi;
 		double wli;
+		double bxdf_divided_by_pdf;
 		double bxdf, pdf;
 		ONB uvw;
 		uvw.BuildFromW(rec.normal);
 		if (!preprocessed)
 			rec.mat_ptr->PreProcess(rec);
-		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf, pdf);
+		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
 		if (respawn)
-			beta *= bxdf * abs(generated_vi.z()) / pdf;
+			beta *= bxdf_divided_by_pdf * abs(generated_vi.z());
+
+
+		//double prr = 1.0 - std::min(0.7, 0.2+bxdf/2.0);
+		double prr = 0.5;
+		if (bounce > 6)
+			prr = 0.9;
+		double d = drand48();
+		if (d < prr)
+			break;
+		beta /= (1.0-prr);
+
+		if (!respawn)
+			break;
+
+		_ray.A = rec.p;
+		_ray.B = unit_vector(uvw.LocalToWorld(generated_vi));
+		_ray.central_wl = r.central_wl;
+		_ray.min_wl = r.min_wl;
+		_ray.max_wl = r.max_wl;
+
+		bounce++;
+
+	}
+	return radiance;
+}
+
+
+
+double Renderer::NEEMISPathTracing(const ray& r)
+{
+	ray _ray = r;
+	HitRecord rec;
+	int bounce = 0;
+	double radiance = 0.0;
+	double beta = 1.0;
+	while (1) {
+		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+		if (!hit) {
+			break;
+		}
+
+		bool preprocessed = false;
+
+		if (bounce == 0) {
+			if (rec.mat_ptr->light_flag) {
+				rec.mat_ptr->PreProcess(rec);
+				preprocessed = true;
+				const double light = rec.mat_ptr->Emitted(_ray, rec);
+				radiance += light;
+			}
+		}
+		std::random_device rnd;
+		int selected_light = rnd() % light_objects.size();
+		// sample light
+		{
+			vec3 p;
+			double area;
+			light_objects[selected_light]->GetRandomPointOnPolygon(p, area);
+			ray shadow_ray = ray(rec.p, unit_vector(p - rec.p));
+			shadow_ray.central_wl = r.central_wl;
+			shadow_ray.min_wl = r.min_wl;
+			shadow_ray.max_wl = r.max_wl;
+
+			bool notoccluded = false;
+			HitRecord light_rec;
+			bool light_hit = world->Hit(shadow_ray, 0.001, std::numeric_limits<double>::max(), light_rec);
+			if (light_hit) {
+				if (light_rec.hit_object == light_objects[selected_light])
+					notoccluded = true;
+			}
+
+			if (notoccluded) {
+				if (!preprocessed) {
+					rec.mat_ptr->PreProcess(rec);
+					preprocessed = true;
+				}
+				ONB uvw_;
+				uvw_.BuildFromW(rec.normal);
+				const vec3 vi = uvw_.WorldToLocal(unit_vector(p - rec.p));
+				const vec3 vo = uvw_.WorldToLocal(-_ray.direction());
+				const double wlo = _ray.central_wl;
+				const double wli = wlo;
+				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
+				const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
+				const double lightpdfarea = 1.0 / area / light_objects.size();
+				//const double lightpdf = lightpdfarea * abs(dot(shadow_ray.direction(), light_rec.normal)) / (light_rec.t*light_rec.t);
+				const double lightpdf_solidangle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * lightpdfarea;
+				light_rec.mat_ptr->PreProcess(light_rec);
+				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec);
+
+				const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo);
+				double mis_weight;
+				if (isinf(scatteringpdf))
+					mis_weight = 0.0;
+				else
+					mis_weight = lightpdf_solidangle*lightpdf_solidangle/(lightpdf_solidangle*lightpdf_solidangle + scatteringpdf * scatteringpdf);
+				//const double add = BxDF * beta * light * abs(vi.z()) * G / pdfarea;
+				const double add = BxDF * beta * light * abs(vi.z()) * mis_weight / lightpdf_solidangle;
+				radiance += add;
+			}
+		}
+
+		// sample bsdf
+		{
+			double bxdf_divided_by_pdf;
+			double bxdf, scattering_pdf;
+			ONB uvw;
+			uvw.BuildFromW(rec.normal);
+			vec3 generated_vi;
+			double wli;
+			bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, scattering_pdf);
+			if (respawn) {
+				ray shadow_ray = ray(rec.p, uvw.LocalToWorld(generated_vi));
+				HitRecord light_rec;
+				bool light_hit = world->Hit(shadow_ray, 0.001, std::numeric_limits<double>::max(), light_rec);
+				if (light_hit) {
+					if (light_rec.hit_object == light_objects[selected_light]) {
+						const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec);
+						const double lightpdfarea = 1.0 / light_objects[selected_light]->polygon_area / light_objects.size();
+						const double light_pdf_solid_angle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * lightpdfarea;
+						//const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo);
+						double mis_weight;
+						if (isinf(light_pdf_solid_angle))
+							mis_weight = 0.0;
+						else
+							mis_weight = scattering_pdf*scattering_pdf/(scattering_pdf*scattering_pdf + light_pdf_solid_angle*light_pdf_solid_angle);
+						const double add = bxdf_divided_by_pdf * beta * light * abs(generated_vi.z()) * mis_weight;
+						radiance += add;
+					}
+				}
+			}
+			//if (respawn)
+			//	beta *= (bxdf * abs(generated_vi.z()) / pdf);
+		}
+
+
+		vec3 generated_vi;
+		double wli;
+		double bxdf_divided_by_pdf;
+		double bxdf, pdf;
+		ONB uvw;
+		uvw.BuildFromW(rec.normal);
+		if (!preprocessed)
+			rec.mat_ptr->PreProcess(rec);
+		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
+		if (respawn)
+			beta *= bxdf_divided_by_pdf * abs(generated_vi.z());
+			//beta *= bxdf * abs(generated_vi.z()) / pdf;
 
 
 		//double prr = 1.0 - std::min(0.7, 0.2+bxdf/2.0);
@@ -676,6 +828,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 //}
 
 
+/*
 double Renderer::GetRadiance(ray& r, int count)
 {
 	HitRecord rec;
@@ -718,4 +871,5 @@ double Renderer::GetRadiance(ray& r, int count)
 	}
 	return radiance;
 }
+*/
 

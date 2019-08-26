@@ -5,12 +5,12 @@
 #include "obj.h"
 #include "object.h"
 #include "camera.h"
-#include "materialfile.h"
 
 
 enum RenderingAlgorithm {
 	Naive,
-	NEE
+	NEE,
+	MIS
 };
 
 class NodeMaterial;
@@ -22,15 +22,15 @@ class Renderer {
 		void RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp);
 		double NaivePathTracing(const ray& r);
 		double NEEPathTracingWithoutSpecular(const ray& r);
+		double NEEMISPathTracing(const ray& r);
 		//double NEEPathTracing(const ray& r);
 		//double NEEVolPathTracing(const ray& r, bool enableNEE);
-		double GetRadiance(ray& r, int count);
+		//double GetRadiance(ray& r, int count);
 		//std::shared_ptr<double[]> orig_img;
 		enum RenderingAlgorithm algorithm_type = NEE;
 		std::vector<double> orig_img;
 		//GLubyte *img = nullptr;
 		obj obj_loader;
-		MaterialLoader Material_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;
 		//std::vector<std::shared_ptr<Material> > Materials;
