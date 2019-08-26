@@ -30,7 +30,6 @@ DEBUG_DEPS += $(DEBUG_OBJS_DIR)/gl3w.d
 DEBUG_FLAGS = -g3 -O0
 RELEASE_FLAGS = -O3
 
-INCLUDE += -I/usr/local/Cellar/boost/1.70.0/include
 INCLUDE += -I./
 INCLUDE += `pkg-config glfw3 --cflags`
 INCLUDE += `pkg-config glm --cflags`
@@ -47,7 +46,6 @@ CXXFLAGS += -MMD -MP
 CXXFLAGS += $(INCLUDE)
 CFLAGS += $(INCLUDE)
 
-LDFLAGS = -L/usr/local/Cellar/boost/1.70.0/lib
 LDFLAGS += -L./nativefiledialog/build/lib/Release/x64
 LDLIBS += `pkg-config glfw3 --libs`
 LDLIBS += `pkg-config glm --libs`
