@@ -222,7 +222,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 
 			bool notoccluded = false;
 			HitRecord light_rec;
-			bool light_hit = world->Hit(shadow_ray, 0.001, std::numeric_limits<double>::max(), light_rec);
+			bool light_hit = world->Hit(shadow_ray, 0.001, (p-rec.p).length()+0.001, light_rec);
 			if (light_hit) {
 				if (light_rec.hit_object == light_objects[selected_light])
 					notoccluded = true;
@@ -326,7 +326,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 
 			bool notoccluded = false;
 			HitRecord light_rec;
-			bool light_hit = world->Hit(shadow_ray, 0.001, std::numeric_limits<double>::max(), light_rec);
+			bool light_hit = world->Hit(shadow_ray, 0.001, (p-rec.p).length()+0.001, light_rec);
 			if (light_hit) {
 				if (light_rec.hit_object == light_objects[selected_light])
 					notoccluded = true;
