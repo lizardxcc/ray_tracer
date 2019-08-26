@@ -17,8 +17,6 @@ extern double env_brightness;
 class ImgViewer {
 	public:
 		void Render(void);
-		//void LoadImage(const std::shared_ptr<const double[]>& img, int width, int height);
-		//void LoadImage(const double *img, int width, int height);
 		void LoadImage(const std::vector<double>& img, int width, int height);
 	private:
 		GLuint opengl_texture;
@@ -102,19 +100,13 @@ class Scene {
 		GLuint vbo_id;
 		GLuint index_buffer_id;
 
-		//std::vector<struct Vertex> vertices;
 		std::vector<struct Vertex> vertices;
-		//std::vector<float> colors;
 		std::vector<GLuint> indices;
 		std::vector<size_t> index_nums;
 		std::vector<size_t> index_partial_sums;
 		std::vector<vec3> colors;
 
 
-		//std::vector<GLuint> VAOs;
-		//std::vector<float *>vertices_array;
-		//std::vector<int> vertices_num;
-		//std::vector<std::array<float, 3>> colors;
 		GLuint rbo;
 		GLuint fbo;
 		GLuint texture;
