@@ -34,7 +34,7 @@ std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
 }
 
 
-void Hittable::SetMaterial(Material *mat)
+void Hittable::SetMaterial(NodeMaterial *mat)
 {
 	mat_ptr = mat;
 }

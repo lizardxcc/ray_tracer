@@ -84,7 +84,7 @@ class Scene {
 		glm::vec3 cameraFront;
 		glm::vec3 cameraUp;
 		float d = 0.45, focal_length=0.4, aperture = 0.0;
-		float vfov = 60;
+		float vfov = 30;
 		unsigned int activeObjectIndex = 0;
 		GLubyte *img = nullptr;
 		int img_width = 500;

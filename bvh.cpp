@@ -102,7 +102,7 @@ bool BVHNode::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 
 
 //void BVHNode::SetMaterial(std::shared_ptr<Material> mat)
-void BVHNode::SetMaterial(Material *mat)
+void BVHNode::SetMaterial(NodeMaterial *mat)
 {
 	if (left != nullptr)
 		left->SetMaterial(mat);

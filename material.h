@@ -49,19 +49,18 @@ class Material {
 		virtual bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const {
 			return false;
 		}
-		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const {
+		virtual double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const {
 			return 0.0;
 		}
-		virtual double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const {
+		virtual double PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const {
 			return 0.0;
 		}
-		virtual double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const {
+		virtual double Emitted(const ray& r, const HitRecord& rec) const {
 			return 0.0;
 		}
 		//std::shared_ptr<MediumMaterial> mi;
 		MediumMaterial *mi = nullptr;
 		//static std::vector<std::shared_ptr<Hittable> > lights;
-		bool light_flag = false;
 		//bool specular_flag = false;
 };
 

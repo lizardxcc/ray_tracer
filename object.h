@@ -15,7 +15,7 @@ bool IsOccluded(const ray& r, const Hittable *world, const Hittable *p);
 class Sphere: public Hittable {
 	public:
 		Sphere() { }
-		Sphere(vec3 center, double r, Material *mat_ptr) : center(center), radius(r) {
+		Sphere(vec3 center, double r, NodeMaterial *mat_ptr) : center(center), radius(r) {
 			//this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 			this->mat_ptr = mat_ptr;
 		};

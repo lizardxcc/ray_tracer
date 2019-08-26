@@ -158,7 +158,7 @@ double Renderer::NaivePathTracing(const ray& r)
 		}
 
 		rec.mat_ptr->PreProcess(rec);
-		radiance += beta * rec.mat_ptr->Emitted(_ray, rec);
+		radiance += beta * rec.mat_ptr->Emitted(_ray, rec, rec.vt);
 
 		double bxdf_divided_by_pdf;
 		double bxdf, pdf;
@@ -204,7 +204,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 			if (rec.mat_ptr->light_flag) {
 				rec.mat_ptr->PreProcess(rec);
 				preprocessed = true;
-				const double light = rec.mat_ptr->Emitted(_ray, rec);
+				const double light = rec.mat_ptr->Emitted(_ray, rec, rec.vt);
 				radiance += light;
 			}
 		}
@@ -239,11 +239,11 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 				const vec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
-				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
+				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
 				const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
 				const double pdfarea = 1.0 / area / light_objects.size();
 				light_rec.mat_ptr->PreProcess(light_rec);
-				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec);
+				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
 				const double add = BxDF * beta * light * abs(vi.z()) * G / pdfarea;
 				radiance += add;
 			}
@@ -308,7 +308,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 			if (rec.mat_ptr->light_flag) {
 				rec.mat_ptr->PreProcess(rec);
 				preprocessed = true;
-				const double light = rec.mat_ptr->Emitted(_ray, rec);
+				const double light = rec.mat_ptr->Emitted(_ray, rec, rec.vt);
 				radiance += light;
 			}
 		}
@@ -343,15 +343,15 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				const vec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
-				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
+				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
 				const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
 				const double lightpdfarea = 1.0 / area / light_objects.size();
 				//const double lightpdf = lightpdfarea * abs(dot(shadow_ray.direction(), light_rec.normal)) / (light_rec.t*light_rec.t);
 				const double lightpdf_solidangle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * lightpdfarea;
 				light_rec.mat_ptr->PreProcess(light_rec);
-				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec);
+				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
 
-				const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo);
+				const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo, rec.vt);
 				double mis_weight;
 				if (isinf(scatteringpdf))
 					mis_weight = 0.0;
@@ -378,7 +378,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				bool light_hit = world->Hit(shadow_ray, 0.001, std::numeric_limits<double>::max(), light_rec);
 				if (light_hit) {
 					if (light_rec.hit_object == light_objects[selected_light]) {
-						const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec);
+						const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
 						const double lightpdfarea = 1.0 / light_objects[selected_light]->polygon_area / light_objects.size();
 						const double light_pdf_solid_angle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * lightpdfarea;
 						//const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo);

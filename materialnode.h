@@ -119,8 +119,8 @@ class LambertianNode : public MaterialNode, public Material {
 		void Render(void) override;
 		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
 		const PinInfo *normal_pin;
@@ -134,8 +134,8 @@ class ConductorNode : public MaterialNode, public Material {
 		void Render(void) override;
 		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		Spectrum n = Spectrum(0.2);
 		Spectrum k = Spectrum(1.0);
 		const PinInfo *normal_pin;
@@ -150,8 +150,8 @@ class ColoredMetal : public MaterialNode, public Material {
 		void Render(void) override;
 		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
 		const PinInfo *normal_pin;
@@ -165,8 +165,8 @@ class GGXReflection : public MaterialNode, public Material {
 		void Render(void) override;
 		void PreProcess(HitRecord& rec) const override;
 		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		Spectrum n = Spectrum(1.0);
 		Spectrum k = Spectrum(0.0);
 		//const PinInfo *albedo_pin;
@@ -184,7 +184,7 @@ class DiffuseLightNode : public MaterialNode, public Material {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(HitRecord& rec) const override;
-		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
+		double Emitted(const ray& r, const HitRecord& rec) const override;
 		Spectrum color = Spectrum(1.0);
 		const PinInfo *color_pin;
 		const PinInfo *normal_pin;
@@ -309,7 +309,7 @@ class RandomSamplingNode : public MaterialNode {
 };
 
 
-class NodeMaterial : public Material {
+class NodeMaterial {
 	public:
 		NodeMaterial(void);
 		explicit NodeMaterial(const json& j);
@@ -326,13 +326,13 @@ class NodeMaterial : public Material {
 		std::vector<LinkInfo *> links;
 		std::vector<MaterialNode *> material_nodes;
 		ax::NodeEditor::EditorContext *context = nullptr;
-		void PreProcess(HitRecord& rec) const override;
-		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
-		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt = default_vt) const override;
+		void PreProcess(HitRecord& rec) const;
+		bool Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const;
+		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const;
+		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const;
+		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const;
 
-		//bool light_flag = false;
+		bool light_flag = false;
 
 		size_t uv_i = 0;
 		size_t Output_i = 1;

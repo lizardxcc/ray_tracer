@@ -329,7 +329,7 @@ bool LambertianNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo
 	return true;
 }
 
-double LambertianNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double LambertianNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	if (vi.z() < 0.0)
 		return 0.0;
@@ -350,7 +350,7 @@ double LambertianNode::BxDF(const vec3& vi, double wli, const vec3& vo, double w
 	}
 
 }
-double LambertianNode::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double LambertianNode::PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	if (vi.z() < 0.0)
 		return 0.0;
@@ -444,13 +444,13 @@ bool ConductorNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo,
 
 	return true;
 }
-double ConductorNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double ConductorNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
-double ConductorNode::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double ConductorNode::PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
@@ -533,13 +533,13 @@ bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 
 	return true;
 }
-double ColoredMetal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double ColoredMetal::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
-double ColoredMetal::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double ColoredMetal::PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
@@ -639,10 +639,10 @@ bool GGXReflection::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo,
 
 	return true;
 }
-double GGXReflection::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double GGXReflection::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 }
-double GGXReflection::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double GGXReflection::PDF(const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
 }
 
@@ -689,7 +689,7 @@ void DiffuseLightNode::PreProcess(HitRecord &rec) const
 	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
-double DiffuseLightNode::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
+double DiffuseLightNode::Emitted(const ray& r, const HitRecord& rec) const
 {
 	if (color_pin->connected_links.empty())
 		return color.integrate(r.min_wl, r.max_wl);
@@ -1281,9 +1281,9 @@ NodeMaterial::NodeMaterial(void) : context(ax::NodeEditor::CreateEditor())
 }
 NodeMaterial::NodeMaterial(const json& j) :
 	context(ax::NodeEditor::CreateEditor()),
-	name(j.value("name", "untitled material"))
+	name(j.value("name", "untitled material")),
+	light_flag(j.value("light_flag", false))
 {
-	light_flag = j.value("light_flag", false);
 	bool is_there_any_widgets = false;
 	for (const auto& node_j : j["nodes"]) {
 		is_there_any_widgets = true;
@@ -1570,7 +1570,7 @@ double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo
 	const MaterialNode *parent = connected_pin->parent_node;
 
 	auto p = dynamic_cast<const Material *>(parent);
-	return p->BxDF(vi, wli, vo, wlo, vt);
+	return p->BxDF(vi, wli, vo, wlo);
 }
 double NodeMaterial::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
@@ -1587,7 +1587,7 @@ double NodeMaterial::PDF(const vec3& vi, double wli, const vec3& vo, double wlo,
 	const MaterialNode *parent = connected_pin->parent_node;
 
 	auto p = dynamic_cast<const Material *>(parent);
-	return p->PDF(vi, wli, vo, wlo, vt);
+	return p->PDF(vi, wli, vo, wlo);
 }
 double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
 {
@@ -1603,6 +1603,6 @@ double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt)
 	const MaterialNode *parent = connected_pin->parent_node;
 
 	auto p = dynamic_cast<const Material *>(parent);
-	return p->Emitted(r, rec, vt);
+	return p->Emitted(r, rec);
 }
 
