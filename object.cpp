@@ -118,6 +118,12 @@ ObjModel::ObjModel(obj& o)
 						pol->v[1] - pol->v[0],
 						pol->v[2] - pol->v[1]
 						));
+			for (size_t i = 0; i < pol->normal.size(); i++) {
+				if (dot(pol->face_normal, pol->normal[i]) < 0.0) {
+					std::cout << "Warning: The order of vertices may be incorrect" << std::endl;
+					pol->face_normal *= -1.0;
+				}
+			}
 			pol->mat_ptr = nullptr;
 			pol->object_id = i;
 			pol->CalcTriangleAreas();
