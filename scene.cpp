@@ -11,7 +11,6 @@
 #include "scene.h"
 #include "vec3.h"
 #include "filter.h"
-#include "filebrowser.h"
 #include "pdf.h"
 
 #ifdef _OPENMP

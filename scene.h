@@ -5,7 +5,6 @@
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <glm/glm.hpp>
 #include "renderer.h"
-#include "filebrowser.h"
 #include "materialnode.h"
 
 
