@@ -345,10 +345,17 @@ void ConvexPolygon::GetRandomPointOnPolygon(vec3& p, double &area) const
 		}
 		if (a) {
 			size_t v_i = tri_i+1;
+			assert(v_i+1 < v.size());
 			vec3 va = v[v_i]-v[0];
 			vec3 vb = v[v_i+1]-v[0];
 
-			p = v[0] + drand48()*va + drand48()*vb;
+			double x = drand48();
+			double y = drand48();
+			if (x+y >= 1.0) {
+				x = 1.0-x;
+				y = 1.0-y;
+			}
+			p = v[0] + x*va + y*vb;
 			area = polygon_area;
 			return;
 		}
