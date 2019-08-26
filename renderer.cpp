@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <stack>
 #include <random>
 #ifdef _OPENMP
@@ -193,7 +194,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 	double radiance = 0.0;
 	double beta = 1.0;
 	while (1) {
-		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
+		bool hit = world->Hit(_ray, 0.0001, std::numeric_limits<double>::max(), rec);
 		if (!hit) {
 			break;
 		}
@@ -220,15 +221,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 			shadow_ray.min_wl = r.min_wl;
 			shadow_ray.max_wl = r.max_wl;
 
-			bool notoccluded = false;
-			HitRecord light_rec;
-			bool light_hit = world->Hit(shadow_ray, 0.001, (p-rec.p).length()+0.001, light_rec);
-			if (light_hit) {
-				if (light_rec.hit_object == light_objects[selected_light])
-					notoccluded = true;
-			}
-
-			if (notoccluded) {
+			if (!world->Occluded(shadow_ray, 0.0001, (p-rec.p).length()-0.0001)) {
 				if (!preprocessed) {
 					rec.mat_ptr->PreProcess(rec);
 					preprocessed = true;
@@ -240,12 +233,17 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
 				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
-				const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
+				const double G = abs(dot(shadow_ray.direction(), light_objects[selected_light]->face_normal) * dot(shadow_ray.direction(), rec.normal) / (p-rec.p).squared_length());
 				const double pdfarea = 1.0 / area / light_objects.size();
-				light_rec.mat_ptr->PreProcess(light_rec);
-				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
-				const double add = BxDF * beta * light * abs(vi.z()) * G / pdfarea;
-				radiance += add;
+				HitRecord light_rec;
+				if (light_objects[selected_light]->Hit(shadow_ray, 0.0001, (p-rec.p).length()+0.0001, light_rec)) {
+					light_rec.mat_ptr->PreProcess(light_rec);
+					const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
+					const double add = BxDF * beta * light * abs(vi.z()) * G / pdfarea;
+					radiance += add;
+				} else {
+					// bug?
+				}
 			}
 		}
 

@@ -101,6 +101,20 @@ bool BVHNode::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) cons
 }
 
 
+bool BVHNode::Occluded(const ray& r, double t_min, double t_max) const
+{
+	if (box.Hit(r, t_min, t_max)) {
+		bool hit_left = left->Occluded(r, t_min, t_max);
+		if (hit_left)
+			return true;
+		bool hit_right = right->Occluded(r, t_min, t_max);
+		if (hit_right)
+			return true;
+	}
+
+	return false;
+}
+
 //void BVHNode::SetMaterial(std::shared_ptr<Material> mat)
 void BVHNode::SetMaterial(NodeMaterial *mat)
 {
