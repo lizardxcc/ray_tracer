@@ -114,7 +114,6 @@ int main(void)
 
 		scene.RenderSceneWindow();
 		scene.RenderPreviewWindow();
-		//scene.RenderMaterialEditorWindow();
 		scene.RenderMaterialNodeEditorWindow();
 		scene.retouch_window.Render();
 

@@ -25,7 +25,6 @@ class Renderer {
 		double NEEMISPathTracing(const ray& r);
 		//double NEEPathTracing(const ray& r);
 		//double NEEVolPathTracing(const ray& r, bool enableNEE);
-		//double GetRadiance(ray& r, int count);
 		//std::shared_ptr<double[]> orig_img;
 		enum RenderingAlgorithm algorithm_type = NEE;
 		std::vector<double> orig_img;
@@ -33,7 +32,6 @@ class Renderer {
 		obj obj_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;
-		//std::vector<std::shared_ptr<Material> > Materials;
 		//LensCamera cam;
 		PinholeCamera cam;
 		bool img_updated = false;

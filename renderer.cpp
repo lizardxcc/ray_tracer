@@ -12,53 +12,32 @@
 void Renderer::Load(const char *objfilename)
 {
 	obj_loader.Load(objfilename);
-	//for (const auto& s : obj_loader.mtl_file) {
-	//	Material_loader.Load(s.c_str());
-	//}
-	//Material_loader.Load(matfilename);
-	//for (int i = 0; i < obj_loader.objects.size(); i++) {
-	//	std::cout << "name: " << obj_loader.objects[i]->material_name << std::endl;
-	//	//std::shared_ptr<Material> mat = Material_loader.Materials.at(obj_loader.objects[i]->material_name);
-	//	//Materials.push_back(mat);
-	//}
 	world = std::make_unique<ObjModel>(obj_loader);
 }
 
 void Renderer::LoadMaterials(const std::vector<std::shared_ptr<NodeMaterial>>& materials)
 {
-	//Material::lights.clear();
 	light_objects.clear();
 	for (size_t i = 0; i < world->models.size(); i++) {
-		//world->models[i]->SetMaterial(std::shared_ptr<Material>(Materials[i]));
-		//auto mat = Material_loader.Materials[obj_loader.objects[i]->material_name];
-		//std::shared_ptr<Material> mat;// = std::make_shared<Material>(materials[i]);
-		//mat.reset(materials[i]);
 		world->models[i]->SetMaterial(materials[i].get());
 		if (materials[i]->light_flag) {
 			for (const auto& pol : world->polygon_models[i]) {
 				light_objects.push_back(pol);
 			}
 		}
-		//if (materials[i]->light_flag) {
-		//	Material::lights.push_back(world->models[i]);
-		//}
 	}
-	std::cout << "light_objects_size: " << light_objects.size() << std::endl;
 }
 
 
 void Renderer::Clear(void)
 {
 	obj_loader.Clear();
-	//Material_loader.Clear();
 	img_updated = false;
 }
 
 
 void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp)
 {
-	//orig_img.reset(new double[nx*ny*4]);
-
 	orig_img.resize(nx*ny*4);
 
 	size_t count = 0;
@@ -94,8 +73,6 @@ int i, j, s;
 						r.min_wl = min_wl;
 						r.max_wl = max_wl;
 						r.central_wl = (min_wl + max_wl) / 2.0;
-						//double rad = NEEVolPathTracing(r, true);
-						//double rad = NaivePathTracing(r);
 						double rad;
 						switch (algorithm_type) {
 							case Naive:
@@ -415,8 +392,6 @@ double Renderer::NEEMISPathTracing(const ray& r)
 					}
 				}
 			}
-			//if (respawn)
-			//	beta *= (bxdf * abs(generated_vi.z()) / pdf);
 		}
 
 
@@ -828,48 +803,4 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //}
 
 
-/*
-double Renderer::GetRadiance(ray& r, int count)
-{
-	HitRecord rec;
-	double radiance = 0.0;
-	if (world->Hit(r, 0.001, std::numeric_limits<double>::max(), rec)) {
-		radiance += rec.mat_ptr->Emitted(r, rec);
-		double bxdf, pdf;
-
-		ONB uvw;
-		uvw.BuildFromW(rec.normal);
-		vec3 generated_vi;
-		double wli;
-		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-r.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
-		double prr;
-		//if (respawn)
-		//	beta *= (bxdf * abs(generated_vi.z()) / pdf);
-		if (respawn) {
-			if (count > 10) {
-				prr = 0.01;
-			} else {
-				prr = std::min(0.8, 0.1+bxdf);
-			}
-		} else {
-			prr = 0.0;
-		}
-
-		if (drand48() < prr) {
-			if (respawn) {
-				ray scattered(rec.p, uvw.LocalToWorld(generated_vi));
-				scattered.central_wl = wli;
-				scattered.min_wl = r.min_wl;
-				scattered.max_wl = r.max_wl;
-				radiance += bxdf * GetRadiance(scattered, count+1) *
-					abs(generated_vi.z()) / pdf / prr;
-			}
-		}
-		return radiance;
-	} else {
-		return 0.0;
-	}
-	return radiance;
-}
-*/
 
