@@ -34,7 +34,7 @@ INCLUDE += -I/usr/local/Cellar/boost/1.70.0/include
 INCLUDE += -I./
 INCLUDE += `pkg-config glfw3 --cflags`
 INCLUDE += `pkg-config glm --cflags`
-INCLUDE += -I../nativefiledialog-master/src/include
+INCLUDE += -I./nativefiledialog/src/include
 
 CFLAGS = -Wall -Wextra
 CFLAGS += -Wno-unused-parameter
@@ -48,7 +48,7 @@ CXXFLAGS += $(INCLUDE)
 CFLAGS += $(INCLUDE)
 
 LDFLAGS = -L/usr/local/Cellar/boost/1.70.0/lib
-LDFLAGS += -L../nativefiledialog-master/build/lib/Release/x64
+LDFLAGS += -L./nativefiledialog/build/lib/Release/x64
 LDLIBS += `pkg-config glfw3 --libs`
 LDLIBS += `pkg-config glm --libs`
 LDLIBS += -framework OpenGL -framework CoreFoundation
@@ -57,6 +57,8 @@ LDLIBS += -lnfd
 #OPENMPFLAGS = -fopenmp
 OPENMPFLAGS = -Xpreprocessor -fopenmp
 OPENMPLDLIBS = -lomp
+
+NATIVEFILEDIALOG_LIB = ./nativefiledialog/build/lib/Release/x64/libnfd.a
 
 
 .PHONY: all debug release clean
@@ -70,10 +72,10 @@ release: $(RELEASE_TARGET)
 
 debug: $(DEBUG_TARGET)
 	
-$(RELEASE_TARGET) : $(RELEASE_OBJS) Makefile | $(RELEASE_BIN_DIR)
+$(RELEASE_TARGET) : $(RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
 	$(CXX) $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS)
 
-$(DEBUG_TARGET) : $(DEBUG_OBJS) Makefile | $(DEBUG_BIN_DIR)
+$(DEBUG_TARGET) : $(DEBUG_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(DEBUG_BIN_DIR)
 	$(CXX) $(LDFLAGS) $(LDLIBS) -o $@ $(DEBUG_OBJS)
 
 $(DEBUG_BIN_DIR):
@@ -86,6 +88,10 @@ $(RELEASE_OBJS_DIR):
 	mkdir -p $@
 $(DEPS_DIR):
 	mkdir -p $@
+
+$(NATIVEFILEDIALOG_LIB):
+	$(MAKE) -C ./nativefiledialog/build/gmake_macosx config=release_x64 AR="/usr/bin/ar" RANLIB="/usr/bin/ranlib"
+
 
 $(RELEASE_OBJS_DIR)/%.o: %.cpp Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
