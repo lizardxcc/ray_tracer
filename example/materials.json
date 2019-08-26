@@ -1,0 +1,629 @@
+[
+    {
+        "light_flag": true,
+        "links": [
+            {
+                "id": 9,
+                "input_id": 8,
+                "output_id": 4
+            },
+            {
+                "id": 16,
+                "input_id": 14,
+                "output_id": 6
+            },
+            {
+                "id": 20,
+                "input_id": 19,
+                "output_id": 13
+            },
+            {
+                "id": 21,
+                "input_id": 11,
+                "output_id": 18
+            }
+        ],
+        "name": "light",
+        "nodes": [
+            {
+                "id": 1,
+                "inputs": [],
+                "name": "UV",
+                "outputs": [
+                    {
+                        "id": 2,
+                        "io_type": 1,
+                        "name": "Out->",
+                        "type": 1
+                    }
+                ],
+                "type": 6
+            },
+            {
+                "id": 3,
+                "inputs": [
+                    {
+                        "id": 4,
+                        "io_type": 0,
+                        "name": "->BSDF",
+                        "type": 4
+                    }
+                ],
+                "name": "Output",
+                "outputs": [],
+                "type": 5
+            },
+            {
+                "color": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "id": 5,
+                "inputs": [
+                    {
+                        "id": 6,
+                        "io_type": 0,
+                        "name": "->color",
+                        "type": 2
+                    },
+                    {
+                        "id": 7,
+                        "io_type": 0,
+                        "name": "->normal",
+                        "type": 1
+                    }
+                ],
+                "name": "Diffuse Light",
+                "outputs": [
+                    {
+                        "id": 8,
+                        "io_type": 1,
+                        "name": "BSDF->",
+                        "type": 4
+                    }
+                ],
+                "type": 3
+            },
+            {
+                "col": [
+                    1.0,
+                    0.9999899864196777,
+                    0.9999899864196777
+                ],
+                "id": 10,
+                "inputs": [],
+                "name": "RGB Color",
+                "outputs": [
+                    {
+                        "id": 11,
+                        "io_type": 1,
+                        "name": "RGB->",
+                        "type": 1
+                    }
+                ],
+                "type": 8
+            },
+            {
+                "id": 12,
+                "inputs": [
+                    {
+                        "id": 13,
+                        "io_type": 0,
+                        "name": "->RGB",
+                        "type": 1
+                    }
+                ],
+                "name": "RGBtoSpectrumNode",
+                "outputs": [
+                    {
+                        "id": 14,
+                        "io_type": 1,
+                        "name": "Spectrum->",
+                        "type": 2
+                    }
+                ],
+                "type": 9
+            },
+            {
+                "id": 17,
+                "inputs": [
+                    {
+                        "id": 18,
+                        "io_type": 0,
+                        "name": "->In",
+                        "type": 3
+                    }
+                ],
+                "name": "Multiply Scalar",
+                "outputs": [
+                    {
+                        "id": 19,
+                        "io_type": 1,
+                        "name": "Out->",
+                        "type": 3
+                    }
+                ],
+                "scale": 1.0,
+                "type": 14
+            }
+        ]
+    },
+    {
+        "light_flag": false,
+        "links": [
+            {
+                "id": 9,
+                "input_id": 8,
+                "output_id": 4
+            },
+            {
+                "id": 15,
+                "input_id": 14,
+                "output_id": 6
+            },
+            {
+                "id": 18,
+                "input_id": 17,
+                "output_id": 13
+            }
+        ],
+        "name": "white",
+        "nodes": [
+            {
+                "id": 1,
+                "inputs": [],
+                "name": "UV",
+                "outputs": [
+                    {
+                        "id": 2,
+                        "io_type": 1,
+                        "name": "Out->",
+                        "type": 1
+                    }
+                ],
+                "type": 6
+            },
+            {
+                "id": 3,
+                "inputs": [
+                    {
+                        "id": 4,
+                        "io_type": 0,
+                        "name": "->BSDF",
+                        "type": 4
+                    }
+                ],
+                "name": "Output",
+                "outputs": [],
+                "type": 5
+            },
+            {
+                "albedo": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "id": 5,
+                "inputs": [
+                    {
+                        "id": 6,
+                        "io_type": 0,
+                        "name": "->Albedo",
+                        "type": 2
+                    },
+                    {
+                        "id": 7,
+                        "io_type": 0,
+                        "name": "->Normal",
+                        "type": 1
+                    }
+                ],
+                "name": "Lambertian",
+                "outputs": [
+                    {
+                        "id": 8,
+                        "io_type": 1,
+                        "name": "BSDF->",
+                        "type": 4
+                    }
+                ],
+                "type": 0
+            },
+            {
+                "id": 12,
+                "inputs": [
+                    {
+                        "id": 13,
+                        "io_type": 0,
+                        "name": "->RGB",
+                        "type": 1
+                    }
+                ],
+                "name": "RGBtoSpectrumNode",
+                "outputs": [
+                    {
+                        "id": 14,
+                        "io_type": 1,
+                        "name": "Spectrum->",
+                        "type": 2
+                    }
+                ],
+                "type": 9
+            },
+            {
+                "col": [
+                    1.0,
+                    0.9999899864196777,
+                    0.9999899864196777
+                ],
+                "id": 16,
+                "inputs": [],
+                "name": "RGB Color",
+                "outputs": [
+                    {
+                        "id": 17,
+                        "io_type": 1,
+                        "name": "RGB->",
+                        "type": 1
+                    }
+                ],
+                "type": 8
+            }
+        ]
+    },
+    {
+        "light_flag": false,
+        "links": [
+            {
+                "id": 9,
+                "input_id": 8,
+                "output_id": 4
+            },
+            {
+                "id": 13,
+                "input_id": 12,
+                "output_id": 6
+            },
+            {
+                "id": 18,
+                "input_id": 17,
+                "output_id": 11
+            }
+        ],
+        "name": "red",
+        "nodes": [
+            {
+                "id": 1,
+                "inputs": [],
+                "name": "UV",
+                "outputs": [
+                    {
+                        "id": 2,
+                        "io_type": 1,
+                        "name": "Out->",
+                        "type": 1
+                    }
+                ],
+                "type": 6
+            },
+            {
+                "id": 3,
+                "inputs": [
+                    {
+                        "id": 4,
+                        "io_type": 0,
+                        "name": "->BSDF",
+                        "type": 4
+                    }
+                ],
+                "name": "Output",
+                "outputs": [],
+                "type": 5
+            },
+            {
+                "albedo": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "id": 5,
+                "inputs": [
+                    {
+                        "id": 6,
+                        "io_type": 0,
+                        "name": "->Albedo",
+                        "type": 2
+                    },
+                    {
+                        "id": 7,
+                        "io_type": 0,
+                        "name": "->Normal",
+                        "type": 1
+                    }
+                ],
+                "name": "Lambertian",
+                "outputs": [
+                    {
+                        "id": 8,
+                        "io_type": 1,
+                        "name": "BSDF->",
+                        "type": 4
+                    }
+                ],
+                "type": 0
+            },
+            {
+                "id": 10,
+                "inputs": [
+                    {
+                        "id": 11,
+                        "io_type": 0,
+                        "name": "->RGB",
+                        "type": 1
+                    }
+                ],
+                "name": "RGBtoSpectrumNode",
+                "outputs": [
+                    {
+                        "id": 12,
+                        "io_type": 1,
+                        "name": "Spectrum->",
+                        "type": 2
+                    }
+                ],
+                "type": 9
+            },
+            {
+                "col": [
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                "id": 16,
+                "inputs": [],
+                "name": "RGB Color",
+                "outputs": [
+                    {
+                        "id": 17,
+                        "io_type": 1,
+                        "name": "RGB->",
+                        "type": 1
+                    }
+                ],
+                "type": 8
+            }
+        ]
+    },
+    {
+        "light_flag": false,
+        "links": [
+            {
+                "id": 9,
+                "input_id": 8,
+                "output_id": 4
+            },
+            {
+                "id": 13,
+                "input_id": 12,
+                "output_id": 6
+            },
+            {
+                "id": 16,
+                "input_id": 15,
+                "output_id": 11
+            }
+        ],
+        "name": "green",
+        "nodes": [
+            {
+                "id": 1,
+                "inputs": [],
+                "name": "UV",
+                "outputs": [
+                    {
+                        "id": 2,
+                        "io_type": 1,
+                        "name": "Out->",
+                        "type": 1
+                    }
+                ],
+                "type": 6
+            },
+            {
+                "id": 3,
+                "inputs": [
+                    {
+                        "id": 4,
+                        "io_type": 0,
+                        "name": "->BSDF",
+                        "type": 4
+                    }
+                ],
+                "name": "Output",
+                "outputs": [],
+                "type": 5
+            },
+            {
+                "albedo": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "id": 5,
+                "inputs": [
+                    {
+                        "id": 6,
+                        "io_type": 0,
+                        "name": "->Albedo",
+                        "type": 2
+                    },
+                    {
+                        "id": 7,
+                        "io_type": 0,
+                        "name": "->Normal",
+                        "type": 1
+                    }
+                ],
+                "name": "Lambertian",
+                "outputs": [
+                    {
+                        "id": 8,
+                        "io_type": 1,
+                        "name": "BSDF->",
+                        "type": 4
+                    }
+                ],
+                "type": 0
+            },
+            {
+                "id": 10,
+                "inputs": [
+                    {
+                        "id": 11,
+                        "io_type": 0,
+                        "name": "->RGB",
+                        "type": 1
+                    }
+                ],
+                "name": "RGBtoSpectrumNode",
+                "outputs": [
+                    {
+                        "id": 12,
+                        "io_type": 1,
+                        "name": "Spectrum->",
+                        "type": 2
+                    }
+                ],
+                "type": 9
+            },
+            {
+                "col": [
+                    0.12499988079071045,
+                    1.0,
+                    0.0
+                ],
+                "id": 14,
+                "inputs": [],
+                "name": "RGB Color",
+                "outputs": [
+                    {
+                        "id": 15,
+                        "io_type": 1,
+                        "name": "RGB->",
+                        "type": 1
+                    }
+                ],
+                "type": 8
+            }
+        ]
+    }
+]

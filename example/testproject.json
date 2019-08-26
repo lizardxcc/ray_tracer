@@ -1,3 +1,4 @@
 {
-	"model": "cornell_box.obj"
+	"model": "cornell_box.obj",
+	"mat": "materials.json"
 }
