@@ -54,6 +54,7 @@ LDLIBS += `pkg-config glm --libs`
 LDLIBS += -framework OpenGL -framework CoreFoundation
 LDLIBS += -framework Cocoa
 LDLIBS += -lnfd
+LDLIBS += -lboost_filesystem
 #OPENMPFLAGS = -fopenmp
 OPENMPFLAGS = -Xpreprocessor -fopenmp
 OPENMPLDLIBS = -lomp

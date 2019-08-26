@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <boost/filesystem/path.hpp>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -152,9 +153,18 @@ void Scene::LoadProject(const char *path)
 	std::ifstream i(path);
 	json j;
 	i >> j;
-	LoadModel(j["model"].get<std::string>().c_str());
-	LoadEnvTexture(j["env"].get<std::string>().c_str());
-	LoadMaterial(j["mat"].get<std::string>().c_str());
+	i.close();
+	boost::filesystem::path project_file(path);
+
+	if (j.find("model") != j.end()) {
+		LoadModel(project_file.parent_path().append(j["model"].get<std::string>()).c_str());
+	}
+	if (j.find("env") != j.end()) {
+		LoadEnvTexture(project_file.parent_path().append(j["env"].get<std::string>()).c_str());
+	}
+	if (j.find("mat") != j.end()) {
+		LoadMaterial(project_file.parent_path().append(j["mat"].get<std::string>()).c_str());
+	}
 }
 
 void Scene::LoadModel(const char *obj_path)
