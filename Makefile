@@ -96,13 +96,13 @@ $(RELEASE_OBJS_DIR)/%.o: %.cpp Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
 
 $(RELEASE_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
-	g++ $(CFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) -c -o $@ $<
+	gcc $(CFLAGS) $(CPPFLAGS) $(RELEASE_FLAGS) -c -o $@ $<
 
 $(DEBUG_OBJS_DIR)/%.o: %.cpp Makefile | $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
 
 $(DEBUG_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(DEBUG_OBJS_DIR) $(DEBUG_DEPS_DIR)
-	g++ $(CFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
+	gcc $(CFLAGS) $(CPPFLAGS) $(DEBUG_FLAGS) -c -o $@ $<
 
 -include $(RELEASE_DEPS)
 -include $(DEBUG_DEPS)
