@@ -157,7 +157,6 @@ void MaterialNode::DumpIO(json &j) const
 	j["name"] = name;
 	j["id"] = iid;
 	j["type"] = static_cast<int>(type);
-	std::cout << "type: " << static_cast<int>(type) << std::endl;
 	j["inputs"] = json::array();
 	j["outputs"] = json::array();
 	for (size_t i = 0; i < inputs.size(); i++) {
@@ -1280,9 +1279,11 @@ NodeMaterial::NodeMaterial(void) : context(ax::NodeEditor::CreateEditor())
 	material_nodes.push_back(new FixedValueNode(unique_id, PinVec3, "UV"));
 	material_nodes.push_back(new OutputNode(unique_id));
 }
-NodeMaterial::NodeMaterial(const json& j) : context(ax::NodeEditor::CreateEditor())
+NodeMaterial::NodeMaterial(const json& j) :
+	context(ax::NodeEditor::CreateEditor()),
+	name(j.value("name", "untitled material"))
 {
-	name = j["name"].get<std::string>();
+	light_flag = j.value("light_flag", false);
 	bool is_there_any_widgets = false;
 	for (const auto& node_j : j["nodes"]) {
 		is_there_any_widgets = true;
@@ -1367,6 +1368,7 @@ NodeMaterial::NodeMaterial(const json& j) : context(ax::NodeEditor::CreateEditor
 void NodeMaterial::DumpJson(json& j) const
 {
 	j["name"] = name;
+	j["light_flag"] = light_flag;
 	for (const auto& node : material_nodes) {
 		json node_j;
 		node->DumpJson(node_j);
