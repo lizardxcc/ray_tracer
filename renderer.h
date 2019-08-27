@@ -1,6 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <random>
 #include <GL/gl3w.h>
 #include "obj.h"
 #include "object.h"
@@ -16,6 +17,7 @@ enum RenderingAlgorithm {
 class NodeMaterial;
 class Renderer {
 	public:
+		Renderer(void);
 		void Load(const char *objfilename);
 		void LoadMaterials(const std::vector<std::shared_ptr<NodeMaterial>>& materials);
 		void Clear(void);
@@ -37,6 +39,8 @@ class Renderer {
 		bool img_updated = false;
 		bool rendering_runnnig = false;
 		bool stop_rendering = false;
+	private:
+		std::mt19937 mt;
 };
 
 #endif

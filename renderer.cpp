@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <stack>
-#include <random>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -9,6 +8,12 @@
 #include "pdf.h"
 #include "scene.h"
 
+
+Renderer::Renderer(void)
+{
+	std::random_device rd;
+	mt.seed(rd());
+}
 
 void Renderer::Load(const char *objfilename)
 {
@@ -63,33 +68,27 @@ int i, j, s;
 				double v = (j + drand48()) / ny;
 				ray r = cam.get_ray(u, v);
 
-				double rand = drand48();
-				const size_t num = spectral_samples; // 調整
-				for (size_t k = 0; k < num; k++) {
-					if (rand <= (static_cast<double>(k+1)/ num)) {
-						double min_wl = 400.0 + 300.0/num*k;
-						double max_wl = min_wl + 300.0/num - 0.00001;
-						//double max_wl = min_wl + SAMPLE_SIZE - 0.00001;
-						//double max_wl = 400 + 300.0/(double)num*(double)(k+1) - 0.00001;
-						r.min_wl = min_wl;
-						r.max_wl = max_wl;
-						r.central_wl = (min_wl + max_wl) / 2.0;
-						double rad;
-						switch (algorithm_type) {
-							case Naive:
-								rad = NaivePathTracing(r);
-								break;
-							case NEE:
-								rad = NEEPathTracingWithoutSpecular(r);
-								break;
-							case MIS:
-								rad = NEEMISPathTracing(r);
-						}
-						if (!std::isnan(rad)) {
-							radiance.add(rad/ns, min_wl, max_wl);
-						}
+				int k = mt()%spectral_samples;
+				double min_wl = 400.0 + 300.0/spectral_samples*k;
+				double max_wl = min_wl + 300.0/spectral_samples - 0.00001;
+				//double max_wl = min_wl + SAMPLE_SIZE - 0.00001;
+				//double max_wl = 400 + 300.0/(double)num*(double)(k+1) - 0.00001;
+				r.min_wl = min_wl;
+				r.max_wl = max_wl;
+				r.central_wl = (min_wl + max_wl) / 2.0;
+				double rad;
+				switch (algorithm_type) {
+					case Naive:
+						rad = NaivePathTracing(r);
 						break;
-					}
+					case NEE:
+						rad = NEEPathTracingWithoutSpecular(r);
+						break;
+					case MIS:
+						rad = NEEMISPathTracing(r);
+				}
+				if (!std::isnan(rad)) {
+					radiance.add(rad/ns, min_wl, max_wl);
 				}
 			}
 			vec3 rgb_col = rgb(radiance);
@@ -211,8 +210,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 		}
 		// sample light
 		{
-			std::random_device rnd;
-			int selected_light = rnd() % light_objects.size();
+			int selected_light = mt() % light_objects.size();
 			vec3 p;
 			double area;
 			light_objects[selected_light]->GetRandomPointOnPolygon(p, area);
@@ -310,8 +308,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				radiance += light;
 			}
 		}
-		std::random_device rnd;
-		int selected_light = rnd() % light_objects.size();
+		int selected_light = mt() % light_objects.size();
 		// sample light
 		{
 			vec3 p;
