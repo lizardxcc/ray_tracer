@@ -512,9 +512,11 @@ bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 	vi[0] = -vo[0];
 	vi[1] = -vo[1];
 	vi[2] = vo[2];
+
+	BxDF = std::numeric_limits<double>::infinity();
 	pdfval = std::numeric_limits<double>::infinity();
 	if (albedo_pin->connected_links.empty()) {
-		BxDF = albedo.get(wli)/abs(vo.z());
+		bxdf_divided_by_pdf = albedo.get(wli)/abs(vo.z());
 	} else {
 
 		if (albedo_pin->connected_links.size() != 1) {
@@ -527,8 +529,7 @@ bool ColoredMetal::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 		const MaterialNode *parent = connected_pin->parent_node;
 		Spectrum albedo;
 		parent->Compute(albedo);
-		BxDF = std::numeric_limits<double>::infinity();
-		bxdf_divided_by_pdf = albedo.get(wli)/M_PI;
+		bxdf_divided_by_pdf = albedo.get(wli)/abs(vo.z());
 	}
 
 	return true;

@@ -237,7 +237,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 				if (light_objects[selected_light]->Hit(shadow_ray, 0.0001, (p-rec.p).length()+0.0001, light_rec)) {
 					light_rec.mat_ptr->PreProcess(light_rec);
 					const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
-					const double add = BxDF * beta * light * abs(vi.z()) * G / pdfarea;
+					const double add = BxDF * beta * light * G / pdfarea;
 					radiance += add;
 				} else {
 					// bug?
@@ -369,6 +369,9 @@ double Renderer::NEEMISPathTracing(const ray& r)
 			bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, scattering_pdf);
 			if (respawn) {
 				ray shadow_ray = ray(rec.p, uvw.LocalToWorld(generated_vi));
+				shadow_ray.central_wl = r.central_wl;
+				shadow_ray.min_wl = r.min_wl;
+				shadow_ray.max_wl = r.max_wl;
 				HitRecord light_rec;
 				bool light_hit = world->Hit(shadow_ray, 0.001, std::numeric_limits<double>::max(), light_rec);
 				if (light_hit) {
@@ -380,6 +383,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 						double mis_weight;
 						if (isinf(light_pdf_solid_angle))
 							mis_weight = 0.0;
+						else if (isinf(scattering_pdf))
+							mis_weight = 1.0;
 						else
 							mis_weight = scattering_pdf*scattering_pdf/(scattering_pdf*scattering_pdf + light_pdf_solid_angle*light_pdf_solid_angle);
 						const double add = bxdf_divided_by_pdf * beta * light * abs(generated_vi.z()) * mis_weight;
