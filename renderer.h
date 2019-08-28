@@ -25,12 +25,8 @@ class Renderer {
 		double NaivePathTracing(const ray& r);
 		double NEEPathTracingWithoutSpecular(const ray& r);
 		double NEEMISPathTracing(const ray& r);
-		//double NEEPathTracing(const ray& r);
-		//double NEEVolPathTracing(const ray& r, bool enableNEE);
-		//std::shared_ptr<double[]> orig_img;
 		enum RenderingAlgorithm algorithm_type = NEE;
 		std::vector<double> orig_img;
-		//GLubyte *img = nullptr;
 		obj obj_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;

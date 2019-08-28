@@ -149,7 +149,6 @@ class Scene {
 			"}\n\0";
 
 		float pitch = 0.0f, yaw = -90.0f;
-		//ax::NodeEditor::EditorContext *context = nullptr;
 		std::vector<std::shared_ptr<NodeMaterial>> materials;
 		std::vector<std::shared_ptr<NodeMaterial> > obj_materials;
 
