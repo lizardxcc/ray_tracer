@@ -163,7 +163,9 @@ void Scene::LoadProject(const char *path)
 		LoadEnvTexture(project_file.parent_path().append(j["env"].get<std::string>()).c_str());
 	}
 	if (j.find("mat") != j.end()) {
-		LoadMaterial(project_file.parent_path().append(j["mat"].get<std::string>()).c_str());
+		for (const auto& m : j["mat"]) {
+			LoadMaterial(project_file.parent_path().append(m.get<std::string>()).c_str());
+		}
 	}
 	if (j.find("objmatmap") != j.end()) {
 		LoadObjMatMap(project_file.parent_path().append(j["objmatmap"].get<std::string>()).c_str());
