@@ -934,9 +934,10 @@ RGBtoSpectrumNode::RGBtoSpectrumNode(const json& j) : MaterialNode(j)
 void RGBtoSpectrumNode::Compute(const Argument& global_arg, Spectrum& data) const
 {
 	vec3 RGB;
-	assert(inputs[0].connected_links.size() == 1);
-	assert(inputs[0].connected_links[0]->input != nullptr);
-	inputs[0].connected_links[0]->input->parent_node->Compute(global_arg, RGB);
+	const MaterialNode *parent = GetInputParentNode(&inputs[0]);
+	if (parent == nullptr)
+		return;
+	parent->Compute(global_arg, RGB);
 	data = RGBtoSpectrum(RGB);
 }
 
