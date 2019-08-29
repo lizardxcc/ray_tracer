@@ -103,9 +103,8 @@ static const Spectrum X(cie_x);
 static const Spectrum Y(cie_y);
 static const Spectrum Z(cie_z);
 
-Spectrum::Spectrum(void)
+Spectrum::Spectrum(void) : data(N_SAMPLE, 0.0)
 {
-	data.resize(N_SAMPLE);
 }
 Spectrum::Spectrum(double v)
 {

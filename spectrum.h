@@ -13,6 +13,7 @@ class Spectrum {
 		explicit Spectrum(void);
 		explicit Spectrum(double v);
 		explicit Spectrum(const double d[N_SAMPLE]);
+		inline Spectrum& operator=(const double);
 		inline Spectrum& operator*=(const double);
 		inline Spectrum& operator/=(const double);
 
@@ -22,6 +23,11 @@ class Spectrum {
 		std::vector<double> data;
 };
 
+inline Spectrum& Spectrum::operator=(const double t)
+{
+	std::fill(data.begin(), data.end(), t);
+	return *this;
+}
 inline Spectrum& Spectrum::operator*=(const double t)
 {
 	for (auto& d : data) {

@@ -25,8 +25,9 @@ class Renderer {
 		double NaivePathTracing(const ray& r);
 		double NEEPathTracingWithoutSpecular(const ray& r);
 		double NEEMISPathTracing(const ray& r);
-		enum RenderingAlgorithm algorithm_type = NEE;
+		enum RenderingAlgorithm algorithm_type = MIS;
 		std::vector<double> orig_img;
+		std::vector<Spectrum> spectrum_img;
 		obj obj_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;
