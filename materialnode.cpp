@@ -143,6 +143,17 @@ MaterialNode::MaterialNode(const json& j) : id(j["id"]), iid(j["id"]), name(j["n
 		outputs.push_back(new_pin);
 	}
 }
+const MaterialNode *MaterialNode::GetInputParentNode(const PinInfo *pin) const
+{
+	if (pin->connected_links.size() != 1) {
+		return nullptr;
+	}
+	const PinInfo *connected_pin = pin->connected_links[0]->input;
+	if (connected_pin == nullptr) {
+		return nullptr;
+	}
+	return connected_pin->parent_node;
+}
 void MaterialNode::Compute(const Argument& global_arg, double& data) const
 {
 }
@@ -360,21 +371,14 @@ double LambertianNode::BxDF(const Argument& global_arg, const vec3& vi, double w
 		return 0.0;
 	if (albedo_pin->connected_links.empty())
 		return albedo.get(wli)/M_PI;
-	else {
-		if (albedo_pin->connected_links.size() != 1) {
-			std::cout << "node connection error" << std::endl;
-			return 0.0;
-		}
 
-		const PinInfo *connected_pin = albedo_pin->connected_links[0]->input;
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
-		Spectrum albedo;
-		Argument global_arg = { vec3(0.0, 0.0, 0.0) };
-		parent->Compute(global_arg, albedo);
-		return albedo.get(wli)/M_PI;
-	}
 
+	const MaterialNode *parent = GetInputParentNode(albedo_pin);
+	if (parent == nullptr)
+		return 0.0;
+	Spectrum albedo;
+	parent->Compute(global_arg, albedo);
+	return albedo.get(wli)/M_PI;
 }
 double LambertianNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
@@ -545,14 +549,9 @@ bool ColoredMetal::Sample(const Argument& global_arg, const HitRecord& rec, cons
 		bxdf_divided_by_pdf = albedo.get(wli)/abs(vo.z());
 	} else {
 
-		if (albedo_pin->connected_links.size() != 1) {
-			std::cout << "node connection error" << std::endl;
-			return 0.0;
-		}
-
-		const PinInfo *connected_pin = albedo_pin->connected_links[0]->input;
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
+		const MaterialNode *parent = GetInputParentNode(albedo_pin);
+		if (parent == nullptr)
+			return false;
 		Spectrum albedo;
 		parent->Compute(global_arg, albedo);
 		bxdf_divided_by_pdf = albedo.get(wli)/abs(vo.z());
@@ -721,7 +720,9 @@ double DiffuseLightNode::Emitted(const Argument& global_arg, const ray& r, const
 	if (color_pin->connected_links.empty())
 		return color.integrate(r.min_wl, r.max_wl);
 	else {
-		const MaterialNode *node = color_pin->connected_links[0]->input->parent_node;
+		const MaterialNode *node = GetInputParentNode(color_pin);
+		if (node == nullptr)
+			return 0.0;
 		Spectrum color;
 		node->Compute(global_arg, color);
 		return color.integrate(r.min_wl, r.max_wl);
@@ -1547,89 +1548,55 @@ void NodeMaterial::Render(void)
 void NodeMaterial::PreProcess(HitRecord& rec) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
-	if (bsdf_pin->connected_links.size() != 1) {
-		std::cout << "node connection error" << std::endl;
-	} else {
-		const PinInfo *connected_pin = bsdf_pin->connected_links[0]->input;
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
+	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
+	if (parent == nullptr)
+		return;
 
-		Argument global_arg = { rec.vt };
+	Argument global_arg = { rec.vt };
 
-		auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
-		p->PreProcess(global_arg, rec);
-	}
+	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
+	p->PreProcess(global_arg, rec);
 }
 bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
-	bool result;
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
-	if (bsdf_pin->connected_links.size() != 1) {
-		std::cout << "node connection error" << std::endl;
-		result = false;
-	} else {
-		const PinInfo *connected_pin = bsdf_pin->connected_links[0]->input;
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
-
-		auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
-		Argument global_arg = { rec.vt };
-		result = p->Sample(global_arg, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BxDF, pdfval);
-	}
-	return result;
+	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
+	if (parent == nullptr)
+		return false;
+	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
+	Argument global_arg = { rec.vt };
+	return p->Sample(global_arg, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BxDF, pdfval);
 }
 double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
-	double result;
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
-	if (bsdf_pin->connected_links.size() != 1) {
-		std::cout << "node connection error" << std::endl;
-		result = 0.0;
-	} else {
-		const PinInfo *connected_pin = FindPinConst(bsdf_pin->connected_links[0]->input_id);
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
+	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
+	if (parent == nullptr)
+		return 0.0;
 
-		auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
-		Argument global_arg = { vt };
-		result = p->BxDF(global_arg, vi, wli, vo, wlo);
-	}
-	return result;
+	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
+	Argument global_arg = { vt };
+	return p->BxDF(global_arg, vi, wli, vo, wlo);
 }
 double NodeMaterial::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {
-	double result;
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
-	if (bsdf_pin->connected_links.size() != 1) {
-		std::cout << "node connection error" << std::endl;
-		result = 0.0;
-	} else {
-		const PinInfo *connected_pin = FindPinConst(bsdf_pin->connected_links[0]->input_id);
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
+	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
+	if (parent == nullptr)
+		return 0.0;
 
-		auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
-		Argument global_arg = { vt };
-		result = p->PDF(global_arg, vi, wli, vo, wlo);
-	}
-	return result;
+	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
+	Argument global_arg = { vt };
+	return p->PDF(global_arg, vi, wli, vo, wlo);
 }
 double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
 {
-	double result;
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
-	if (bsdf_pin->connected_links.size() != 1) {
-		std::cout << "node connection error" << std::endl;
-		result = 0.0;
-	} else {
-		const PinInfo *connected_pin = FindPinConst(bsdf_pin->connected_links[0]->input_id);
-		assert(connected_pin != nullptr);
-		const MaterialNode *parent = connected_pin->parent_node;
-
-		auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
-		Argument global_arg = { vt };
-		result = p->Emitted(global_arg, r, rec);
-	}
-	return result;
+	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
+	if (parent == nullptr)
+		return 0.0;
+	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
+	Argument global_arg = { vt };
+	return p->Emitted(global_arg, r, rec);
 }
 

@@ -88,6 +88,7 @@ class MaterialNode {
 		virtual void Render(void);
 		void RenderPins(void);
 		void RenderSpectrum(Spectrum& data, double min, double max);
+		const MaterialNode *GetInputParentNode(const PinInfo *pin) const;
 		virtual void Compute(const Argument& global_arg, double& data) const;
 		virtual void Compute(const Argument& global_arg, Spectrum& data) const;
 		virtual void Compute(const Argument& global_arg, vec3& data) const;
