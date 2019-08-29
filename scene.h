@@ -2,6 +2,7 @@
 #define SCENE_H
 
 #include <vector>
+#include <map>
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <glm/glm.hpp>
 #include "renderer.h"
@@ -73,6 +74,8 @@ class Scene {
 		void LoadEnvTexture(const char *path);
 		void LoadMaterial(const char *path);
 		void WriteMaterial(const char *path);
+		void LoadObjMatMap(const char *path);
+		void WriteObjMatMap(const char *path);
 		void ClearData(void);
 		void RenderScene(void);
 
@@ -150,7 +153,7 @@ class Scene {
 
 		float pitch = 0.0f, yaw = -90.0f;
 		std::vector<std::shared_ptr<NodeMaterial>> materials;
-		std::vector<std::shared_ptr<NodeMaterial> > obj_materials;
+		std::map<std::string, std::shared_ptr<NodeMaterial>> obj_materials;
 
 };
 

@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include <random>
+#include <map>
 #include <GL/gl3w.h>
 #include "obj.h"
 #include "object.h"
@@ -19,7 +20,7 @@ class Renderer {
 	public:
 		Renderer(void);
 		void Load(const char *objfilename);
-		void LoadMaterials(const std::vector<std::shared_ptr<NodeMaterial>>& materials);
+		void LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMaterial>>& materials);
 		void Clear(void);
 		void RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp);
 		double NaivePathTracing(const ray& r);

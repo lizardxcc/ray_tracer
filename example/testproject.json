@@ -1,4 +1,5 @@
 {
 	"model": "cornell_box.obj",
-	"mat": "materials.json"
+	"mat": "materials.json",
+	"objmatmap": "objmatmap.json"
 }

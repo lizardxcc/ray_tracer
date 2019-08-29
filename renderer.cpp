@@ -21,12 +21,16 @@ void Renderer::Load(const char *objfilename)
 	world = std::make_unique<ObjModel>(obj_loader);
 }
 
-void Renderer::LoadMaterials(const std::vector<std::shared_ptr<NodeMaterial>>& materials)
+void Renderer::LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMaterial>>& materials)
 {
 	light_objects.clear();
 	for (size_t i = 0; i < world->models.size(); i++) {
-		world->models[i]->SetMaterial(materials[i].get());
-		if (materials[i]->light_flag) {
+		auto itr = materials.find(obj_loader.objects[i]->name);
+		if (itr == materials.end()) {
+			continue;
+		}
+		world->models[i]->SetMaterial(itr->second.get());
+		if (itr->second->light_flag) {
 			for (const auto& pol : world->polygon_models[i]) {
 				light_objects.push_back(pol);
 			}

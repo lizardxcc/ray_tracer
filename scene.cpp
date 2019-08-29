@@ -165,6 +165,9 @@ void Scene::LoadProject(const char *path)
 	if (j.find("mat") != j.end()) {
 		LoadMaterial(project_file.parent_path().append(j["mat"].get<std::string>()).c_str());
 	}
+	if (j.find("objmatmap") != j.end()) {
+		LoadObjMatMap(project_file.parent_path().append(j["objmatmap"].get<std::string>()).c_str());
+	}
 }
 
 void Scene::LoadModel(const char *obj_path)
@@ -172,10 +175,10 @@ void Scene::LoadModel(const char *obj_path)
 	if (obj_path == nullptr)
 		return;
 	renderer.Load(obj_path);
-	obj_materials.resize(renderer.obj_loader.objects.size());
-	for (size_t i = 0; i < obj_materials.size(); i++) {
-		obj_materials[i] = nullptr;
-	}
+	//obj_materials.resize(renderer.obj_loader.objects.size());
+	//for (size_t i = 0; i < obj_materials.size(); i++) {
+	//	obj_materials[i] = nullptr;
+	//}
 
 
 	cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -218,6 +221,41 @@ void Scene::WriteMaterial(const char *path)
 		json mat_j;
 		mat->DumpJson(mat_j);
 		j.push_back(mat_j);
+	}
+	o << j.dump(4);
+	o.close();
+}
+
+void Scene::LoadObjMatMap(const char *path)
+{
+	if (path == nullptr)
+		return;
+	std::ifstream i(path);
+	json j;
+	i >> j;
+
+	for (const auto& map_j : j.items()) {
+		auto result = std::find_if(materials.begin(), materials.end(),
+				[map_j](std::shared_ptr<NodeMaterial>& m)
+				{
+				return m->name == map_j.value();
+				});
+		if (result == materials.end()) {
+			continue;
+		}
+		obj_materials[map_j.key()] = *result;
+	}
+}
+
+void Scene::WriteObjMatMap(const char *path)
+{
+	if (path == nullptr)
+		return;
+	std::ofstream o(path);
+	json j;
+
+	for (const auto& m : obj_materials) {
+		j[m.first] = m.second->name;
 	}
 	o << j.dump(4);
 	o.close();
@@ -670,11 +708,27 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 					free(path);
 				}
 			}
+			if (ImGui::MenuItem("Open ObjMatMap")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					LoadObjMatMap(path);
+					free(path);
+				}
+			}
 			if (ImGui::MenuItem("Write Material")) {
 				nfdchar_t *path = nullptr;
 				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
 				if (result == NFD_OKAY) {
 					WriteMaterial(path);
+					free(path);
+				}
+			}
+			if (ImGui::MenuItem("Write ObjMatMap")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					WriteObjMatMap(path);
 					free(path);
 				}
 			}
@@ -694,7 +748,13 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		materials.push_back(new_material);
 	}
 
-	NodeMaterial *selected_material = obj_materials[activeObjectIndex-1].get();
+	auto itr = obj_materials.find(renderer.obj_loader.objects[activeObjectIndex-1]->name);
+	if (itr == obj_materials.end()) {
+		std::shared_ptr<NodeMaterial> p;
+		obj_materials[renderer.obj_loader.objects[activeObjectIndex-1]->name] = p;
+		itr = obj_materials.find(renderer.obj_loader.objects[activeObjectIndex-1]->name);
+	}
+	NodeMaterial *selected_material = itr->second.get();
 	const char *preview_name = "";
 	if (selected_material != nullptr)
 		preview_name = selected_material->name.c_str();
@@ -703,7 +763,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 			bool is_selected = (selected_material == materials[i].get());
 			if (ImGui::Selectable(materials[i]->name.c_str(), is_selected)) {
 				selected_material = materials[i].get();
-				obj_materials[activeObjectIndex-1] = materials[i];
+				obj_materials[renderer.obj_loader.objects[activeObjectIndex-1]->name] = materials[i];
 			}
 		}
 		ImGui::EndCombo();
