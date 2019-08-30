@@ -1295,6 +1295,212 @@ void RandomSamplingNode::Render(void)
 }
 
 
+AccessVec3ComponentNode::AccessVec3ComponentNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = AccessVec3ComponentType;
+	AddInput(unique_id, PinVec3, "vector");
+	AddOutput(unique_id, PinDouble, "output");
+}
+
+AccessVec3ComponentNode::AccessVec3ComponentNode(const json& j) : MaterialNode(j)
+{
+	type = AccessVec3ComponentType;
+}
+
+void AccessVec3ComponentNode::Compute(const Argument& global_arg, double &data) const
+{
+	vec3 v;
+	const MaterialNode *node = GetInputParentNode(&inputs[0]);
+	node->Compute(global_arg, v);
+	data = v[index];
+}
+
+
+void AccessVec3ComponentNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	const uint32_t min = 0;
+	const uint32_t max = 2;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("index", ImGuiDataType_U32, &index, &min, &max, "%u");
+	ImGui::PopItemWidth();
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+
+CombineVec3ComponentNode::CombineVec3ComponentNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = CombineVec3ComponentType;
+	AddInput(unique_id, PinDouble, "->0");
+	AddInput(unique_id, PinDouble, "->1");
+	AddInput(unique_id, PinDouble, "->2");
+	AddOutput(unique_id, PinVec3, "Vec->");
+}
+
+CombineVec3ComponentNode::CombineVec3ComponentNode(const json& j) : MaterialNode(j)
+{
+}
+
+
+void CombineVec3ComponentNode::Compute(const Argument& global_arg, vec3& data) const
+{
+	for (size_t i = 0; i < 3; i++) {
+		const MaterialNode *node = GetInputParentNode(&inputs[i]);
+		if (node == nullptr)
+			return;
+		node->Compute(global_arg, data[i]);
+	}
+}
+
+
+ValueNoiseNode::ValueNoiseNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = ValueNoiseType;
+	AddInput(unique_id, PinDouble, "input");
+	AddOutput(unique_id, PinDouble, "Output");
+	GenerateRand();
+}
+
+ValueNoiseNode::ValueNoiseNode(const json& j) : MaterialNode(j)
+{
+	type = ValueNoiseType;
+	GenerateRand();
+}
+
+
+void ValueNoiseNode::Compute(const Argument& global_arg, double &data) const
+{
+	const MaterialNode *node = GetInputParentNode(&inputs[0]);
+	if (node == nullptr)
+		return;
+	double u;
+	node->Compute(global_arg, u);
+	u = fmod(u, 1.0);
+	if (u < 0.0)
+		u += 1.0;
+	assert(r.size() > 1);
+	double us = 1.0/(r.size()-1);
+	double rem = fmod(u, us);
+	int x0 = (u-rem)/us;
+	int x1 = x0+1;
+	double t = rem/us;
+	assert(x1<r.size());
+	data = (1.0-t)*r[x0] + t*r[x1];
+}
+
+
+void ValueNoiseNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	const uint32_t min = 1;
+	const uint32_t max = 1024;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("size", ImGuiDataType_U32, &size, &min, &max, "%u");
+	ImGui::PopItemWidth();
+	if (ImGui::Button("Generate Random")) {
+		GenerateRand();
+	}
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+
+void ValueNoiseNode::GenerateRand(unsigned int seed)
+{
+	srand48(seed);
+	r.resize(size+1);
+	for (int i = 0; i < r.size(); i++) {
+		r[i] = drand48();
+	}
+}
+
+ValueNoise2DNode::ValueNoise2DNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = ValueNoise2DType;
+	AddInput(unique_id, PinDouble, "u");
+	AddInput(unique_id, PinDouble, "v");
+	AddOutput(unique_id, PinDouble, "Output");
+	GenerateRand();
+}
+
+ValueNoise2DNode::ValueNoise2DNode(const json& j) : MaterialNode(j)
+{
+	type = ValueNoise2DType;
+	GenerateRand();
+}
+
+
+void ValueNoise2DNode::Compute(const Argument& global_arg, double &data) const
+{
+	const MaterialNode *u_node = GetInputParentNode(&inputs[0]);
+	const MaterialNode *v_node = GetInputParentNode(&inputs[1]);
+	if (u_node == nullptr || v_node == nullptr)
+		return;
+	double u, v;
+	u_node->Compute(global_arg, u);
+	v_node->Compute(global_arg, v);
+	u = fmod(u, 1.0);
+	if (u < 0.0)
+		u += 1.0;
+	v = fmod(v, 1.0);
+	if (v < 0.0)
+		v += 1.0;
+	double us = 1.0/u_size;
+	double vs = 1.0/v_size;
+	double urem = fmod(u, us);
+	double vrem = fmod(v, vs);
+	unsigned int u0 = (u-urem)/us;
+	unsigned int u1 = u0+1;
+	unsigned int v0 = (v-vrem)/vs;
+	unsigned int v1 = v0+1;
+
+	double ut = urem/us;
+	double vt = vrem/vs;
+	ut = ut*ut*(3.0-2.0*ut);
+	vt = vt*vt*(3.0-2.0*vt);
+	double a = (1.0-ut)*r[u0*(v_size+1)+v0] + ut*r[u1*(v_size+1)+v0];
+	double b = (1.0-ut)*r[u0*(v_size+1)+v1] + ut*r[u1*(v_size+1)+v1];
+	data = (1.0-vt)*a + vt*b;
+}
+
+
+void ValueNoise2DNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	const uint32_t min = 1;
+	const uint32_t max = 1024;
+	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+	ImGui::SliderScalar("u size", ImGuiDataType_U32, &u_size, &min, &max, "%u");
+	ImGui::SliderScalar("v size", ImGuiDataType_U32, &v_size, &min, &max, "%u");
+	ImGui::PopItemWidth();
+	if (ImGui::Button("Generate Random")) {
+		GenerateRand();
+	}
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+
+void ValueNoise2DNode::GenerateRand(unsigned int seed)
+{
+	srand48(seed);
+	r.resize((u_size+1)*(v_size+1));
+	for (int i = 0; i < u_size+1; i++) {
+		for (int j = 0; j < v_size+1; j++)
+			r[i*(v_size+1)+j] = drand48();
+	}
+}
+
 NodeMaterial::NodeMaterial(void) : context(ax::NodeEditor::CreateEditor())
 {
 	material_nodes.push_back(new UVNode(unique_id, PinVec3, "UV"));
@@ -1357,6 +1563,18 @@ NodeMaterial::NodeMaterial(const json& j) :
 				break;
 			case UVType:
 				node = new UVNode(node_j);
+				break;
+			case AccessVec3ComponentType:
+				node = new AccessVec3ComponentNode(node_j);
+				break;
+			case CombineVec3ComponentType:
+				node = new CombineVec3ComponentNode(node_j);
+				break;
+			case ValueNoiseType:
+				node = new ValueNoiseNode(node_j);
+				break;
+			case ValueNoise2DType:
+				node = new ValueNoise2DNode(node_j);
 				break;
 			default:
 				std::cout << "Error: Unimplemented" << std::endl;
@@ -1535,6 +1753,14 @@ void NodeMaterial::Render(void)
 			node = new ScalarMultiplicationNode(unique_id);
 		} else if (ImGui::MenuItem("Random Sampling Node")) {
 			node = new RandomSamplingNode(unique_id);
+		} else if (ImGui::MenuItem("AccessVec3ComponentNode")) {
+			node = new AccessVec3ComponentNode(unique_id);
+		} else if (ImGui::MenuItem("CombineVec3ComponentNode")) {
+			node = new CombineVec3ComponentNode(unique_id);
+		} else if (ImGui::MenuItem("Value Noise Node")) {
+			node = new ValueNoiseNode(unique_id);
+		} else if (ImGui::MenuItem("Value Noise 2D Node")) {
+			node = new ValueNoise2DNode(unique_id);
 		}
 		if (node != nullptr)
 			material_nodes.push_back(node);

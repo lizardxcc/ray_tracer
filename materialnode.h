@@ -77,7 +77,11 @@ enum MaterialNodeType {
 	MultiplicationType,
 	ScalarMultiplicationType,
 	RandomSamplingType,
-	GGXReflectionType
+	GGXReflectionType,
+	AccessVec3ComponentType,
+	CombineVec3ComponentType,
+	ValueNoiseType,
+	ValueNoise2DType,
 };
 
 class MaterialNode {
@@ -329,6 +333,51 @@ class RandomSamplingNode : public MaterialNode {
 		void Render(void) override;
 	private:
 		double ratio;
+};
+
+
+class AccessVec3ComponentNode : public MaterialNode {
+	public:
+		AccessVec3ComponentNode(int &unique_id, const char *name = "AccessVec3ComponentNode");
+		AccessVec3ComponentNode(const json& j);
+		void Compute(const Argument& global_arg, double& data) const override;
+		void Render(void) override;
+	private:
+		uint32_t index = 0;
+};
+
+
+class CombineVec3ComponentNode : public MaterialNode {
+	public:
+		CombineVec3ComponentNode(int &unique_id, const char *name = "CombineVec3ComponentNode");
+		CombineVec3ComponentNode(const json& j);
+		void Compute(const Argument& global_arg, vec3& data) const override;
+	private:
+};
+
+class ValueNoiseNode : public MaterialNode {
+	public:
+		ValueNoiseNode(int &unique_id, const char *name = "Value Noise");
+		ValueNoiseNode(const json& j);
+		void Compute(const Argument& global_arg, double &data) const override;
+		void Render(void) override;
+	private:
+		void GenerateRand(unsigned int seed = 323048);
+		std::vector<double> r;
+		uint32_t size = 256;
+};
+
+class ValueNoise2DNode : public MaterialNode {
+	public:
+		ValueNoise2DNode(int &unique_id, const char *name = "Value Noise 2D");
+		ValueNoise2DNode(const json& j);
+		void Compute(const Argument& global_arg, double &data) const override;
+		void Render(void) override;
+	private:
+		void GenerateRand(unsigned int seed = 323048);
+		std::vector<double> r;
+		uint32_t u_size = 64;
+		uint32_t v_size = 64;
 };
 
 
