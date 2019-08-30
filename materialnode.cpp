@@ -1525,6 +1525,101 @@ void ValueNoise2DNode::GenerateRand(unsigned int seed)
 	}
 }
 
+
+
+RodriguesRotationNode::RodriguesRotationNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	AddInput(unique_id, PinVec3, "->v");
+	AddInput(unique_id, PinVec3, "->n");
+	AddInput(unique_id, PinDouble, "->theta");
+	AddOutput(unique_id, PinVec3, "output->");
+	type = RodriguesRotationType;
+}
+RodriguesRotationNode::RodriguesRotationNode(const json& j) : MaterialNode(j)
+{
+	type = RodriguesRotationType;
+	for (int i = 0; i < 3; i++)
+		n[i] = j["n"][i];
+	theta = j["theta"];
+}
+
+void RodriguesRotationNode::DumpJson(json& j) const
+{
+	for (int i = 0; i < 3; i++)
+		j["n"][i] = n[i];
+	j["theta"] = theta;
+}
+
+
+void RodriguesRotationNode::Compute(const Argument& global_arg, vec3& data) const
+{
+	vec3 nn;
+	if (inputs[1].connected_links.empty()) {
+		nn = unit_vector(n);
+	} else {
+		const MaterialNode *node = GetInputParentNode(&inputs[1]);
+		if (node == nullptr)
+			return;
+		node->Compute(global_arg, nn);
+		nn.make_unit_vector();
+	}
+
+	double c;
+	double s;
+	if (inputs[2].connected_links.empty()) {
+		c = cos(theta);
+		s = sin(theta);
+	} else {
+		double t;
+		const MaterialNode *node = GetInputParentNode(&inputs[2]);
+		if (node == nullptr)
+			return;
+		node->Compute(global_arg, t);
+		c = cos(t);
+		s = sin(t);
+	}
+	double nx = nn[0];
+	double ny = nn[1];
+	double nz = nn[2];
+	vec3 r0 = vec3(c+nx*nx*(1.0-c), nx*ny*(1.0-c)-nz*s, nx*nz*(1.0-c)+ny*s);
+	vec3 r1 = vec3(ny*nx*(1.0-c)+nz*s, c+ny*ny*(1.0-c), ny*nz*(1.0-c)-nx*s);
+	vec3 r2 = vec3(nz*nx*(1.0-c)-ny*s, nz*ny*(1.0-c)+nx*s, c+nz*nz*(1.0-c));
+	const MaterialNode *node = GetInputParentNode(&inputs[0]);
+	if (node == nullptr)
+		return;
+	vec3 v;
+	node->Compute(global_arg, v);
+	data[0] = dot(r0, v);
+	data[1] = dot(r1, v);
+	data[2] = dot(r2, v);
+}
+void RodriguesRotationNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	if (inputs[1].connected_links.empty()) {
+		const double min = 0.0;
+		const double max = 1.0;
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+		ImGui::SliderScalar("nx", ImGuiDataType_Double, &n[0], &min, &max, "%f");
+		ImGui::SliderScalar("ny", ImGuiDataType_Double, &n[1], &min, &max, "%f");
+		ImGui::SliderScalar("nz", ImGuiDataType_Double, &n[2], &min, &max, "%f");
+		ImGui::PopItemWidth();
+	}
+	if (inputs[2].connected_links.empty()) {
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
+		const double theta_min = -M_PI;
+		const double theta_max = M_PI;
+		ImGui::SliderScalar("theta", ImGuiDataType_Double, &theta, &theta_min, &theta_max, "%f");
+		ImGui::PopItemWidth();
+	}
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+
+
 NodeMaterial::NodeMaterial(void) : context(ax::NodeEditor::CreateEditor())
 {
 	material_nodes.push_back(new UVNode(unique_id, PinVec3, "UV"));
@@ -1599,6 +1694,9 @@ NodeMaterial::NodeMaterial(const json& j) :
 				break;
 			case ValueNoise2DType:
 				node = new ValueNoise2DNode(node_j);
+				break;
+			case RodriguesRotationType:
+				node = new RodriguesRotationNode(node_j);
 				break;
 			default:
 				std::cout << "Error: Unimplemented" << std::endl;
@@ -1785,6 +1883,8 @@ void NodeMaterial::Render(void)
 			node = new ValueNoiseNode(unique_id);
 		} else if (ImGui::MenuItem("Value Noise 2D Node")) {
 			node = new ValueNoise2DNode(unique_id);
+		} else if (ImGui::MenuItem("Rodrigues' Rotation Node")) {
+			node = new RodriguesRotationNode(unique_id);
 		}
 		if (node != nullptr)
 			material_nodes.push_back(node);

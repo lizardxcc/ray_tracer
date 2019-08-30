@@ -82,6 +82,7 @@ enum MaterialNodeType {
 	CombineVec3ComponentType,
 	ValueNoiseType,
 	ValueNoise2DType,
+	RodriguesRotationType,
 };
 
 class MaterialNode {
@@ -380,6 +381,19 @@ class ValueNoise2DNode : public MaterialNode {
 		std::vector<double> r;
 		uint32_t u_size = 64;
 		uint32_t v_size = 64;
+};
+
+
+class RodriguesRotationNode : public MaterialNode {
+	public:
+		RodriguesRotationNode(int &unique_id, const char *name = "Rodrigues' Rotation Node");
+		RodriguesRotationNode(const json& j);
+		void Compute(const Argument& global_arg, vec3& data) const override;
+		void DumpJson(json& j) const override;
+		void Render(void) override;
+	private:
+		vec3 n = vec3(0.0, 0.0, 1.0);
+		double theta;
 };
 
 
