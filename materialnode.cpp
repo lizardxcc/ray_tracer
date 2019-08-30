@@ -1067,7 +1067,8 @@ void AdditionNode::Compute(const Argument& global_arg, double &data) const
 	data = 0;
 	for (size_t i = 0; i < 2; i++) {
 		assert(inputs[i].connected_links.size() == 1);
-		if (inputs[i].connected_links[0]->input->type != PinDouble) {
+		if (!(inputs[i].connected_links[0]->input->type == PinDouble ||
+				inputs[i].connected_links[0]->input->type == PinUniversal)) {
 			std::cout << "Error" << std::endl;
 		}
 		double d;
@@ -1080,7 +1081,8 @@ void AdditionNode::Compute(const Argument& global_arg, vec3& data) const
 	data = vec3(0.0, 0.0, 0.0);
 	for (size_t i = 0; i < 2; i++) {
 		assert(inputs[i].connected_links.size() == 1);
-		if (inputs[i].connected_links[0]->input->type != PinVec3) {
+		if (!(inputs[i].connected_links[0]->input->type == PinVec3 ||
+				inputs[i].connected_links[0]->input->type == PinUniversal)) {
 			std::cout << "Error" << std::endl;
 		}
 		vec3 d;
@@ -1093,7 +1095,8 @@ void AdditionNode::Compute(const Argument& global_arg, Spectrum& data) const
 	data = Spectrum(0.0);
 	for (size_t i = 0; i < 2; i++) {
 		assert(inputs[i].connected_links.size() == 1);
-		if (inputs[i].connected_links[0]->input->type != PinSpectrum) {
+		if (!(inputs[i].connected_links[0]->input->type == PinSpectrum ||
+				inputs[i].connected_links[0]->input->type == PinUniversal)) {
 			std::cout << "Error" << std::endl;
 		}
 		Spectrum d;
@@ -1137,7 +1140,8 @@ void ScalarMultiplicationNode::Render(void)
 void ScalarMultiplicationNode::Compute(const Argument& global_arg, double &data) const
 {
 	assert(inputs[0].connected_links.size() == 1);
-	if (inputs[0].connected_links[0]->input->type != PinDouble) {
+	if (!(inputs[0].connected_links[0]->input->type == PinDouble ||
+			inputs[0].connected_links[0]->input->type == PinUniversal)) {
 		std::cout << "Error" << std::endl;
 	}
 	double d;
@@ -1147,7 +1151,8 @@ void ScalarMultiplicationNode::Compute(const Argument& global_arg, double &data)
 void ScalarMultiplicationNode::Compute(const Argument& global_arg, vec3& data) const
 {
 	assert(inputs[0].connected_links.size() == 1);
-	if (inputs[0].connected_links[0]->input->type != PinVec3) {
+	if (!(inputs[0].connected_links[0]->input->type == PinVec3 ||
+			inputs[0].connected_links[0]->input->type == PinUniversal)) {
 		std::cout << "Error" << std::endl;
 	}
 	vec3 d;
@@ -1157,7 +1162,8 @@ void ScalarMultiplicationNode::Compute(const Argument& global_arg, vec3& data) c
 void ScalarMultiplicationNode::Compute(const Argument& global_arg, Spectrum& data) const
 {
 	assert(inputs[0].connected_links.size() == 1);
-	if (inputs[0].connected_links[0]->input->type != PinSpectrum) {
+	if (!(inputs[0].connected_links[0]->input->type == PinSpectrum ||
+			inputs[0].connected_links[0]->input->type == PinUniversal)) {
 		std::cout << "Error" << std::endl;
 	}
 	Spectrum d;
