@@ -360,6 +360,7 @@ class ValueNoiseNode : public MaterialNode {
 		ValueNoiseNode(int &unique_id, const char *name = "Value Noise");
 		ValueNoiseNode(const json& j);
 		void Compute(const Argument& global_arg, double &data) const override;
+		void DumpJson(json& j) const override;
 		void Render(void) override;
 	private:
 		void GenerateRand(unsigned int seed = 323048);
@@ -372,6 +373,7 @@ class ValueNoise2DNode : public MaterialNode {
 		ValueNoise2DNode(int &unique_id, const char *name = "Value Noise 2D");
 		ValueNoise2DNode(const json& j);
 		void Compute(const Argument& global_arg, double &data) const override;
+		void DumpJson(json& j) const override;
 		void Render(void) override;
 	private:
 		void GenerateRand(unsigned int seed = 323048);

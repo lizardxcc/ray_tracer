@@ -1374,6 +1374,7 @@ ValueNoiseNode::ValueNoiseNode(int &unique_id, const char *name) : MaterialNode(
 ValueNoiseNode::ValueNoiseNode(const json& j) : MaterialNode(j)
 {
 	type = ValueNoiseType;
+	size = j["u_size"];
 	GenerateRand();
 }
 
@@ -1396,6 +1397,13 @@ void ValueNoiseNode::Compute(const Argument& global_arg, double &data) const
 	double t = rem/us;
 	assert(x1<r.size());
 	data = (1.0-t)*r[x0] + t*r[x1];
+}
+
+
+void ValueNoiseNode::DumpJson(json& j) const
+{
+	DumpIO(j);
+	j["u_size"] = size;
 }
 
 
@@ -1439,7 +1447,17 @@ ValueNoise2DNode::ValueNoise2DNode(int &unique_id, const char *name) : MaterialN
 ValueNoise2DNode::ValueNoise2DNode(const json& j) : MaterialNode(j)
 {
 	type = ValueNoise2DType;
+	u_size = j["u_size"];
+	v_size = j["v_size"];
 	GenerateRand();
+}
+
+
+void ValueNoise2DNode::DumpJson(json& j) const
+{
+	DumpIO(j);
+	j["u_size"] = u_size;
+	j["v_size"] = v_size;
 }
 
 
