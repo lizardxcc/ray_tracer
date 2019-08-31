@@ -567,9 +567,7 @@ void Scene::RenderScene(void)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 
-
-	ImVec2 pos = ImGui::GetCursorScreenPos();
-        ImGui::Image(reinterpret_cast<void *>(texture), ImVec2(640, 480));
+        ImGui::Image(reinterpret_cast<void *>(texture), ImVec2(640, 480), ImVec2(0, 1), ImVec2(1, 0));
 }
 
 
