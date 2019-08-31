@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <boost/filesystem/path.hpp>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -154,7 +153,7 @@ void Scene::LoadProject(const char *path)
 	json j;
 	i >> j;
 	i.close();
-	boost::filesystem::path project_file(path);
+	project_file = boost::filesystem::path(path);
 
 	if (j.find("model") != j.end()) {
 		LoadModel(project_file.parent_path().append(j["model"].get<std::string>()).c_str());
@@ -205,8 +204,10 @@ void Scene::LoadMaterial(const char *path)
 	json j;
 	i >> j;
 
+	boost::filesystem::path p(path);
+
 	for (const auto& material_j : j) {
-		std::shared_ptr<NodeMaterial> mat = std::make_shared<NodeMaterial>(material_j);
+		std::shared_ptr<NodeMaterial> mat = std::make_shared<NodeMaterial>(material_j, p.parent_path().c_str());
 		materials.push_back(mat);
 	}
 	i.close();
@@ -745,8 +746,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 
 	char str[32] = "";
 	if (ImGui::InputText("Press Enter to add new Material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
-		std::shared_ptr<NodeMaterial> new_material = std::make_shared<NodeMaterial>();
-		new_material->name = str;
+		std::shared_ptr<NodeMaterial> new_material = std::make_shared<NodeMaterial>(str, project_file.parent_path().c_str());
 		materials.push_back(new_material);
 	}
 
@@ -779,6 +779,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		selected_material->Render();
 
 		ax::NodeEditor::End();
+		ax::NodeEditor::SetCurrentEditor(nullptr);
 	}
 	ImGui::End();
 }

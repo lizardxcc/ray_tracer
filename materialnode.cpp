@@ -1620,16 +1620,29 @@ void RodriguesRotationNode::Render(void)
 }
 
 
-NodeMaterial::NodeMaterial(void) : context(ax::NodeEditor::CreateEditor())
+NodeMaterial::NodeMaterial(const char *name, const char *settings_dir) : name(name)
 {
+	ed::Config config;
+	boost::filesystem::path config_path(settings_dir);
+	config_path.append("material_settings");
+	config_path.append(std::string(name)+".json");
+	settings_file = config_path.string();
+	config.SettingsFile = settings_file.c_str();
+	context = ax::NodeEditor::CreateEditor(&config);
 	material_nodes.push_back(new UVNode(unique_id, PinVec3, "UV"));
 	material_nodes.push_back(new OutputNode(unique_id));
 }
-NodeMaterial::NodeMaterial(const json& j) :
-	context(ax::NodeEditor::CreateEditor()),
+NodeMaterial::NodeMaterial(const json& j, const char *settings_dir) :
 	name(j.value("name", "untitled material")),
 	light_flag(j.value("light_flag", false))
 {
+	ed::Config config;
+	boost::filesystem::path config_path(settings_dir);
+	config_path.append("material_settings");
+	config_path.append(std::string(name)+".json");
+	settings_file = config_path.string();
+	config.SettingsFile = settings_file.c_str();
+	context = ax::NodeEditor::CreateEditor(&config);
 	bool is_there_any_widgets = false;
 	for (const auto& node_j : j["nodes"]) {
 		is_there_any_widgets = true;
@@ -1724,6 +1737,12 @@ NodeMaterial::NodeMaterial(const json& j) :
 	}
 	if (is_there_any_widgets)
 		unique_id++;
+}
+
+
+NodeMaterial::~NodeMaterial(void)
+{
+	ed::DestroyEditor(context);
 }
 
 void NodeMaterial::DumpJson(json& j) const

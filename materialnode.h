@@ -1,6 +1,7 @@
 #ifndef MATERIALNODE_H
 #define MATERIALNODE_H
 
+#include <boost/filesystem/path.hpp>
 #include "imgui_node_editor.h"
 #include "vec3.h"
 #include "hittable.h"
@@ -399,8 +400,9 @@ class RodriguesRotationNode : public MaterialNode {
 
 class NodeMaterial {
 	public:
-		NodeMaterial(void);
-		explicit NodeMaterial(const json& j);
+		NodeMaterial(const char *name, const char *settings_path);
+		explicit NodeMaterial(const json& j, const char *settings_path);
+		~NodeMaterial(void);
 		void Render(void);
 		struct PinInfo *FindPin(int iid);
 		struct PinInfo *FindPin(const ed::PinId& id);
@@ -415,6 +417,7 @@ class NodeMaterial {
 		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const;
 		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const;
 		std::string name;
+		std::string settings_file;
 		ax::NodeEditor::EditorContext *context = nullptr;
 		bool light_flag = false;
 	private:

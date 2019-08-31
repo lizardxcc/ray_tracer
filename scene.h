@@ -1,6 +1,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include <boost/filesystem/path.hpp>
 #include <vector>
 #include <map>
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
@@ -86,6 +87,7 @@ class Scene {
 		glm::vec3 cameraPos;
 		glm::vec3 cameraFront;
 		glm::vec3 cameraUp;
+		boost::filesystem::path project_file;
 		float d = 0.45, focal_length=0.4, aperture = 0.0;
 		float vfov = 30;
 		unsigned int activeObjectIndex = 0;
