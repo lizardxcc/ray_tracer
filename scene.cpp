@@ -569,9 +569,7 @@ void Scene::RenderScene(void)
 
 
 	ImVec2 pos = ImGui::GetCursorScreenPos();
-	ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<void *>(texture), ImVec2(pos.x, pos.y),
-			ImVec2(pos.x+640, pos.y+480),
-			ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image(reinterpret_cast<void *>(texture), ImVec2(640, 480));
 }
 
 
