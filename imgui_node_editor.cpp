@@ -2395,6 +2395,8 @@ bool ed::Settings::Parse(const std::string& string, Settings& settings)
 {
     Settings result = settings;
 
+    if (string == "")
+	    return false;
     auto settingsValue = nlohmann::json::parse(string);
     if (settingsValue.is_discarded())
         return false;
