@@ -48,14 +48,13 @@ void Renderer::Clear(void)
 
 void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp)
 {
-	orig_img.resize(nx*ny*4);
 	spectrum_img.resize(nx*ny);
+	preview_img.resize(nx*ny);
 	std::fill(spectrum_img.begin(), spectrum_img.end(), 0.0);
 
-	size_t count = 0;
 	rendering_runnnig = true;
 
-int s;
+	int s;
 
 	for (s = 0; s < ns; s++) {
 		if (stop_rendering)
@@ -96,31 +95,30 @@ int s;
 				}
 			}
 		}
+		if (preview_img_flag || s == ns-1) {
+			int c;
 #ifdef _OPENMP
-#pragma omp parallel for private(j) if (enable_openmp)
+#pragma omp parallel for private(j, c) if (enable_openmp)
 #endif
-		for (i = 0; i < nx; i++) {
-			for (j = 0; j < ny; j++) {
-				vec3 rgb_col = rgb(spectrum_img[i*ny+j]/(s+1)*ns);
-				for (size_t c = 0; c < 3; c++) {
-					if (rgb_col[c] >= 0.0) {
-						rgb_col.e[c] = pow(rgb_col[c], 1.0/2.2);
+			for (i = 0; i < nx; i++) {
+				for (j = 0; j < ny; j++) {
+					vec3 rgb_col = rgb(spectrum_img[i*ny+j]*(ns/static_cast<double>(s+1)));
+					for (c = 0; c < 3; c++) {
+						if (rgb_col[c] >= 0.0) {
+							rgb_col[c] = pow(rgb_col[c], 1.0/2.2);
+							rgb_col[c] = std::min(rgb_col[c], 1.0);
+						} else
+							rgb_col[c] = 0.0;
 					}
+					preview_img[i*ny+j] = rgb_col;
 				}
-				size_t i_ = nx-i-1;
-				size_t j_ = ny-j-1;
-				orig_img[((ny-j_-1)*nx+i_)*4] = std::min(rgb_col[0], 1.0);
-				orig_img[((ny-j_-1)*nx+i_)*4+1] = std::min(rgb_col[1], 1.0);
-				orig_img[((ny-j_-1)*nx+i_)*4+2] = std::min(rgb_col[2], 1.0);
-				orig_img[((ny-j_-1)*nx+i_)*4+3] = 1.0;
-				img_updated = true;
 			}
+			img_updated = true;
 		}
-		std::cout << 100.0 * static_cast<double>(s) / (ns) << "%" << std::endl;
+		progress = static_cast<float>(s+1) / ns;
 	}
 
 	img_updated = true;
-	std::cout << "Completed rendering" << std::endl;
 	if (stop_rendering)
 		stop_rendering = false;
 	rendering_runnnig = false;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
@@ -144,6 +145,11 @@ Scene::Scene(void)
 {
 
 	OpenGLInitShader();
+	glGenTextures(1, &preview_texture);
+	glBindTexture(GL_TEXTURE_2D, preview_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
@@ -182,9 +188,9 @@ void Scene::LoadModel(const char *obj_path)
 	//}
 
 
-	cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+	cameraPos = glm::dvec3(0.0f, 0.0f, 3.0f);
 	//cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	cameraUp = glm::dvec3(0.0f, 1.0f, 0.0f);
 	OpenGLLoadModel();
 }
 
@@ -359,18 +365,18 @@ void Scene::OpenGLLoadModel(void)
 
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glGenTextures(1, &scene_texture);
+	glBindTexture(GL_TEXTURE_2D, scene_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene_texture, 0);
 	//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 640, 480);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 640, 480);
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WIDTH, HEIGHT);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -393,7 +399,9 @@ void Scene::ClearData(void)
 
 void Scene::RenderSceneWindow(void)
 {
-	ImGui::Begin("3D Scene", nullptr, ImGuiWindowFlags_MenuBar);
+	//ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+	//ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_Always);
+	//ImGui::Begin("3D Scene", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Load Project")) {
@@ -428,78 +436,46 @@ void Scene::RenderSceneWindow(void)
 					scene_loaded = false;
 				}
 			}
-			if (ImGui::MenuItem("Load test.obj")) {
-				if (!scene_loaded) {
-					LoadModel("test.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load test2.obj")) {
-				if (!scene_loaded) {
-					LoadModel("test2.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load cubetest.obj")) {
-				if (!scene_loaded) {
-					LoadModel("cubetest.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load suzanne.obj")) {
-				if (!scene_loaded) {
-					LoadModel("suzanne.obj");
-					scene_loaded = true;
-				}
-			}
-			if (ImGui::MenuItem("Load testscene.obj")) {
-				if (!scene_loaded) {
-					LoadModel("testscene.obj");
-					scene_loaded = true;
-				}
-			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
 	}
 	if (scene_loaded)
 		RenderScene();
-	ImGui::End();
+	//ImGui::End();
 }
 
 void Scene::RenderScene(void)
 {
-	ImGui::SliderFloat("vfov", &vfov, 0, 180);
-	//ImGui::SliderFloat("d", &d, focal_length, focal_length+5.0);
-	//ImGui::SliderFloat("focal length", &focal_length, 0, 50);
-	//ImGui::SliderFloat("aperture", &aperture, 0, 10);
+	ImGui::BeginChild("left pane", ImVec2(WIDTH, 0));
 	if (ImGui::IsWindowFocused()) {
-		float cameraSpeed = 0.02f;
 		if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
-			pitch += 1.0f;
+			pyr[0] += pyr_angular_velocity[0];
 		} else if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_DownArrow))) {
-			pitch -= 1.0f;
+			pyr[0] -= pyr_angular_velocity[0];
 		}
 		if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_RightArrow))) {
-			yaw += 1.0f;
+			pyr[1] += pyr_angular_velocity[1];
 		} else if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftArrow))) {
-			yaw -= 1.0f;
-		}
-		cameraFront.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-		cameraFront.y = sin(glm::radians(pitch));
-		cameraFront.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-		if (ImGui::IsKeyDown('W')) {
-			cameraPos += cameraSpeed * cameraFront;
-		} else if (ImGui::IsKeyDown('S')) {
-			cameraPos -= cameraSpeed * cameraFront;
-		}
-		if (ImGui::IsKeyDown('D')) {
-			cameraPos += cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
-		} else if (ImGui::IsKeyDown('A')) {
-			cameraPos -= cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
+			pyr[1] -= pyr_angular_velocity[1];
 		}
 	}
-	glViewport(0, 0, 640, 480);
+	cameraFront.x = cos(glm::radians(pyr[0])) * cos(glm::radians(pyr[1]));
+	cameraFront.y = sin(glm::radians(pyr[0]));
+	cameraFront.z = cos(glm::radians(pyr[0])) * sin(glm::radians(pyr[1]));
+	if (ImGui::IsWindowFocused()) {
+		if (ImGui::IsKeyDown('W')) {
+			cameraPos += camera_speed * cameraFront;
+		} else if (ImGui::IsKeyDown('S')) {
+			cameraPos -= camera_speed * cameraFront;
+		}
+		if (ImGui::IsKeyDown('D')) {
+			cameraPos += camera_speed * glm::normalize(glm::cross(cameraFront, cameraUp));
+		} else if (ImGui::IsKeyDown('A')) {
+			cameraPos -= camera_speed * glm::normalize(glm::cross(cameraFront, cameraUp));
+		}
+	}
+	glViewport(0, 0, WIDTH, HEIGHT);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
@@ -509,11 +485,11 @@ void Scene::RenderScene(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glUseProgram(shaderProgram);
 
-	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 model = glm::mat4(1.0);
 	glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 	glm::mat4 projection;
-	//projection = glm::perspective(glm::radians(60.0f), 640.0f/480.0f, 0.1f, 100.0f);
-	projection = glm::perspective(glm::radians(vfov), 640.0f/480.0f, 0.1f, 100.0f);
+	//projection = glm::perspective(glm::radians(60.0f), WIDTH.0f/HEIGHT.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(vfov), WIDTH/HEIGHT, 0.1, 100.0);
 
 
 	int modelLocation = glGetUniformLocation(shaderProgram, "model");
@@ -549,15 +525,15 @@ void Scene::RenderScene(void)
 	if (ImGui::IsWindowFocused() && ImGui::IsMouseClicked(0, false)) {
 		auto x = ImGui::GetMousePos().x - ImGui::GetCursorScreenPos().x;
 		auto y = ImGui::GetMousePos().y - ImGui::GetCursorScreenPos().y;
-		if (x >= 0 && x < 640 && y >= 0 && y < 480) {
+		if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
 			unsigned int index = 0;
-			glReadPixels(x, 480-y-1, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
+			glReadPixels(x, HEIGHT-y-1, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
 			activeObjectIndex = index;
 			if (index != 0) {
 				AABB box;
 				if (renderer.world->models[index-1]->BoundingBox(box)) {
-					glm::vec3 v(box.center[0], box.center[1], box.center[2]);
-					float a = glm::length(v-cameraPos);
+					glm::dvec3 v(box.center[0], box.center[1], box.center[2]);
+					double a = glm::length(v-cameraPos);
 					d = 1.0/(1.0/focal_length-1.0/a);
 				}
 			}
@@ -567,7 +543,79 @@ void Scene::RenderScene(void)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 
-        ImGui::Image(reinterpret_cast<void *>(texture), ImVec2(640, 480), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image(reinterpret_cast<void *>(scene_texture), ImVec2(WIDTH, HEIGHT), ImVec2(0, 1), ImVec2(1, 0));
+	ImGui::EndChild();
+	ImGui::SameLine();
+
+	ImGui::BeginChild("right pane", ImVec2(0, 0));
+	{
+		if (activeObjectIndex == 0) {
+			ImGui::Text("No objects are selected");
+		} else {
+			ImGui::Text("Object: %s", renderer.obj_loader.objects[activeObjectIndex-1]->name.c_str());
+		}
+	}
+	if (ImGui::CollapsingHeader("Camera Parameters", ImGuiTreeNodeFlags_DefaultOpen)) {
+		{
+			const double min = 0.00001;
+			const double max = 180;
+			ImGui::SliderScalar("vfov", ImGuiDataType_Double, &vfov, &min, &max, "%f");
+		}
+		{
+			const double min = -10.0;
+			const double max = 10.0;
+			ImGui::SliderScalarN("camera pos (x/y/z)", ImGuiDataType_Double, &cameraPos.x, 3, &min, &max, "%f");
+		}
+		{
+			const double min = 0.0;
+			const double max = 1.0;
+			ImGui::SliderScalar("camera speed", ImGuiDataType_Double, &camera_speed, &min, &max, "%f");
+		}
+		{
+			const double min = -180.0;
+			const double max = 180.0;
+			ImGui::SliderScalarN("pitch/yaw/roll", ImGuiDataType_Double, pyr, 3, &min, &max, "%f");
+		}
+		{
+			const double min = 0.0;
+			const double max = 5.0;
+			ImGui::SliderScalarN("p/y/r angular speed", ImGuiDataType_Double, pyr_angular_velocity, 3, &min, &max, "%f");
+		}
+	}
+	if (ImGui::CollapsingHeader("Rendering Options", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (renderer.rendering_runnnig) {
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+		}
+		const char *algorithms[] = {"Naive", "Next Event Estiation", "NEE and MIS"};
+		if (ImGui::BeginCombo("Select Algorithm", algorithms[renderer.algorithm_type])) {
+			for (size_t i = 0; i < 3; i++) {
+				bool is_selected = (renderer.algorithm_type == i);
+				if (ImGui::Selectable(algorithms[i], is_selected)) {
+					renderer.algorithm_type = static_cast<RenderingAlgorithm>(i);
+				}
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+#ifdef _OPENMP
+		ImGui::Checkbox("Enable OpenMP", &enable_openmp);
+#endif
+		ImGui::SliderInt("Image Width", &img_width, 1, 2000);
+		ImGui::SliderInt("Image Height", &img_height, 1, 2000);
+		ImGui::SliderInt("Image Samples", &img_Samples, 1, 1000);
+		ImGui::SliderInt("Spectral samples", &img_spectral_samples, 1, N_SAMPLE);
+		const double min = 0.001;
+		const double max = 3.0;
+		ImGui::SliderScalar("Environment Brightness", ImGuiDataType_Double, &env_brightness, &min, &max, "%f");
+		if (renderer.rendering_runnnig) {
+			ImGui::PopItemFlag();
+			ImGui::PopStyleVar();
+		}
+		ImGui::Checkbox("Enable Preview", &renderer.preview_img_flag);
+	}
+	ImGui::EndChild();
 }
 
 
@@ -577,23 +625,21 @@ void Scene::RenderScene(void)
 
 void Scene::RenderPreviewWindow(void)
 {
-	ImGui::Begin("Render", nullptr, ImGuiWindowFlags_MenuBar);
+	//ImGui::Begin("Render", nullptr, ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Save an image")) {
 				nfdchar_t *path = nullptr;
 				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
 				if (result == NFD_OKAY) {
-					//Load(path);
-					//scene_loaded = true;
 					std::ofstream ofs;
 					ofs.open(path, std::ios::out);
 					ofs << "P3\n" << img_width << " " << img_height << std::endl << 255 << std::endl;
 					for (int j = img_height-1; j >= 0; j--) {
 						for (int i = 0; i < img_width; i++) {
-							ofs << (int)img[((img_height-j-1)*img_width+i)*4] << " ";
-							ofs << (int)img[((img_height-j-1)*img_width+i)*4+1] << " ";
-							ofs << (int)img[((img_height-j-1)*img_width+i)*4+2] << std::endl;
+							ofs << (int)img[((img_height-j-1)*img_width+i)*3] << " ";
+							ofs << (int)img[((img_height-j-1)*img_width+i)*3+1] << " ";
+							ofs << (int)img[((img_height-j-1)*img_width+i)*3+2] << std::endl;
 						}
 					}
 					ofs.close();
@@ -605,7 +651,7 @@ void Scene::RenderPreviewWindow(void)
 		if (ImGui::BeginMenu("Render")) {
 			if (ImGui::MenuItem("Render Image", nullptr, false, !renderer.rendering_runnnig)) {
 				if (!renderer.rendering_runnnig) {
-					img = new GLubyte[img_width*img_height*4];
+					img.resize(img_width*img_height*3);
 					vec3 veccameraPos = vec3(cameraPos.x, cameraPos.y, cameraPos.z);
 					vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
 					glm::vec3 lookat = cameraPos + cameraFront;
@@ -617,48 +663,25 @@ void Scene::RenderPreviewWindow(void)
 					t.detach();
 				}
 			}
-			if (ImGui::MenuItem("Render with Naive algorithm", nullptr, renderer.algorithm_type == Naive)) {
-				renderer.algorithm_type = Naive;
-			}
-			if (ImGui::MenuItem("Render with NEE algorithm", nullptr, renderer.algorithm_type == NEE)) {
-				renderer.algorithm_type = NEE;
-			}
-			if (ImGui::MenuItem("Render with MIS algorithm", nullptr, renderer.algorithm_type == MIS)) {
-				renderer.algorithm_type = MIS;
-			}
 			if (renderer.rendering_runnnig) {
 				if (ImGui::MenuItem("Terminate Rendering")) {
 					renderer.stop_rendering = true;
 				}
 			}
-#ifdef _OPENMP
-			if (ImGui::MenuItem("Enable OpenMP", nullptr, enable_openmp, !renderer.rendering_runnnig)) {
-				enable_openmp = !enable_openmp;
-			}
-			//std::cout << omp_get_max_threads() << " " << omp_get_thread_limit() << std::endl;
-			//omp_set_dynamic(0);
-			//static int threads_num = omp_get_max_threads();
-			//ImGui::SliderInt("Thread number", &threads_num, 1, 100);            // Edit 1 float using a slider from 0.0f to 1.0f
-			//omp_set_num_threads(threads_num);
-
-#endif
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Retouch")) {
 			if (ImGui::MenuItem("Add to Retouch Window")) {
-				retouch_window.AddImage(renderer.orig_img, img_width, img_height);
+				//retouch_window.AddImage(renderer.orig_img, img_width, img_height);
 			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
 	}
-	ImGui::SliderInt("Image Width", &img_width, 1, 2000);
-	ImGui::SliderInt("Image Height", &img_height, 1, 2000);
-	ImGui::SliderInt("Image Samples", &img_Samples, 1, 1000);
-	ImGui::SliderInt("Spectral samples", &img_spectral_samples, 1, N_SAMPLE);
-	const double min = 0.001;
-	const double max = 3.0;
-	ImGui::SliderScalar("Environment Brightness", ImGuiDataType_Double, &env_brightness, &min, &max, "%f");
+
+
+	ImGui::ProgressBar(renderer.progress);
+	ImGui::BeginChild("left pane", ImVec2(img_width, 0));
 	if (renderer.img_updated) {
 		int nx = img_width;
 		int ny = img_height;
@@ -666,37 +689,46 @@ void Scene::RenderPreviewWindow(void)
 			for (int j = 0; j < ny; j++) {
 				size_t i_ = nx-i-1;
 				size_t j_ = ny-j-1;
-				const double dr = renderer.orig_img[((ny-j_-1)*nx+i_)*4];
-				const double dg = renderer.orig_img[((ny-j_-1)*nx+i_)*4+1];
-				const double db = renderer.orig_img[((ny-j_-1)*nx+i_)*4+2];
-				int ir = std::min(std::max(int(255.99*dr), 0), 255);
-				int ig = std::min(std::max(int(255.99*dg), 0), 255);
-				int ib = std::min(std::max(int(255.99*db), 0), 255);
-				img[((ny-j_-1)*nx+i_)*4] = ir;
-				img[((ny-j_-1)*nx+i_)*4+1] = ig;
-				img[((ny-j_-1)*nx+i_)*4+2] = ib;
-				img[((ny-j_-1)*nx+i_)*4+3] = 255;
+				img[((ny-j_-1)*nx+i_)*3] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][0]);
+				img[((ny-j_-1)*nx+i_)*3+1] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][1]);
+				img[((ny-j_-1)*nx+i_)*3+2] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][2]);
 			}
 		}
-		glGenTextures(1, &my_opengl_texture);
-		glBindTexture(GL_TEXTURE_2D, my_opengl_texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, preview_texture);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.data());
 		renderer.img_updated = false;
 		img_loaded = true;
 	}
+	ImVec2 image_cursor_pos = ImGui::GetCursorScreenPos();
 	if (img_loaded)
-		ImGui::Image((void*)(intptr_t)my_opengl_texture, ImVec2(img_width, img_height));
-	ImGui::End();
+		ImGui::Image((void*)(intptr_t)preview_texture, ImVec2(img_width, img_height));
+	ImGui::EndChild();
+	ImGui::SameLine();
+	ImGui::BeginChild("right pane", ImVec2(0, 0));
+	if (renderer.progress == 1.0f) {
+		ImGui::Text("x:%f, y:%f", image_cursor_pos.x, image_cursor_pos.y);
+		int mx = static_cast<int>(ImGui::GetMousePos().x-image_cursor_pos.x);
+		mx = img_width-1-mx;
+		int my = static_cast<int>(ImGui::GetMousePos().y-image_cursor_pos.y);
+		if (mx >= 0 && mx < img_width && my >= 0 && my < img_height) {
+
+			float spectrum[N_SAMPLE];
+			for (int i = 0; i < N_SAMPLE; i++) {
+				spectrum[i] = renderer.spectrum_img[mx*img_height+my].data[i];
+			}
+			ImGui::PlotHistogram("Spectrum", spectrum, N_SAMPLE, 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(500, 50));
+		}
+	}
+	ImGui::EndChild();
+	//ImGui::End();
 }
 
 
 
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
-	ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
+	//ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Open Material")) {
@@ -736,7 +768,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		ImGui::EndMenuBar();
 	}
 	if (activeObjectIndex == 0) {
-		ImGui::End();
+		//ImGui::End();
 		return;
 	}
 
@@ -777,7 +809,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		ax::NodeEditor::End();
 		ax::NodeEditor::SetCurrentEditor(nullptr);
 	}
-	ImGui::End();
+	//ImGui::End();
 }
 
 void Scene::RenderLog(void)

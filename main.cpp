@@ -87,7 +87,7 @@ int main(void)
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
-	io.Fonts->AddFontFromFileTTF("/System/Library/Fonts/ヒラギノ角ゴシック W2.ttc", 14.0f, nullptr,
+	io.Fonts->AddFontFromFileTTF("/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc", 12.0f, nullptr,
 	io.Fonts->GetGlyphRangesJapanese());
 
 	ImVec4 clear_color = ImVec4(0.1f, 0.1f, 0.1f, 1.00f);
@@ -102,20 +102,28 @@ int main(void)
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		if (ImGui::BeginMainMenuBar()) {
-			if (ImGui::BeginMenu("Help"))
-			{
-				if (ImGui::MenuItem("Help me")) {
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndMainMenuBar();
-		}
+		int window_w, window_h;
+		glfwGetWindowSize(window, &window_w, &window_h);
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(window_w, window_h), ImGuiCond_Always);
+		ImGui::Begin("3D Scene", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-		scene.RenderSceneWindow();
-		scene.RenderPreviewWindow();
-		scene.RenderMaterialNodeEditorWindow();
-		scene.retouch_window.Render();
+		if (ImGui::BeginTabBar("TabBar")) {
+			if (ImGui::BeginTabItem("3D Scene")) {
+				scene.RenderSceneWindow();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Preview")) {
+				scene.RenderPreviewWindow();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Matreial Editor")) {
+				scene.RenderMaterialNodeEditorWindow();
+				ImGui::EndTabItem();
+			}
+			ImGui::EndTabBar();
+		}
+		ImGui::End();
 
 		ImGui::Render();
 		int display_w, display_h;

@@ -84,21 +84,27 @@ class Scene {
 		void OpenGLLoadModel(void);
 		bool scene_loaded = false;
 		Renderer renderer;
-		glm::vec3 cameraPos;
-		glm::vec3 cameraFront;
-		glm::vec3 cameraUp;
+		glm::dvec3 cameraPos;
+		glm::dvec3 cameraFront;
+		glm::dvec3 cameraUp;
+		double camera_speed = 0.05;
+		double pyr[3] = {0.0, -90.0, 0.0};
+		double pyr_angular_velocity[3] = {0.5, 0.5, 0.5};
+		const double WIDTH = 500;
+		const double HEIGHT = 500;
 		boost::filesystem::path project_file;
 		float d = 0.45, focal_length=0.4, aperture = 0.0;
-		float vfov = 30;
+		double vfov = 30;
 		unsigned int activeObjectIndex = 0;
-		GLubyte *img = nullptr;
+		//GLubyte *img = nullptr;
+		std::vector<GLubyte> img;
 		int img_width = 500;
 		int img_height = 500;
 		int img_Samples = 100;
 		int img_spectral_samples = N_SAMPLE;
 		bool enable_openmp = true;
 		bool img_loaded = false;
-		GLuint my_opengl_texture;
+		GLuint preview_texture;
 
 		GLuint vao_id;
 		GLuint vbo_id;
@@ -113,7 +119,7 @@ class Scene {
 
 		GLuint rbo;
 		GLuint fbo;
-		GLuint texture;
+		GLuint scene_texture;
 		GLuint shaderProgram;
 		const char * const vertexShaderSource = "#version 330 core\n"
 			"layout (location = 0) in vec3 aPos;\n"
@@ -153,7 +159,6 @@ class Scene {
 			"	FragColor = vec4((ambient) * objectColor, 1.0f);"
 			"}\n\0";
 
-		float pitch = 0.0f, yaw = -90.0f;
 		std::vector<std::shared_ptr<NodeMaterial>> materials;
 		std::map<std::string, std::shared_ptr<NodeMaterial>> obj_materials;
 

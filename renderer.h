@@ -27,16 +27,18 @@ class Renderer {
 		double NEEPathTracingWithoutSpecular(const ray& r);
 		double NEEMISPathTracing(const ray& r);
 		enum RenderingAlgorithm algorithm_type = MIS;
-		std::vector<double> orig_img;
 		std::vector<Spectrum> spectrum_img;
+		std::vector<vec3> preview_img;
 		obj obj_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;
 		//LensCamera cam;
 		PinholeCamera cam;
+		bool preview_img_flag = true;
 		bool img_updated = false;
 		bool rendering_runnnig = false;
 		bool stop_rendering = false;
+		float progress = 0.0;
 	private:
 		std::mt19937 mt;
 };
