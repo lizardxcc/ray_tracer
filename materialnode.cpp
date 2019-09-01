@@ -1,3 +1,4 @@
+#include <boost/filesystem/operations.hpp>
 #include "materialnode.h"
 #include "material.h"
 #include "pdf.h"
@@ -1625,6 +1626,9 @@ NodeMaterial::NodeMaterial(const char *name, const char *settings_dir) : name(na
 	ed::Config config;
 	boost::filesystem::path config_path(settings_dir);
 	config_path.append("material_settings");
+	if (!boost::filesystem::exists(config_path)) {
+		boost::filesystem::create_directory(config_path);
+	}
 	config_path.append(std::string(name)+".json");
 	settings_file = config_path.string();
 	config.SettingsFile = settings_file.c_str();
@@ -1639,6 +1643,9 @@ NodeMaterial::NodeMaterial(const json& j, const char *settings_dir) :
 	ed::Config config;
 	boost::filesystem::path config_path(settings_dir);
 	config_path.append("material_settings");
+	if (!boost::filesystem::exists(config_path)) {
+		boost::filesystem::create_directory(config_path);
+	}
 	config_path.append(std::string(name)+".json");
 	settings_file = config_path.string();
 	config.SettingsFile = settings_file.c_str();
