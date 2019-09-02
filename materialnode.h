@@ -164,7 +164,8 @@ class DielectricNode : public BSDFMaterialNode {
 		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
 	private:
-		Spectrum n = Spectrum(1.33333);
+		Spectrum n = Spectrum(2.4);
+		Spectrum surface_color = Spectrum(1.0);
 		const PinInfo *normal_pin;
 };
 

@@ -392,23 +392,30 @@ DielectricNode::DielectricNode(int &unique_id, const char *name) : MaterialNode(
 {
 	type = DielectricType;
 	AddInput(unique_id, PinSpectrum, "->n");
+	AddInput(unique_id, PinSpectrum, "->surface color");
 	AddInput(unique_id, PinVec3, "->normal");
 	AddOutput(unique_id, PinBSDF, "BSDF->");
-	normal_pin = &inputs[1];
+	normal_pin = &inputs[2];
 }
 DielectricNode::DielectricNode(const json& j) : MaterialNode(j)
 {
 	type = DielectricType;
-	normal_pin = &inputs[1];
+	normal_pin = &inputs[2];
 
 	for (size_t i = 0; i < j["n"].size(); i++) {
 		n.data[i] = j["n"][i];
+	}
+	for (size_t i = 0; i < j["surface_color"]; i++) {
+		surface_color.data[i] = j["surface_color"][i];
 	}
 }
 void DielectricNode::DumpJson(json& j) const
 {
 	for (const auto& d : n.data) {
 		j["n"].push_back(d);
+	}
+	for (const auto& d : n.data) {
+		j["surface_color"].push_back(d);
 	}
 	DumpIO(j);
 }
@@ -420,8 +427,15 @@ void DielectricNode::Render(void)
 	ImGui::Text("%s", name.c_str());
 	ImGui::PushID(0);
 	ImGui::Text("n");
-	RenderSpectrum(n, 0.0, 10.0);
+	RenderSpectrum(n, 0.0, 5.0);
 	ImGui::PopID();
+
+	if (inputs[1].connected_links.empty()) {
+		ImGui::PushID(1);
+		ImGui::Text("surface color");
+		RenderSpectrum(surface_color, 0.0, 1.0);
+		ImGui::PopID();
+	}
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
@@ -437,6 +451,17 @@ bool DielectricNode::Sample(const Argument& global_arg, const HitRecord& rec, co
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
+	double surface_scale;
+	if (inputs[1].connected_links.empty())
+		surface_scale = surface_color.get(wlo);
+	else {
+		const MaterialNode *node = GetInputParentNode(&inputs[1]);
+		if (node == nullptr)
+			return false;
+		Spectrum surface_color;
+		node->Compute(global_arg, surface_color);
+		surface_scale = surface_color.get(wlo);
+	}
 
 	double cos_o = vo.z();
 	double n_vacuum = 1.0;
@@ -462,28 +487,27 @@ bool DielectricNode::Sample(const Argument& global_arg, const HitRecord& rec, co
 		vi[0] = -vo[0];
 		vi[1] = -vo[1];
 		vi[2] = vo[2];
-		bxdf_divided_by_pdf = 1.0/cos_o;
+		bxdf_divided_by_pdf = surface_scale/cos_o;
 	} else {
 		double sin_o = sqrt(1.0-cos_o*cos_o);
 		double sin_t = sin_o/relative_ref_idx;
 		double cos_t = sqrt(1.0-sin_t*sin_t);
 		vi = (-cos_t)*normal - sin_t*unit_vector(vec3(vo[0], vo[1], 0));
-		bxdf_divided_by_pdf = 1.0/pow(relative_ref_idx, 2) / cos_t;
+		bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 2) / cos_t;
 	}
-	wli = wlo;
 
 	return true;
 }
 double DielectricNode::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
-	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
-		return std::numeric_limits<double>::infinity();
+	//if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+	//	return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
 double DielectricNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
 {
-	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
-		return std::numeric_limits<double>::infinity();
+	//if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+	//	return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
 ConductorNode::ConductorNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
