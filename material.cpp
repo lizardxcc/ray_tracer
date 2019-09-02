@@ -17,8 +17,10 @@ double rfresnel(double cos_theta, double n)
 	const double sin_t = sin_theta/n;
 	if (sin_t > 1.0)
 		return 1.0;
-	const double r = (cos_theta - sqrt(n*n-sin_theta*sin_theta))/(cos_theta + sqrt(n*n-sin_theta*sin_theta));
-	return r*r;
+	const double sqrt_n_squared_minus_sin_theta_squared = sqrt(n*n-sin_theta*sin_theta);
+	const double rte = (cos_theta - sqrt_n_squared_minus_sin_theta_squared)/(cos_theta + sqrt_n_squared_minus_sin_theta_squared);
+	const double rtm = (n*n*cos_theta - sqrt_n_squared_minus_sin_theta_squared)/(n*n*cos_theta + sqrt_n_squared_minus_sin_theta_squared);
+	return (rte*rte+rtm*rtm)/2.0;
 	//return shlick(sqrt(1-sin_beta*sin_beta), 1.0/n);
 }
 double cfresnel(double cos_theta, std::complex<double> n)

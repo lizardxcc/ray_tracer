@@ -11,6 +11,7 @@
 
 extern const vec3 default_vt;
 vec3 reflect2(vec3 v, vec3 normal);
+double rfresnel(double cos_theta, double n);
 double cfresnel(double cos_theta, std::complex<double> n);
 
 class MediumMaterial {
