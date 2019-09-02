@@ -84,6 +84,7 @@ enum MaterialNodeType {
 	ValueNoiseType,
 	ValueNoise2DType,
 	RodriguesRotationType,
+	DielectricType,
 };
 
 class MaterialNode {
@@ -149,6 +150,21 @@ class LambertianNode : public BSDFMaterialNode {
 	private:
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
+		const PinInfo *normal_pin;
+};
+
+class DielectricNode : public BSDFMaterialNode {
+	public:
+		DielectricNode(int &unique_id, const char *name = "Dielectric");
+		DielectricNode(const json& j);
+		void DumpJson(json& j) const override;
+		void Render(void) override;
+		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
+		bool Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
+		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+	private:
+		Spectrum n = Spectrum(1.33333);
 		const PinInfo *normal_pin;
 };
 

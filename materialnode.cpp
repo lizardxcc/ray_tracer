@@ -388,6 +388,104 @@ double LambertianNode::PDF(const Argument& global_arg, const vec3& vi, double wl
 	double cos_theta = vi.z();
 	return cos_theta/M_PI;
 }
+DielectricNode::DielectricNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
+{
+	type = DielectricType;
+	AddInput(unique_id, PinSpectrum, "->n");
+	AddInput(unique_id, PinVec3, "->normal");
+	AddOutput(unique_id, PinBSDF, "BSDF->");
+	normal_pin = &inputs[1];
+}
+DielectricNode::DielectricNode(const json& j) : MaterialNode(j)
+{
+	type = DielectricType;
+	normal_pin = &inputs[1];
+
+	for (size_t i = 0; i < j["n"].size(); i++) {
+		n.data[i] = j["n"][i];
+	}
+}
+void DielectricNode::DumpJson(json& j) const
+{
+	for (const auto& d : n.data) {
+		j["n"].push_back(d);
+	}
+	DumpIO(j);
+}
+
+void DielectricNode::Render(void)
+{
+	ImGui::PushID(iid);
+	ax::NodeEditor::BeginNode(id);
+	ImGui::Text("%s", name.c_str());
+	ImGui::PushID(0);
+	ImGui::Text("n");
+	RenderSpectrum(n, 0.0, 10.0);
+	ImGui::PopID();
+	RenderPins();
+	ax::NodeEditor::EndNode();
+	ImGui::PopID();
+}
+void DielectricNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
+{
+	vec3 new_normal;
+	UpdateNormal(normal_pin, rec, new_normal);
+	rec.normal = new_normal;
+}
+
+bool DielectricNode::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+{
+	wli = wlo;
+	double ref_idx = n.get(wlo);
+
+	double cos_o = vo.z();
+	double n_vacuum = 1.0;
+	vec3 normal = vec3(0, 0, 1);
+	double n1, n2;
+	if (cos_o >= 0.0) {
+		n1 = n_vacuum;
+		n2 = ref_idx;
+	} else {
+		normal = vec3(0, 0, -1);
+		n1 = ref_idx;
+		n2 = n_vacuum;
+		cos_o = abs(cos_o);
+	}
+	double relative_ref_idx = n2/n1;
+	const double sin_o = sqrt(std::max(0.0, 1.0-cos_o*cos_o));
+	const double fresnel = rfresnel(cos_o, relative_ref_idx);
+
+	double r = drand48();
+	pdfval = std::numeric_limits<double>::infinity();
+	BxDF = std::numeric_limits<double>::infinity();
+	if (r <= fresnel) {
+		vi[0] = -vo[0];
+		vi[1] = -vo[1];
+		vi[2] = vo[2];
+		bxdf_divided_by_pdf = 1.0/cos_o;
+	} else {
+		double sin_o = sqrt(1.0-cos_o*cos_o);
+		double sin_t = sin_o/relative_ref_idx;
+		double cos_t = sqrt(1.0-sin_t*sin_t);
+		vi = (-cos_t)*normal - sin_t*unit_vector(vec3(vo[0], vo[1], 0));
+		bxdf_divided_by_pdf = 1.0/pow(relative_ref_idx, 2) / cos_t;
+	}
+	wli = wlo;
+
+	return true;
+}
+double DielectricNode::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+		return std::numeric_limits<double>::infinity();
+	return 0.0;
+}
+double DielectricNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+{
+	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
+		return std::numeric_limits<double>::infinity();
+	return 0.0;
+}
 ConductorNode::ConductorNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
 {
 	type = ConductorType;
@@ -1658,6 +1756,9 @@ NodeMaterial::NodeMaterial(const json& j, const char *settings_dir) :
 			case LambertianType:
 				node = new LambertianNode(node_j);
 				break;
+			case DielectricType:
+				node = new DielectricNode(node_j);
+				break;
 			case ConductorType:
 				node = new ConductorNode(node_j);
 				break;
@@ -1873,6 +1974,8 @@ void NodeMaterial::Render(void)
 		MaterialNode *node = nullptr;
 		if (ImGui::MenuItem("Lambertian")) {
 			node = new LambertianNode(unique_id);
+		} else if (ImGui::MenuItem("Dielectric")) {
+			node = new DielectricNode(unique_id);
 		} else if (ImGui::MenuItem("Conductor")) {
 			node = new ConductorNode(unique_id);
 		} else if (ImGui::MenuItem("Colored Metal")) {
