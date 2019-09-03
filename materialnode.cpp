@@ -405,7 +405,7 @@ DielectricNode::DielectricNode(const json& j) : MaterialNode(j)
 	for (size_t i = 0; i < j["n"].size(); i++) {
 		n.data[i] = j["n"][i];
 	}
-	for (size_t i = 0; i < j["surface_color"]; i++) {
+	for (size_t i = 0; i < j["surface_color"].size(); i++) {
 		surface_color.data[i] = j["surface_color"][i];
 	}
 }
@@ -414,7 +414,7 @@ void DielectricNode::DumpJson(json& j) const
 	for (const auto& d : n.data) {
 		j["n"].push_back(d);
 	}
-	for (const auto& d : n.data) {
+	for (const auto& d : surface_color.data) {
 		j["surface_color"].push_back(d);
 	}
 	DumpIO(j);
