@@ -36,7 +36,7 @@ class ObjModel : public Hittable {
 		//std::vector<std::vector<Hittable *>> models;
 		std::vector<std::vector<const ConvexPolygon *> > polygon_models;
 		std::vector<std::shared_ptr<Hittable> > models;
-		std::shared_ptr<BVHNode> bvh;
+		std::shared_ptr<SAHBVHNode> bvh;
 };
 
 //class PlyModel : public Hittable {

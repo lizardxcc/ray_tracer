@@ -12,10 +12,11 @@
 
 
 
-class BVHNode : public Hittable {
+class BVHNode : public virtual Hittable {
 	public:
 		BVHNode() {}
 		BVHNode(std::vector<std::shared_ptr<Hittable> >& l);
+		//virtual void ConstructBVH(std::vector<std::shared_ptr<Hittable>>& l);
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool Occluded(const ray& r, double t_min, double t_max) const override;
 		bool BoundingBox(AABB& box) const override;
@@ -24,6 +25,12 @@ class BVHNode : public Hittable {
 		std::shared_ptr<Hittable> left;
 		std::shared_ptr<Hittable> right;
 		AABB box;
+};
+
+class SAHBVHNode : public BVHNode {
+	public:
+		SAHBVHNode(void);
+		SAHBVHNode(std::vector<std::shared_ptr<Hittable>>& l);
 };
 
 

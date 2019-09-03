@@ -131,12 +131,12 @@ ObjModel::ObjModel(obj& o)
 			polygons.push_back(pol.get());
 		}
 		polygon_models.push_back(polygons);
-		std::shared_ptr<Hittable> b = std::make_shared<BVHNode>(model);
+		std::shared_ptr<Hittable> b = std::make_shared<SAHBVHNode>(model);
 		models[i] = b;
 	}
 
 	auto v(models);
-	bvh = std::make_shared<BVHNode>(v);
+	bvh = std::make_shared<SAHBVHNode>(v);
 }
 
 bool ObjModel::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const

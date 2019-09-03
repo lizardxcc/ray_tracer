@@ -34,6 +34,13 @@ bool AABB::Hit(const ray& r, double t_min, double t_max) const
 }
 
 
+double AABB::SurfaceArea(void) const
+{
+	vec3 v = maxp-minp;
+	return 2.0*(v[0]*v[1]+v[1]*v[2]+v[2]*v[0]);
+}
+
+
 
 AABB SurroundingBox(const AABB& box0, const AABB& box1)
 {

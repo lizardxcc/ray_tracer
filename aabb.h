@@ -18,6 +18,7 @@ class AABB {
 		}
 
 		bool Hit(const ray& r, double t_min, double t_max) const;
+		double SurfaceArea(void) const;
 
 		vec3 minp;
 		vec3 maxp;
