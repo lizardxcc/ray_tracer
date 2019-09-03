@@ -310,40 +310,60 @@ void Scene::OpenGLInitShader(void)
 }
 void Scene::OpenGLLoadModel(void)
 {
-	for (size_t vertices_i = 0; vertices_i < renderer.obj_loader.v.size(); vertices_i++) {
-		Vertex v = {
-			{
-				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].x()),
-				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].y()),
-				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].z()),
-			},
-			{
-				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].x()),
-				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].x()),
-				static_cast<GLfloat>(renderer.obj_loader.v[vertices_i].y()),
-			},
-		};
-		vertices.push_back(v);
-	}
 	for (size_t object_i = 0; object_i < renderer.obj_loader.objects.size(); object_i++) {
+		if (object_i == 0)
+			start_indices.push_back(0);
+		else
+			start_indices.push_back(start_indices[object_i-1]+vertices_nums[object_i-1]);
 		colors.push_back(vec3(drand48(), drand48(), drand48()));
 		auto& object = renderer.obj_loader.objects[object_i];
 		size_t index_num = 0;
 		for (size_t faces_i = 0; faces_i < object->faces.size(); faces_i++) {
 			auto& face = object->faces[faces_i];
 			for (size_t v_i = 1; v_i < face.size()-1; v_i++) {
-				indices.push_back(*face[0][0]);
-				indices.push_back(*face[v_i][0]);
-				indices.push_back(*face[v_i+1][0]);
+				Vertex v = {
+					{
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[0][0]].x()),
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[0][0]].y()),
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[0][0]].z()),
+					},
+					{
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[0][2]].x()),
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[0][2]].y()),
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[0][2]].z()),
+					}
+				};
+				vertices.push_back(v);
+				Vertex v1 = {
+					{
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[v_i][0]].x()),
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[v_i][0]].y()),
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[v_i][0]].z()),
+					},
+					{
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[v_i][2]].x()),
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[v_i][2]].y()),
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[v_i][2]].z()),
+					}
+				};
+				vertices.push_back(v1);
+				Vertex v2 = {
+					{
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[v_i+1][0]].x()),
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[v_i+1][0]].y()),
+						static_cast<GLfloat>(renderer.obj_loader.v[*face[v_i+1][0]].z()),
+					},
+					{
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[v_i+1][2]].x()),
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[v_i+1][2]].y()),
+						static_cast<GLfloat>(renderer.obj_loader.vn[*face[v_i+1][2]].z()),
+					}
+				};
+				vertices.push_back(v2);
 				index_num += 3;
 			}
 		}
-
-		if (index_partial_sums.empty())
-			index_partial_sums.push_back(0);
-		else
-			index_partial_sums.push_back(index_partial_sums.back()+index_nums.back());
-		index_nums.push_back(index_num);
+		vertices_nums.push_back(index_num);
 	}
 	glGenVertexArrays(1, &vao_id);
 	glBindVertexArray(vao_id);
@@ -352,12 +372,8 @@ void Scene::OpenGLLoadModel(void)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(struct Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 
-	glGenBuffers(1, &index_buffer_id);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(struct Vertex, xyz)); // positions
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(struct Vertex, rgb)); // rgb colors
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(struct Vertex, normal)); // rgb colors
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -480,7 +496,7 @@ void Scene::RenderScene(void)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClearStencil(0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glUseProgram(shaderProgram);
@@ -513,13 +529,13 @@ void Scene::RenderScene(void)
 		glStencilFunc(GL_ALWAYS, o_i+1, -1);
 		if (activeObjectIndex != 0 && o_i == (activeObjectIndex-1)) {
 			glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 0.9f, 0.9f, 0.9f);
-			glDrawElements(GL_TRIANGLES, index_nums[o_i], GL_UNSIGNED_INT, (void *)(sizeof(GLuint)*index_partial_sums[o_i]));
+			glDrawArrays(GL_TRIANGLES, start_indices[o_i], vertices_nums[o_i]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glUniform3f(glGetUniformLocation(shaderProgram, "objectColor"), 1.0f, 0.0f, 0.0f);
-			glDrawElements(GL_TRIANGLES, index_nums[o_i], GL_UNSIGNED_INT, (void *)(sizeof(GLuint)*index_partial_sums[o_i]));
+			glDrawArrays(GL_TRIANGLES, start_indices[o_i], vertices_nums[o_i]);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		} else
-			glDrawElements(GL_TRIANGLES, index_nums[o_i], GL_UNSIGNED_INT, (void *)(sizeof(GLuint)*index_partial_sums[o_i]));
+			glDrawArrays(GL_TRIANGLES, start_indices[o_i], vertices_nums[o_i]);
 	}
 	model = tmpModel;
 	if (ImGui::IsWindowFocused() && ImGui::IsMouseClicked(0, false)) {
