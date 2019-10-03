@@ -1,7 +1,25 @@
 {
-	"model": "cornell_box.obj",
-	"mat": [
-		"materials.json"
-	],
-	"objmatmap": "objmatmap.json"
+    "camera_front": [
+        6.123233995736766e-17,
+        0.0,
+        -1.0
+    ],
+    "camera_pos": [
+        -1.255262969126038e-16,
+        0.0,
+        5.049999999999993
+    ],
+    "camera_up": [
+        0.0,
+        1.0,
+        0.0
+    ],
+    "img_height": 500,
+    "img_samples": 100,
+    "img_width": 500,
+    "mat": [
+        "materials.json"
+    ],
+    "model": "cornell_box.obj",
+    "objmatmap": "objmatmap.json"
 }
