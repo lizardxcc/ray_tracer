@@ -319,7 +319,7 @@ void MaterialNode::AddOutput(int &unique_id, PinType type, const char *name)
 void BSDFMaterialNode::PreProcess(const Argument& global_arg, HitRecord &rec) const
 {
 }
-bool BSDFMaterialNode::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const
+bool BSDFMaterialNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	return false;
 }
@@ -384,7 +384,7 @@ void LambertianNode::PreProcess(const Argument& global_arg, HitRecord& rec) cons
 	rec.normal = new_normal;
 }
 
-bool LambertianNode::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool LambertianNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	CosinePdf Pdf(rec.normal);
 
@@ -480,7 +480,7 @@ void DielectricNode::PreProcess(const Argument& global_arg, HitRecord& rec) cons
 	rec.normal = new_normal;
 }
 
-bool DielectricNode::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -602,7 +602,7 @@ void ConductorNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool ConductorNode::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool ConductorNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -695,7 +695,7 @@ void ColoredMetal::PreProcess(const Argument& global_arg, HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool ColoredMetal::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool ColoredMetal::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 
@@ -784,7 +784,7 @@ void GGXReflection::Render(void)
 void GGXReflection::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
 }
-bool GGXReflection::Sample(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool GGXReflection::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	double phi = 2 * M_PI * drand48();
 	double u = drand48();
@@ -927,7 +927,7 @@ void MixBSDFNode::PreProcess(HitRecord& rec) const
 	dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->PreProcess(rec);
 }
 
-bool MixBSDFNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool MixBSDFNode::SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
 	size_t i;
 	if (drand48() < ratio) {
@@ -939,7 +939,7 @@ bool MixBSDFNode::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, d
 	if (inputs[i].connected_links[0]->input->type != PinBSDF) {
 		std::cout << "Error" << std::endl;
 	}
-	return dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->Sample(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
+	return dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->SampleBSDF(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
 }
 
 double MixBSDFNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
@@ -2132,7 +2132,7 @@ void NodeMaterial::PreProcess(HitRecord& rec) const
 	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
 	p->PreProcess(global_arg, rec);
 }
-bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool NodeMaterial::SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
@@ -2140,7 +2140,7 @@ bool NodeMaterial::Sample(const HitRecord& rec, const ONB& uvw, const vec3& vo, 
 		return false;
 	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
 	Argument global_arg = { rec.vt };
-	return p->Sample(global_arg, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BxDF, pdfval);
+	return p->SampleBSDF(global_arg, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BxDF, pdfval);
 }
 double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
 {

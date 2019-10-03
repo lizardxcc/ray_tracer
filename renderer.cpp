@@ -182,7 +182,7 @@ double Renderer::NaivePathTracing(const ray& r)
 		uvw.BuildFromW(rec.normal);
 		vec3 generated_vi;
 		double wli;
-		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
+		bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
 		if (respawn)
 			beta *= (bxdf_divided_by_pdf * abs(generated_vi.z()));
 		double prr = 0.5;
@@ -270,7 +270,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 		uvw.BuildFromW(rec.normal);
 		if (!preprocessed)
 			rec.mat_ptr->PreProcess(rec);
-		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
+		bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
 		if (respawn)
 			beta *= bxdf_divided_by_pdf * abs(generated_vi.z());
 
@@ -382,7 +382,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 			uvw.BuildFromW(rec.normal);
 			vec3 generated_vi;
 			double wli;
-			bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, scattering_pdf);
+			bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, scattering_pdf);
 			if (respawn) {
 				ray shadow_ray = ray(rec.p, uvw.LocalToWorld(generated_vi));
 				shadow_ray.central_wl = r.central_wl;
@@ -419,7 +419,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 		uvw.BuildFromW(rec.normal);
 		if (!preprocessed)
 			rec.mat_ptr->PreProcess(rec);
-		bool respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
+		bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), _ray.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
 		if (respawn)
 			beta *= bxdf_divided_by_pdf * abs(generated_vi.z());
 			//beta *= bxdf * abs(generated_vi.z()) / pdf;
@@ -477,7 +477,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //				uvw_.BuildFromW(rec.normal);
 //				UniformPdf pdf(rec.normal);
 //				vec3 generated_direction = pdf.Generate();
-//				//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
+//				//bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw_, uvw_.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
 //				generated_vi = uvw_.WorldToLocal(generated_direction);
 //				bool respawn = true;
 //				if (respawn) {
@@ -534,7 +534,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //		ONB uvw;
 //		uvw.BuildFromW(rec.normal);
 //		{
-//			respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+//			respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 //			if (respawn) {
 //				beta *= (bxdf * abs(generated_vi.z()) / pdf);
 //				//if (rec.mat_ptr->specular_flag)
@@ -700,7 +700,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //					uvw_.BuildFromW(rec.normal);
 //					UniformPdf pdf(rec.normal);
 //					vec3 generated_direction = pdf.Generate();
-//					//bool respawn = rec.mat_ptr->Sample(rec, uvw_, uvw_.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
+//					//bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw_, uvw_.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
 //					generated_vi = uvw_.WorldToLocal(generated_direction);
 //					bool respawn = true;
 //					if (respawn) {
@@ -760,7 +760,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //			ONB uvw;
 //			uvw.BuildFromW(rec.normal);
 //			{
-//				respawn = rec.mat_ptr->Sample(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
+//				respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdf);
 //				if (respawn) {
 //					beta *= (bxdf * abs(generated_vi.z()) / pdf);
 //					scattered_point = rec.p;
