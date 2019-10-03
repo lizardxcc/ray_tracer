@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <assert.h>
 #include "bvh.h"
 
 //bool box_x_compare(const Hittable& a, const Hittable& b);

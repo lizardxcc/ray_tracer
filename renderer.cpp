@@ -46,13 +46,16 @@ void Renderer::Clear(void)
 }
 
 
-void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp)
+void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp, bool print_progress)
 {
 	spectrum_img.resize(nx*ny);
 	preview_img.resize(nx*ny);
 	std::fill(spectrum_img.begin(), spectrum_img.end(), 0.0);
 
 	rendering_runnnig = true;
+	if (print_progress) {
+		std::cout << "max threads: " << omp_get_max_threads() << std::endl;
+	}
 
 	int s;
 
@@ -60,6 +63,7 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 		if (stop_rendering)
 			break;
 		int i, j;
+		int count = 0;
 #ifdef _OPENMP
 		//#pragma omp parallel for private(j, s) schedule(dynamic) if (enable_openmp)
 #pragma omp parallel for private(j) schedule(dynamic) if (enable_openmp)
@@ -94,6 +98,8 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 					spectrum_img[i*ny+j].add(rad/ns, min_wl, max_wl);
 				}
 			}
+			if (print_progress)
+				count = omp_get_num_threads();
 		}
 		if (preview_img_flag || s == ns-1) {
 			int c;
@@ -116,12 +122,21 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 			img_updated = true;
 		}
 		progress = static_cast<float>(s+1) / ns;
+		if (print_progress) {
+			std::cout << progress*100.0 << "%";
+#ifdef _OPENMP
+			std::cout << " running " << count << " threads";
+#endif
+			std::cout << std::endl;
+		}
 	}
 
 	img_updated = true;
 	if (stop_rendering)
 		stop_rendering = false;
 	rendering_runnnig = false;
+	if (print_progress)
+		std::cout << "Completed" << std::endl;
 }
 
 

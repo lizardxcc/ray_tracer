@@ -3,8 +3,11 @@
 #include "material.h"
 #include "pdf.h"
 #include "stb_image.h"
+#ifndef _CLI
 #include <nfd.h>
+#endif
 
+#ifndef _CLI
 const ImVec4 MaterialNode::pin_colors[] = {
 	ImVec4(1.0f, 0.2f, 0.2f, 1.0f),
 	ImVec4(0.2f, 1.0f, 0.2f, 1.0f),
@@ -23,12 +26,15 @@ LinkInfo::LinkInfo(int &unique_id, ed::PinId input_id, ed::PinId output_id, PinI
 {
 	unique_id++;
 }
+#endif
 
 LinkInfo::LinkInfo(const json& j, PinInfo *input, PinInfo *output) :
+#ifndef _CLI
 	id(j["id"]),
-	iid(j["id"]),
 	input_id(j["input_id"]),
 	output_id(j["output_id"]),
+#endif
+	iid(j["id"]),
 	input(input),
 	output(output)
 {
@@ -42,7 +48,10 @@ void LinkInfo::DumpJson(json& j) const
 }
 
 PinInfo::PinInfo(int &unique_id, PinIOType io_type, PinType type, const char *name, const MaterialNode *parent_node) :
-	id(unique_id), iid(unique_id),
+#ifndef _CLI
+	id(unique_id),
+#endif
+	iid(unique_id),
 	name(name),
 	io_type(io_type),
 	type(type),
@@ -51,7 +60,9 @@ PinInfo::PinInfo(int &unique_id, PinIOType io_type, PinType type, const char *na
 	unique_id++;
 }
 PinInfo::PinInfo(const json& j, const MaterialNode *parent_node) :
+#ifndef _CLI
 	id(j["id"]),
+#endif
 	iid(j["id"]),
 	name(j["name"]),
 	io_type(static_cast<PinIOType>(j["io_type"])),
@@ -76,6 +87,7 @@ struct PinInfo *NodeMaterial::FindPin(int iid)
 	return nullptr;
 }
 
+#ifndef _CLI
 struct PinInfo *NodeMaterial::FindPin(const ed::PinId& id)
 {
 	for (auto& node : material_nodes) {
@@ -123,17 +135,26 @@ const struct LinkInfo *NodeMaterial::FindLinkConst(const ed::LinkId& id) const
 	}
 	return nullptr;
 }
+#endif
 
 MaterialNode::MaterialNode(void)
 {
 	assert(false);
 }
 
-MaterialNode::MaterialNode(int &unique_id, const char *name) : id(unique_id), iid(unique_id), name(name)
+MaterialNode::MaterialNode(int &unique_id, const char *name) :
+#ifndef _CLI
+	id(unique_id),
+#endif
+	iid(unique_id), name(name)
 {
 	unique_id++;
 }
-MaterialNode::MaterialNode(const json& j) : id(j["id"]), iid(j["id"]), name(j["name"].get<std::string>())
+MaterialNode::MaterialNode(const json& j) :
+#ifndef _CLI
+	id(j["id"]),
+#endif
+	iid(j["id"]), name(j["name"].get<std::string>())
 {
 	for (const auto& input_j : j["inputs"]) {
 		PinInfo new_pin(input_j, this);
@@ -225,14 +246,17 @@ void NodeMaterial::AddLink(PinInfo *input, PinInfo *output)
 {
 	assert(input != nullptr);
 	assert(output != nullptr);
+#ifndef _CLI
 	struct LinkInfo *new_link = new LinkInfo(unique_id, input->id, output->id, input, output);
 	links.push_back(new_link);
 	input->connected_links.push_back(new_link);
 	output->connected_links.push_back(new_link);
+#endif
 }
 
 void MaterialNode::RenderPins(void)
 {
+#ifndef _CLI
 	for (size_t i = 0; i < inputs.size() || i < outputs.size(); i++) {
 		if (i < inputs.size()) {
 			ax::NodeEditor::BeginPin(inputs[i].id, ax::NodeEditor::PinKind::Input);
@@ -247,10 +271,12 @@ void MaterialNode::RenderPins(void)
 			ax::NodeEditor::EndPin();
 		}
 	}
+#endif
 }
 
 void MaterialNode::RenderSpectrum(Spectrum &data, double min, double max)
 {
+#ifndef _CLI
 	const ImVec2 slider_size(14, 100);
 	for (int i = 0; i < N_SAMPLE; i++) {
 		if (i > 0)
@@ -261,16 +287,19 @@ void MaterialNode::RenderSpectrum(Spectrum &data, double min, double max)
 			ImGui::SetTooltip("%f", data.data[i]);
 		ImGui::PopID();
 	}
+#endif
 }
 
 void MaterialNode::Render(void)
 {
+#ifndef _CLI
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 
 	RenderPins();
 
 	ax::NodeEditor::EndNode();
+#endif
 }
 
 
@@ -334,6 +363,7 @@ void LambertianNode::DumpJson(json& j) const
 
 void LambertianNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -343,6 +373,7 @@ void LambertianNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -422,6 +453,7 @@ void DielectricNode::DumpJson(json& j) const
 
 void DielectricNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -439,6 +471,7 @@ void DielectricNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 void DielectricNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
@@ -544,6 +577,7 @@ void ConductorNode::DumpJson(json& j) const
 
 void ConductorNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Conductor");
@@ -559,6 +593,7 @@ void ConductorNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 void ConductorNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
@@ -640,6 +675,7 @@ void ColoredMetal::DumpJson(json& j) const
 
 void ColoredMetal::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -650,6 +686,7 @@ void ColoredMetal::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 void ColoredMetal::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
@@ -726,6 +763,7 @@ void GGXReflection::DumpJson(json& j) const
 
 void GGXReflection::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -740,6 +778,7 @@ void GGXReflection::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 void GGXReflection::PreProcess(const Argument& global_arg, HitRecord& rec) const
@@ -821,6 +860,7 @@ void DiffuseLightNode::DumpJson(json& j) const
 }
 void DiffuseLightNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -831,6 +871,7 @@ void DiffuseLightNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 void DiffuseLightNode::PreProcess(const Argument& global_arg, HitRecord &rec) const
 {
@@ -943,11 +984,13 @@ OutputNode::OutputNode(const json& j) : MaterialNode(j)
 }
 void OutputNode::Render(void)
 {
+#ifndef _CLI
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Final Output");
 	//ImGui::Text(name.c_str());
 	RenderPins();
 	ax::NodeEditor::EndNode();
+#endif
 }
 
 SpectrumNode::SpectrumNode(int &unique_id, const char *name) : MaterialNode(unique_id, name)
@@ -969,6 +1012,7 @@ void SpectrumNode::DumpJson(json& j) const
 }
 void SpectrumNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Spectrum");
@@ -978,6 +1022,7 @@ void SpectrumNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -1023,6 +1068,7 @@ void RGBColorNode::DumpJson(json& j) const
 }
 void RGBColorNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1034,6 +1080,7 @@ void RGBColorNode::Render(void)
 
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 void RGBColorNode::Compute(const Argument& global_arg, vec3& data) const
@@ -1086,6 +1133,7 @@ void ImageTextureNode::DumpJson(json& j) const
 
 void ImageTextureNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Image Texture Node");
@@ -1106,6 +1154,7 @@ void ImageTextureNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 void ImageTextureNode::Compute(const Argument& global_arg, vec3& data) const
 {
@@ -1159,6 +1208,7 @@ void CheckerboardNode::Compute(const Argument& global_arg, vec3& data) const
 
 void CheckerboardNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1170,6 +1220,7 @@ void CheckerboardNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -1247,6 +1298,7 @@ void ScalarMultiplicationNode::DumpJson(json& j) const
 }
 void ScalarMultiplicationNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1258,6 +1310,7 @@ void ScalarMultiplicationNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 void ScalarMultiplicationNode::Compute(const Argument& global_arg, double &data) const
@@ -1410,6 +1463,7 @@ void RandomSamplingNode::Compute(const Argument& global_arg, Spectrum& data) con
 
 void RandomSamplingNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1421,6 +1475,7 @@ void RandomSamplingNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -1447,6 +1502,7 @@ void AccessVec3ComponentNode::Compute(const Argument& global_arg, double &data) 
 
 void AccessVec3ComponentNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1458,6 +1514,7 @@ void AccessVec3ComponentNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -1532,6 +1589,7 @@ void ValueNoiseNode::DumpJson(json& j) const
 
 void ValueNoiseNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1546,6 +1604,7 @@ void ValueNoiseNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -1620,6 +1679,7 @@ void ValueNoise2DNode::Compute(const Argument& global_arg, double &data) const
 
 void ValueNoise2DNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1635,6 +1695,7 @@ void ValueNoise2DNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
@@ -1718,6 +1779,7 @@ void RodriguesRotationNode::Compute(const Argument& global_arg, vec3& data) cons
 }
 void RodriguesRotationNode::Render(void)
 {
+#ifndef _CLI
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
@@ -1740,11 +1802,13 @@ void RodriguesRotationNode::Render(void)
 	RenderPins();
 	ax::NodeEditor::EndNode();
 	ImGui::PopID();
+#endif
 }
 
 
 NodeMaterial::NodeMaterial(const char *name, const char *settings_dir) : name(name)
 {
+#ifndef _CLI
 	ed::Config config;
 	boost::filesystem::path config_path(settings_dir);
 	config_path.append("material_settings");
@@ -1757,11 +1821,13 @@ NodeMaterial::NodeMaterial(const char *name, const char *settings_dir) : name(na
 	context = ax::NodeEditor::CreateEditor(&config);
 	material_nodes.push_back(new UVNode(unique_id, PinVec3, "UV"));
 	material_nodes.push_back(new OutputNode(unique_id));
+#endif
 }
 NodeMaterial::NodeMaterial(const json& j, const char *settings_dir) :
 	name(j.value("name", "untitled material")),
 	light_flag(j.value("light_flag", false))
 {
+#ifndef _CLI
 	ed::Config config;
 	boost::filesystem::path config_path(settings_dir);
 	config_path.append("material_settings");
@@ -1772,6 +1838,7 @@ NodeMaterial::NodeMaterial(const json& j, const char *settings_dir) :
 	settings_file = config_path.string();
 	config.SettingsFile = settings_file.c_str();
 	context = ax::NodeEditor::CreateEditor(&config);
+#endif
 	bool is_there_any_widgets = false;
 	for (const auto& node_j : j["nodes"]) {
 		is_there_any_widgets = true;
@@ -1874,7 +1941,9 @@ NodeMaterial::NodeMaterial(const json& j, const char *settings_dir) :
 
 NodeMaterial::~NodeMaterial(void)
 {
+#ifndef _CLI
 	ed::DestroyEditor(context);
+#endif
 }
 
 void NodeMaterial::DumpJson(json& j) const
@@ -1895,6 +1964,7 @@ void NodeMaterial::DumpJson(json& j) const
 
 void NodeMaterial::Render(void)
 {
+#ifndef _CLI
 
 	for (auto& node : material_nodes) {
 		node->Render();
@@ -2046,6 +2116,7 @@ void NodeMaterial::Render(void)
 	ed::Resume();
 
 
+#endif
 }
 
 

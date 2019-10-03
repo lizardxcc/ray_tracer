@@ -3,11 +3,13 @@
 #include <random>
 #include <cstring>
 
+#ifndef _CLI
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <GLFW/glfw3.h>
+#endif
 
 //#include <OpenGL/gl3.h>
 //#include <GLFW/glfw3.h>
@@ -22,15 +24,80 @@
 #include "spectrum.h"
 #include "scene.h"
 
+#include <boost/program_options.hpp>
 
+#ifndef _CLI
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
+#endif
 
 
-int main(void)
+int main(int argc, const char * argv[])
 {
+	boost::program_options::options_description options("CLI Options");
+	options.add_options()
+		//("mode", value<std::string>)
+		("cli,C", "CLI mode")
+		("file,F", boost::program_options::value<std::string>(), "specify project file")
+		("output,o", boost::program_options::value<std::string>(), "specify output file")
+		("width,w", boost::program_options::value<int>(), "specify img width")
+		("height,h", boost::program_options::value<int>(), "specify img height")
+		("sample,s", boost::program_options::value<int>(), "specify img samples per pixel")
+		("help,H", "show help")
+		;
+
+	boost::program_options::variables_map vm;
+	boost::program_options::store(boost::program_options::parse_command_line(argc, argv, options), vm);
+	boost::program_options::notify(vm);
+	if (vm.count("cli")) {
+		cli = true;
+		std::cout << "CLI mode" << std::endl;
+		Scene scene;
+		int w, h, s;
+		if (vm.count("file")) {
+			scene.LoadProject(vm["file"].as<std::string>().c_str());
+			std::cout << "loaded" << std::endl;
+			vec3 veccameraPos = vec3(scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
+			vec3 veccameraUp = vec3(scene.cameraUp.x, scene.cameraUp.y, scene.cameraUp.z);
+			glm::vec3 lookat = scene.cameraPos + scene.cameraFront;
+			vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
+			scene.renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(scene.vfov)), static_cast<double>(scene.scene_json["img_width"].get<int>())/scene.scene_json["img_height"].get<int>());
+			scene.renderer.preview_img_flag = false;
+			scene.renderer.LoadMaterials(scene.obj_materials);
+			w = scene.scene_json["img_width"].get<int>();
+			h = scene.scene_json["img_height"].get<int>();
+			s = scene.scene_json["img_samples"].get<int>();
+			if (vm.count("width"))
+				w = vm["width"].as<int>();
+			if (vm.count("height"))
+				h = vm["height"].as<int>();
+			if (vm.count("sample"))
+				s = vm["sample"].as<int>();
+
+			scene.renderer.RenderImage(w, h, s, scene.img_spectral_samples, scene.enable_openmp, true);
+
+		}
+		if (vm.count("output")) {
+			std::cout << "Saving an image" << std::endl;
+			std::ofstream ofs;
+			ofs.open(vm["output"].as<std::string>().c_str(), std::ios::out);
+			ofs << "P3\n" << w << " " << h << std::endl << 255 << std::endl;
+			for (int i = 0; i < w; i++) {
+				for (int j = 0; j < h; j++) {
+					ofs << static_cast<int>(255.0*scene.renderer.preview_img[(h-j-1)*w+i][0]) << " ";
+					ofs << static_cast<int>(255.0*scene.renderer.preview_img[(h-j-1)*w+i][1]) << " ";
+					ofs << static_cast<int>(255.0*scene.renderer.preview_img[(h-j-1)*w+i][2]) << std::endl;
+				}
+			}
+			ofs.close();
+			std::cout << "Done" << std::endl;
+		}
+		return 0;
+	}
+#ifndef _CLI
+
 	// Setup window
 	glfwSetErrorCallback(glfw_error_callback);
 	if (!glfwInit())
@@ -144,6 +211,7 @@ int main(void)
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
+#endif // _CLI
 
 	return 0;
 }

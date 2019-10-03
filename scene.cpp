@@ -1,11 +1,14 @@
 #include <iostream>
 #include <fstream>
+#ifndef _CLI
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <GLFW/glfw3.h>
+#include <nfd.h>
+#endif
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <thread>
@@ -21,17 +24,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include <nfd.h>
 
-#include "json.hpp"
-using json = nlohmann::json;
 
 
 uint8_t *env_mapping_texture = nullptr;
 int env_mapping_width, env_mapping_height, env_mapping_bpp;
 double env_brightness = 0.5;
+bool cli = false;
 
 
+#ifndef _CLI
 void ImgViewer::LoadImage(const std::vector<double>& img, int width, int height)
 {
 	if (glimg != nullptr)
@@ -135,6 +137,8 @@ void RetouchWindow::AddImage(const std::vector<double>& img, int width, int heig
 	tabs.push_back(new_retouch);
 }
 
+#endif
+
 //void RetouchWindow::AddImage(double *img, int width, int height)
 //{
 //	std::string name = "image." + std::to_string(img_names.size());
@@ -143,38 +147,70 @@ void RetouchWindow::AddImage(const std::vector<double>& img, int width, int heig
 
 Scene::Scene(void)
 {
-
-	OpenGLInitShader();
-	glGenTextures(1, &preview_texture);
-	glBindTexture(GL_TEXTURE_2D, preview_texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
+#ifndef _CLI
+	if (!cli) {
+		OpenGLInitShader();
+		glGenTextures(1, &preview_texture);
+		glBindTexture(GL_TEXTURE_2D, preview_texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+#endif
 }
 
 
 void Scene::LoadProject(const char *path)
 {
 	std::ifstream i(path);
-	json j;
-	i >> j;
+	i >> scene_json;
 	i.close();
 	project_file = boost::filesystem::path(path);
 
-	if (j.find("model") != j.end()) {
-		LoadModel(project_file.parent_path().append(j["model"].get<std::string>()).c_str());
+	if (scene_json.find("model") != scene_json.end()) {
+		LoadModel(project_file.parent_path().append(scene_json["model"].get<std::string>()).c_str());
 	}
-	if (j.find("env") != j.end()) {
-		LoadEnvTexture(project_file.parent_path().append(j["env"].get<std::string>()).c_str());
+	if (scene_json.find("env") != scene_json.end()) {
+		LoadEnvTexture(project_file.parent_path().append(scene_json["env"].get<std::string>()).c_str());
 	}
-	if (j.find("mat") != j.end()) {
-		for (const auto& m : j["mat"]) {
+	if (scene_json.find("mat") != scene_json.end()) {
+		for (const auto& m : scene_json["mat"]) {
 			LoadMaterial(project_file.parent_path().append(m.get<std::string>()).c_str());
 		}
 	}
-	if (j.find("objmatmap") != j.end()) {
-		LoadObjMatMap(project_file.parent_path().append(j["objmatmap"].get<std::string>()).c_str());
+	if (scene_json.find("objmatmap") != scene_json.end()) {
+		LoadObjMatMap(project_file.parent_path().append(scene_json["objmatmap"].get<std::string>()).c_str());
 	}
+	scene_json["img_width"] = scene_json.value("img_width", static_cast<int64_t>(500));
+	scene_json["img_height"] = scene_json.value("img_height", static_cast<int64_t>(500));
+	scene_json["img_samples"] = scene_json.value("img_samples", static_cast<int64_t>(100));
+	if (scene_json.find("camera_pos") != scene_json.end()) {
+		for (int i = 0; i < 3; i++)
+			cameraPos[i] = scene_json["camera_pos"][i].get<double>();
+	}
+	if (scene_json.find("camera_front") != scene_json.end()) {
+		for (int i = 0; i < 3; i++)
+			cameraFront[i] = scene_json["camera_front"][i].get<double>();
+	}
+	if (scene_json.find("camera_up") != scene_json.end()) {
+		for (int i = 0; i < 3; i++)
+			cameraUp[i] = scene_json["camera_up"][i].get<double>();
+	}
+	//scene_json["vfov"] = scene_json.value("vfov", 60.0);
+}
+void Scene::WriteProject(const char *path)
+{
+	if (path == nullptr)
+		return;
+	std::ofstream o(path);
+	for (int i = 0; i < 3; i++) {
+		scene_json["camera_pos"][i] = cameraPos[i];
+		scene_json["camera_front"][i] = cameraFront[i];
+		scene_json["camera_up"][i] = cameraUp[i];
+	}
+	//scene_json["vfov"] = vfov;
+	o << scene_json.dump(4);
+	o.close();
 }
 
 void Scene::LoadModel(const char *obj_path)
@@ -191,7 +227,10 @@ void Scene::LoadModel(const char *obj_path)
 	cameraPos = glm::dvec3(0.0f, 0.0f, 3.0f);
 	//cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	cameraUp = glm::dvec3(0.0f, 1.0f, 0.0f);
-	OpenGLLoadModel();
+#ifndef _CLI
+	if (!cli)
+		OpenGLLoadModel();
+#endif
 }
 
 void Scene::LoadEnvTexture(const char *path)
@@ -272,6 +311,7 @@ void Scene::WriteObjMatMap(const char *path)
 
 
 
+#ifndef _CLI
 void Scene::OpenGLInitShader(void)
 {
 	int success;
@@ -403,6 +443,7 @@ void Scene::OpenGLLoadModel(void)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+#endif
 
 
 void Scene::ClearData(void)
@@ -415,6 +456,7 @@ void Scene::ClearData(void)
 
 void Scene::RenderSceneWindow(void)
 {
+#ifndef _CLI
 	//ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
 	//ImGui::SetNextWindowSize(ImVec2(window_width, window_height), ImGuiCond_Always);
 	//ImGui::Begin("3D Scene", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus);
@@ -426,6 +468,14 @@ void Scene::RenderSceneWindow(void)
 				if (result == NFD_OKAY) {
 					LoadProject(path);
 					scene_loaded = true;
+					free(path);
+				}
+			}
+			if (ImGui::MenuItem("Save Project")) {
+				nfdchar_t *path = nullptr;
+				nfdresult_t result = NFD_SaveDialog(nullptr, nullptr, &path);
+				if (result == NFD_OKAY) {
+					WriteProject(path);
 					free(path);
 				}
 			}
@@ -459,10 +509,12 @@ void Scene::RenderSceneWindow(void)
 	if (scene_loaded)
 		RenderScene();
 	//ImGui::End();
+#endif
 }
 
 void Scene::RenderScene(void)
 {
+#ifndef _CLI
 	ImGui::BeginChild("left pane", ImVec2(WIDTH, 0));
 	if (ImGui::IsWindowFocused()) {
 		if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_UpArrow))) {
@@ -618,9 +670,23 @@ void Scene::RenderScene(void)
 #ifdef _OPENMP
 		ImGui::Checkbox("Enable OpenMP", &enable_openmp);
 #endif
-		ImGui::SliderInt("Image Width", &img_width, 1, 2000);
-		ImGui::SliderInt("Image Height", &img_height, 1, 2000);
-		ImGui::SliderInt("Image Samples", &img_Samples, 1, 1000);
+		{
+			int64_t min = 1;
+			int64_t max = 2000;
+			int64_t img_width = scene_json["img_width"];
+			ImGui::SliderScalar("Image Width", ImGuiDataType_S64, &img_width, &min, &max, "%d");
+			scene_json["img_width"] = img_width;
+			int64_t img_height = scene_json["img_height"];
+			ImGui::SliderScalar("Image Height", ImGuiDataType_S64, &img_height, &min, &max, "%d");
+			scene_json["img_height"] = img_height;
+		}
+		{
+			int64_t min = 1;
+			int64_t max = 1000;
+			int64_t img_samples = scene_json["img_samples"];
+			ImGui::SliderScalar("Image Samples", ImGuiDataType_S64, &img_samples, &min, &max, "%d");
+			scene_json["img_samples"] = img_samples;
+		}
 		ImGui::SliderInt("Spectral samples", &img_spectral_samples, 1, N_SAMPLE);
 		const double min = 0.001;
 		const double max = 3.0;
@@ -632,6 +698,7 @@ void Scene::RenderScene(void)
 		ImGui::Checkbox("Enable Preview", &renderer.preview_img_flag);
 	}
 	ImGui::EndChild();
+#endif
 }
 
 
@@ -641,6 +708,7 @@ void Scene::RenderScene(void)
 
 void Scene::RenderPreviewWindow(void)
 {
+#ifndef _CLI
 	//ImGui::Begin("Render", nullptr, ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -650,12 +718,12 @@ void Scene::RenderPreviewWindow(void)
 				if (result == NFD_OKAY) {
 					std::ofstream ofs;
 					ofs.open(path, std::ios::out);
-					ofs << "P3\n" << img_width << " " << img_height << std::endl << 255 << std::endl;
-					for (int j = img_height-1; j >= 0; j--) {
-						for (int i = 0; i < img_width; i++) {
-							ofs << (int)img[((img_height-j-1)*img_width+i)*3] << " ";
-							ofs << (int)img[((img_height-j-1)*img_width+i)*3+1] << " ";
-							ofs << (int)img[((img_height-j-1)*img_width+i)*3+2] << std::endl;
+					ofs << "P3\n" << scene_json["img_width"].get<int>() << " " << scene_json["img_height"].get<int>() << std::endl << 255 << std::endl;
+					for (int j = scene_json["img_height"].get<int>()-1; j >= 0; j--) {
+						for (int i = 0; i < scene_json["img_width"].get<int>(); i++) {
+							ofs << (int)img[((scene_json["img_height"].get<int>()-j-1)*scene_json["img_width"].get<int>()+i)*3] << " ";
+							ofs << (int)img[((scene_json["img_height"].get<int>()-j-1)*scene_json["img_width"].get<int>()+i)*3+1] << " ";
+							ofs << (int)img[((scene_json["img_height"].get<int>()-j-1)*scene_json["img_width"].get<int>()+i)*3+2] << std::endl;
 						}
 					}
 					ofs.close();
@@ -667,15 +735,15 @@ void Scene::RenderPreviewWindow(void)
 		if (ImGui::BeginMenu("Render")) {
 			if (ImGui::MenuItem("Render Image", nullptr, false, !renderer.rendering_runnnig)) {
 				if (!renderer.rendering_runnnig) {
-					img.resize(img_width*img_height*3);
+					img.resize(scene_json["img_width"].get<int>()*scene_json["img_height"].get<int>()*3);
 					vec3 veccameraPos = vec3(cameraPos.x, cameraPos.y, cameraPos.z);
 					vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
 					glm::vec3 lookat = cameraPos + cameraFront;
 					vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
-					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(img_width)/img_height);
-					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/img_height, d, focal_length, aperture);
+					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>());
+					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/scene_json["img_height"].get<int>(), d, focal_length, aperture);
 					renderer.LoadMaterials(obj_materials);
-					std::thread t(&Renderer::RenderImage, &renderer, img_width, img_height, img_Samples, img_spectral_samples, enable_openmp);
+					std::thread t(&Renderer::RenderImage, &renderer, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>(), scene_json["img_samples"].get<int>(), img_spectral_samples, enable_openmp, false);
 					t.detach();
 				}
 			}
@@ -688,7 +756,7 @@ void Scene::RenderPreviewWindow(void)
 		}
 		if (ImGui::BeginMenu("Retouch")) {
 			if (ImGui::MenuItem("Add to Retouch Window")) {
-				//retouch_window.AddImage(renderer.orig_img, img_width, img_height);
+				//retouch_window.AddImage(renderer.orig_img, img_width, scene_json["img_height"].get<int>());
 			}
 			ImGui::EndMenu();
 		}
@@ -697,10 +765,10 @@ void Scene::RenderPreviewWindow(void)
 
 
 	ImGui::ProgressBar(renderer.progress);
-	ImGui::BeginChild("left pane", ImVec2(img_width, 0));
+	ImGui::BeginChild("left pane", ImVec2(scene_json["img_width"].get<int>(), 0));
 	if (renderer.img_updated) {
-		int nx = img_width;
-		int ny = img_height;
+		int nx = scene_json["img_width"].get<int>();
+		int ny = scene_json["img_height"].get<int>();
 		for (int i = 0; i < nx; i++) {
 			for (int j = 0; j < ny; j++) {
 				size_t i_ = nx-i-1;
@@ -712,38 +780,40 @@ void Scene::RenderPreviewWindow(void)
 		}
 		glBindTexture(GL_TEXTURE_2D, preview_texture);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.data());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>(), 0, GL_RGB, GL_UNSIGNED_BYTE, img.data());
 		renderer.img_updated = false;
 		img_loaded = true;
 	}
 	ImVec2 image_cursor_pos = ImGui::GetCursorScreenPos();
 	if (img_loaded)
-		ImGui::Image((void*)(intptr_t)preview_texture, ImVec2(img_width, img_height));
+		ImGui::Image((void*)(intptr_t)preview_texture, ImVec2(scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>()));
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::BeginChild("right pane", ImVec2(0, 0));
 	if (renderer.progress == 1.0f) {
 		ImGui::Text("x:%f, y:%f", image_cursor_pos.x, image_cursor_pos.y);
 		int mx = static_cast<int>(ImGui::GetMousePos().x-image_cursor_pos.x);
-		mx = img_width-1-mx;
+		mx = scene_json["img_width"].get<int>() -1-mx;
 		int my = static_cast<int>(ImGui::GetMousePos().y-image_cursor_pos.y);
-		if (mx >= 0 && mx < img_width && my >= 0 && my < img_height) {
+		if (mx >= 0 && mx < scene_json["img_width"].get<int>() && my >= 0 && my < scene_json["img_height"].get<int>()) {
 
 			float spectrum[N_SAMPLE];
 			for (int i = 0; i < N_SAMPLE; i++) {
-				spectrum[i] = renderer.spectrum_img[mx*img_height+my].data[i];
+				spectrum[i] = renderer.spectrum_img[mx*scene_json["img_height"].get<int>()+my].data[i];
 			}
 			ImGui::PlotHistogram("Spectrum", spectrum, N_SAMPLE, 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(500, 50));
 		}
 	}
 	ImGui::EndChild();
 	//ImGui::End();
+#endif
 }
 
 
 
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
+#ifndef _CLI
 	//ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -826,6 +896,7 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		ax::NodeEditor::SetCurrentEditor(nullptr);
 	}
 	//ImGui::End();
+#endif
 }
 
 void Scene::RenderLog(void)

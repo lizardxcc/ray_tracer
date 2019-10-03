@@ -4,17 +4,23 @@
 #include <boost/filesystem/path.hpp>
 #include <vector>
 #include <map>
-#include <GL/gl3w.h>    // Initialize with gl3wInit()
 #include <glm/glm.hpp>
+#include "json.hpp"
+#ifndef _CLI
+#include <GL/gl3w.h>    // Initialize with gl3wInit()
+#endif
 #include "renderer.h"
 #include "materialnode.h"
 
+using json = nlohmann::json;
 
 extern uint8_t *env_mapping_texture;
 extern int env_mapping_width, env_mapping_height, env_mapping_bpp;
 extern double env_brightness;
 
+extern bool cli;
 
+#ifndef _CLI
 class ImgViewer {
 	public:
 		void Render(void);
@@ -51,12 +57,15 @@ class RetouchWindow {
 		std::vector<std::string> img_names;
 		std::vector<ImgRetouch> tabs;
 };
+#endif
 
 
+#ifndef _CLI
 struct Vertex {
 	GLfloat xyz[3];
 	GLfloat normal[3];
 };
+#endif
 
 class Scene {
 	public:
@@ -67,10 +76,26 @@ class Scene {
 		void RenderMaterialEditorWindow(void);
 		void RenderMaterialNodeEditorWindow(void);
 		void RenderLog(void);
-
-		RetouchWindow retouch_window;
-	private:
 		void LoadProject(const char *path);
+
+#ifndef _CLI
+		RetouchWindow retouch_window;
+#endif
+		json scene_json;
+
+		Renderer renderer;
+		glm::dvec3 cameraPos;
+		glm::dvec3 cameraFront;
+		glm::dvec3 cameraUp;
+		double vfov = 30;
+#ifndef _CLI
+		std::vector<GLubyte> img;
+#endif
+		int img_spectral_samples = N_SAMPLE;
+		bool enable_openmp = true;
+		std::map<std::string, std::shared_ptr<NodeMaterial>> obj_materials;
+	private:
+		void WriteProject(const char *path);
 		void LoadModel(const char *obj_path);
 		void LoadEnvTexture(const char *path);
 		void LoadMaterial(const char *path);
@@ -80,13 +105,11 @@ class Scene {
 		void ClearData(void);
 		void RenderScene(void);
 
+#ifndef _CLI
 		void OpenGLInitShader(void);
 		void OpenGLLoadModel(void);
+#endif
 		bool scene_loaded = false;
-		Renderer renderer;
-		glm::dvec3 cameraPos;
-		glm::dvec3 cameraFront;
-		glm::dvec3 cameraUp;
 		double camera_speed = 0.05;
 		double pyr[3] = {0.0, -90.0, 0.0};
 		double pyr_angular_velocity[3] = {0.5, 0.5, 0.5};
@@ -94,16 +117,10 @@ class Scene {
 		const double HEIGHT = 500;
 		boost::filesystem::path project_file;
 		float d = 0.45, focal_length=0.4, aperture = 0.0;
-		double vfov = 30;
 		unsigned int activeObjectIndex = 0;
 		//GLubyte *img = nullptr;
-		std::vector<GLubyte> img;
-		int img_width = 500;
-		int img_height = 500;
-		int img_Samples = 100;
-		int img_spectral_samples = N_SAMPLE;
-		bool enable_openmp = true;
 		bool img_loaded = false;
+#ifndef _CLI
 		GLuint preview_texture;
 
 		GLuint vao_id;
@@ -150,9 +167,9 @@ class Scene {
 			"	vec3 diffuse = diff * lightColor;\n"
 			"	FragColor = vec4((ambient + diffuse) * objectColor, 1.0f);"
 			"}\n\0";
+#endif
 
 		std::vector<std::shared_ptr<NodeMaterial>> materials;
-		std::map<std::string, std::shared_ptr<NodeMaterial>> obj_materials;
 
 };
 

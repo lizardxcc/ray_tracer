@@ -2,7 +2,9 @@
 #define MATERIALNODE_H
 
 #include <boost/filesystem/path.hpp>
+#ifndef _CLI
 #include "imgui_node_editor.h"
+#endif
 #include "vec3.h"
 #include "hittable.h"
 #include "spectrum.h"
@@ -10,20 +12,24 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+#ifndef _CLI
 namespace ed = ax::NodeEditor;
+#endif
 
 
 class MaterialNode;
 struct PinInfo;
 
 struct LinkInfo {
+#ifndef _CLI
 	LinkInfo(int &unique_id, ed::PinId input_id, ed::PinId output_id, PinInfo *input, PinInfo *output);
-	LinkInfo(const json& j, PinInfo *input, PinInfo *output);
-	void DumpJson(json& j) const;
 	const ed::LinkId id;
-	const int iid;
 	const ed::PinId input_id;
 	const ed::PinId output_id;
+#endif
+	LinkInfo(const json& j, PinInfo *input, PinInfo *output);
+	void DumpJson(json& j) const;
+	const int iid;
 	PinInfo * const input;
 	PinInfo * const output;
 };
@@ -46,7 +52,9 @@ enum PinIOType {
 struct PinInfo {
 	PinInfo(int &unique_id, PinIOType io_type, PinType type, const char *name, const MaterialNode *parent_node);
 	PinInfo(const json& j, const MaterialNode *parent_node);
+#ifndef _CLI
 	const ed::PinId id;
+#endif
 	const int iid;
 	const std::string name;
 	const PinIOType io_type;
@@ -107,13 +115,15 @@ class MaterialNode {
 		void DumpIO(json &j) const;
 		void DumpSpectrum(json& j, const Spectrum& s, const char *name) const;
 
+#ifndef _CLI
 		ed::NodeId id;
+		const static ImVec4 pin_colors[];
+#endif
 		int iid;
 		std::string name;
 		enum MaterialNodeType type;
 		std::vector<PinInfo> inputs;
 		std::vector<PinInfo> outputs;
-		const static ImVec4 pin_colors[];
 	protected:
 		void UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, vec3& new_normal) const;
 };
@@ -422,10 +432,12 @@ class NodeMaterial {
 		~NodeMaterial(void);
 		void Render(void);
 		struct PinInfo *FindPin(int iid);
+#ifndef _CLI
 		struct PinInfo *FindPin(const ed::PinId& id);
 		struct LinkInfo *FindLink(const ed::LinkId& id);
 		const struct PinInfo *FindPinConst(const ed::PinId& id) const;
 		const struct LinkInfo *FindLinkConst(const ed::LinkId& id) const;
+#endif
 		void AddLink(PinInfo *input, PinInfo *b);
 		void DumpJson(json& j) const;
 		void PreProcess(HitRecord& rec) const;
@@ -435,7 +447,9 @@ class NodeMaterial {
 		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const;
 		std::string name;
 		std::string settings_file;
+#ifndef _CLI
 		ax::NodeEditor::EditorContext *context = nullptr;
+#endif
 		bool light_flag = false;
 	private:
 		int unique_id = 1;
