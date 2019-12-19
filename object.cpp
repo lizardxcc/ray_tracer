@@ -15,16 +15,16 @@ bool IsOccluded(const ray& r, const Hittable *world, const Hittable *p)
 	return false;
 }
 
-//std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
+//std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const dvec3& o)
 //{
 //	std::cout << "Warning GeneratePdfObject" << std::endl;
-//	return std::make_unique<UniformPdf>(vec3(0.0, 0.0, 1.0));
+//	return std::make_unique<UniformPdf>(dvec3(0.0, 0.0, 1.0));
 //}
-std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const vec3& o)
+std::unique_ptr<Pdf> Hittable::GeneratePdfObject(const dvec3& o)
 {
 	AABB box;
 	if (BoundingBox(box)) {
-		vec3 v = box.center - o;
+		dvec3 v = box.center - o;
 		double r = (box.center-box.minp).length();
 		return std::make_unique<toward_object_Pdf>(unit_vector(v), atan2(r, v.length()));
 	} else {
@@ -77,15 +77,15 @@ bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 bool Sphere::BoundingBox(AABB& box) const
 {
 	box = AABB(
-		center - vec3(radius, radius, radius),
-		center + vec3(radius, radius, radius)
+		center - dvec3(radius, radius, radius),
+		center + dvec3(radius, radius, radius)
 	);
 	return true;
 }
 
-std::unique_ptr<Pdf> Sphere::GeneratePdfObject(const vec3& o)
+std::unique_ptr<Pdf> Sphere::GeneratePdfObject(const dvec3& o)
 {
-	vec3 v = center - o;
+	dvec3 v = center - o;
 	double r = radius;
 	return std::make_unique<toward_object_Pdf>(unit_vector(v), atan2(r, v.length()));
 }
@@ -236,20 +236,20 @@ bool PlyModel::BoundingBox(AABB& box) const
 bool printed_warning = false;
 
 bool ConvexPolygon::HitTriangle(const ray& r, double t_min, double t_max,
-		const vec3& v0, const vec3& v1, const vec3& v2,
-		const vec3& vt0, const vec3& vt1, const vec3& vt2,
-		const vec3& n0, const vec3& n1, const vec3& n2,
-		const vec3& face_normal, HitRecord& rec) const
+		const dvec3& v0, const dvec3& v1, const dvec3& v2,
+		const dvec3& vt0, const dvec3& vt1, const dvec3& vt2,
+		const dvec3& n0, const dvec3& n1, const dvec3& n2,
+		const dvec3& face_normal, HitRecord& rec) const
 {
 	double t = dot(v0 - r.origin(), face_normal) / dot(r.direction(), face_normal);
 	if (!(t >= t_min && t <= t_max)) {
 		return false;
 	}
-	vec3 p = r.point_at_parameter(t);
+	dvec3 p = r.point_at_parameter(t);
 	double tri_area = cross(v1-v0, v2-v1).length();
-	vec3 result0 = cross(v1-v0, p-v1);
-	vec3 result1 = cross(v2-v1, p-v2);
-	vec3 result2 = cross(v0-v2, p-v0);
+	dvec3 result0 = cross(v1-v0, p-v1);
+	dvec3 result1 = cross(v2-v1, p-v2);
+	dvec3 result2 = cross(v0-v2, p-v0);
 	if (dot(result0, result1) > 0.0 && dot(result1, result2) > 0.0) {
 		rec.t = t;
 		rec.p = p;
@@ -257,10 +257,10 @@ bool ConvexPolygon::HitTriangle(const ray& r, double t_min, double t_max,
 
 		rec.vt = (result1.length()*vt0+result2.length()*vt1+result0.length()*vt2)/tri_area;
 
-		const vec3 deltauv1 = vt1 - vt0;
-		const vec3 deltauv2 = vt2 - vt1;
-		const vec3 e1 = v1 - v0;
-		const vec3 e2 = v2 - v1;
+		const dvec3 deltauv1 = vt1 - vt0;
+		const dvec3 deltauv2 = vt2 - vt1;
+		const dvec3 e1 = v1 - v0;
+		const dvec3 e2 = v2 - v1;
 		const double denom = deltauv1.x()*deltauv2.y() - deltauv1.y()*deltauv2.x();
 		if (!printed_warning) {
 			if (denom == 0.0) {
@@ -269,8 +269,8 @@ bool ConvexPolygon::HitTriangle(const ray& r, double t_min, double t_max,
 			}
 		}
 		const double fraction = 1.0/denom;
-		const vec3 t = ((deltauv2.y()*e1) - (deltauv1.y()*e2))*fraction;
-		const vec3 b = ((-deltauv2.x()*e1) + (deltauv1.x()*e2))*fraction;
+		const dvec3 t = ((deltauv2.y()*e1) - (deltauv1.y()*e2))*fraction;
+		const dvec3 b = ((-deltauv2.x()*e1) + (deltauv1.x()*e2))*fraction;
 		rec.tbn.axis[0] = unit_vector(t);
 		rec.tbn.axis[1] = unit_vector(b);
 		rec.tbn.axis[2] = unit_vector(cross(rec.tbn.axis[0], rec.tbn.axis[1]));
@@ -308,8 +308,8 @@ bool ConvexPolygon::Hit(const ray& r, double t_min, double t_max, HitRecord& rec
 
 bool ConvexPolygon::BoundingBox(AABB& box) const
 {
-	vec3 minp = v[0];
-	vec3 maxp = v[0];
+	dvec3 minp = v[0];
+	dvec3 maxp = v[0];
 	for (size_t i = 1; i < v.size(); i++) {
 		for (size_t j = 0; j < 3; j++) {
 			minp.e[j] = std::min(minp.e[j], v[i][j]);
@@ -329,7 +329,7 @@ bool ConvexPolygon::BoundingBox(AABB& box) const
 
 
 
-std::unique_ptr<Pdf> ConvexPolygon::GeneratePdfObject(const vec3& o)
+std::unique_ptr<Pdf> ConvexPolygon::GeneratePdfObject(const dvec3& o)
 {
 	std::cout << "Error: Unimplemented" << std::endl;
 	assert(false);
@@ -337,7 +337,7 @@ std::unique_ptr<Pdf> ConvexPolygon::GeneratePdfObject(const vec3& o)
 }
 
 
-void ConvexPolygon::GetRandomPointOnPolygon(vec3& p, double &area) const
+void ConvexPolygon::GetRandomPointOnPolygon(dvec3& p, double &area) const
 {
 	double r = drand48();
 	for (size_t tri_i = 0; tri_i < triangle_area_cumulative_sums.size(); tri_i++) {
@@ -352,8 +352,8 @@ void ConvexPolygon::GetRandomPointOnPolygon(vec3& p, double &area) const
 		if (a) {
 			size_t v_i = tri_i+1;
 			assert(v_i+1 < v.size());
-			vec3 va = v[v_i]-v[0];
-			vec3 vb = v[v_i+1]-v[0];
+			dvec3 va = v[v_i]-v[0];
+			dvec3 vb = v[v_i+1]-v[0];
 
 			double x = drand48();
 			double y = drand48();
@@ -377,8 +377,8 @@ void ConvexPolygon::CalcTriangleAreas(void)
 	triangle_area_cumulative_sums.resize(v.size()-2);
 	for (size_t v_i = 1; v_i < v.size()-1; v_i++) {
 		const size_t tri_i = v_i-1;
-		vec3 a = v[v_i]-v[0];
-		vec3 b = v[v_i+1]-v[0];
+		dvec3 a = v[v_i]-v[0];
+		dvec3 b = v[v_i+1]-v[0];
 		double tri_area = cross(a, b).length()/2.0;
 		if (tri_i == 0)
 			triangle_area_cumulative_sums[tri_i] = tri_area;

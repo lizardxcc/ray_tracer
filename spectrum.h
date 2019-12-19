@@ -100,10 +100,10 @@ inline Spectrum operator/(const Spectrum &s1, double t)
 	}
 	return s;
 }
-vec3 xyz(const Spectrum &s);
-vec3 rgb(const Spectrum &s);
-vec3 r_xyz(const Spectrum &s);
-vec3 r_rgb(const Spectrum &s);
-Spectrum RGBtoSpectrum(const vec3& rgb);
+dvec3 xyz(const Spectrum &s);
+dvec3 rgb(const Spectrum &s);
+dvec3 r_xyz(const Spectrum &s);
+dvec3 r_rgb(const Spectrum &s);
+Spectrum RGBtoSpectrum(const dvec3& rgb);
 
 #endif

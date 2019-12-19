@@ -225,7 +225,7 @@ void Scene::LoadModel(const char *obj_path)
 
 
 	cameraPos = glm::dvec3(0.0f, 0.0f, 3.0f);
-	//cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+	//cameraFront = glm::dvec3(0.0f, 0.0f, -1.0f);
 	cameraUp = glm::dvec3(0.0f, 1.0f, 0.0f);
 #ifndef _CLI
 	if (!cli)
@@ -355,7 +355,7 @@ void Scene::OpenGLLoadModel(void)
 			start_indices.push_back(0);
 		else
 			start_indices.push_back(start_indices[object_i-1]+vertices_nums[object_i-1]);
-		colors.push_back(vec3(drand48(), drand48(), drand48()));
+		colors.push_back(dvec3(drand48(), drand48(), drand48()));
 		auto& object = renderer.obj_loader.objects[object_i];
 		size_t index_num = 0;
 		for (size_t faces_i = 0; faces_i < object->faces.size(); faces_i++) {
@@ -736,10 +736,10 @@ void Scene::RenderPreviewWindow(void)
 			if (ImGui::MenuItem("Render Image", nullptr, false, !renderer.rendering_runnnig)) {
 				if (!renderer.rendering_runnnig) {
 					img.resize(scene_json["img_width"].get<int>()*scene_json["img_height"].get<int>()*3);
-					vec3 veccameraPos = vec3(cameraPos.x, cameraPos.y, cameraPos.z);
-					vec3 veccameraUp = vec3(cameraUp.x, cameraUp.y, cameraUp.z);
-					glm::vec3 lookat = cameraPos + cameraFront;
-					vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
+					dvec3 veccameraPos = dvec3(cameraPos.x, cameraPos.y, cameraPos.z);
+					dvec3 veccameraUp = dvec3(cameraUp.x, cameraUp.y, cameraUp.z);
+					glm::dvec3 lookat = cameraPos + cameraFront;
+					dvec3 vlookat = dvec3(lookat.x, lookat.y, lookat.z);
 					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>());
 					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/scene_json["img_height"].get<int>(), d, focal_length, aperture);
 					renderer.LoadMaterials(obj_materials);

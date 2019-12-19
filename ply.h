@@ -29,7 +29,7 @@ class ply {
 
 		std::vector<element *> elements;
 
-		std::vector<std::vector<vec3> > vertices;
+		std::vector<std::vector<dvec3> > vertices;
 		std::vector<std::vector<int> > faces;
 
 };

@@ -59,28 +59,28 @@ bool MtlLoader::LoadMtl(void)
 				iss >> s;
 				mtl->Ns = atof(s.c_str());
 			} else if (s == "Ka") {
-				vec3 Ka;
+				dvec3 Ka;
 				for (size_t i = 0; i < 3; i++) {
 					iss >> s;
 					Ka.e[i] = atof(s.c_str());
 				}
 				mtl->Ka = Ka;
 			} else if (s == "Kd") {
-				vec3 Kd;
+				dvec3 Kd;
 				for (size_t i = 0; i < 3; i++) {
 					iss >> s;
 					Kd.e[i] = atof(s.c_str());
 				}
 				mtl->Kd = Kd;
 			} else if (s == "Ks") {
-				vec3 Ks;
+				dvec3 Ks;
 				for (size_t i = 0; i < 3; i++) {
 					iss >> s;
 					Ks.e[i] = atof(s.c_str());
 				}
 				mtl->Ks = Ks;
 			} else if (s == "Ke") {
-				vec3 Ke;
+				dvec3 Ke;
 				for (size_t i = 0; i < 3; i++) {
 					iss >> s;
 					Ke.e[i] = atof(s.c_str());

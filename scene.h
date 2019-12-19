@@ -129,7 +129,7 @@ class Scene {
 		std::vector<struct Vertex> vertices;
 		std::vector<size_t> start_indices;
 		std::vector<size_t> vertices_nums;
-		std::vector<vec3> colors;
+		std::vector<dvec3> colors;
 
 
 		GLuint rbo;

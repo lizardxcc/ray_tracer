@@ -15,14 +15,14 @@ bool IsOccluded(const ray& r, const Hittable *world, const Hittable *p);
 class Sphere: public Hittable {
 	public:
 		Sphere() { }
-		Sphere(vec3 center, double r, NodeMaterial *mat_ptr) : center(center), radius(r) {
+		Sphere(dvec3 center, double r, NodeMaterial *mat_ptr) : center(center), radius(r) {
 			//this->mat_ptr = std::shared_ptr<Material>(mat_ptr);
 			this->mat_ptr = mat_ptr;
 		};
 		bool Hit(const ray& r, double tmin, double tmux, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
-		std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o) override;
-		vec3 center;
+		std::unique_ptr<Pdf> GeneratePdfObject(const dvec3& o) override;
+		dvec3 center;
 		double radius;
 };
 
@@ -56,20 +56,20 @@ class ConvexPolygon : public Hittable {
 	public:
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
-		std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o) override;
-		void GetRandomPointOnPolygon(vec3& p, double& area) const;
-		std::vector<vec3> v;
-		std::vector<vec3> vt;
-		std::vector<vec3> normal;
-		vec3 face_normal;
+		std::unique_ptr<Pdf> GeneratePdfObject(const dvec3& o) override;
+		void GetRandomPointOnPolygon(dvec3& p, double& area) const;
+		std::vector<dvec3> v;
+		std::vector<dvec3> vt;
+		std::vector<dvec3> normal;
+		dvec3 face_normal;
 		void CalcTriangleAreas(void);
 		double polygon_area;
 	private:
 		bool HitTriangle(const ray& r, double t_min, double t_max,
-				const vec3& v0, const vec3& v1, const vec3& v2,
-				const vec3& vt0, const vec3& vt1, const vec3& vt2,
-				const vec3& n0, const vec3& n1, const vec3& n2,
-				const vec3& face_normal, HitRecord& rec) const;
+				const dvec3& v0, const dvec3& v1, const dvec3& v2,
+				const dvec3& vt0, const dvec3& vt1, const dvec3& vt2,
+				const dvec3& n0, const dvec3& n1, const dvec3& n2,
+				const dvec3& face_normal, HitRecord& rec) const;
 		std::vector<double> triangle_area_cumulative_sums;
 };
 

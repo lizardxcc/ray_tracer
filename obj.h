@@ -26,9 +26,9 @@ class obj {
 		std::ifstream file;
 		std::vector<std::string> mtl_file;
 		std::vector<objobject *> objects;
-		std::vector<vec3> v;
-		std::vector<vec3> vt;
-		std::vector<vec3> vn;
+		std::vector<dvec3> v;
+		std::vector<dvec3> vt;
+		std::vector<dvec3> vn;
 
 	private:
 		bool LoadObject(void);

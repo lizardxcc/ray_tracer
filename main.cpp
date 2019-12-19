@@ -59,10 +59,10 @@ int main(int argc, const char * argv[])
 		if (vm.count("file")) {
 			scene.LoadProject(vm["file"].as<std::string>().c_str());
 			std::cout << "loaded" << std::endl;
-			vec3 veccameraPos = vec3(scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
-			vec3 veccameraUp = vec3(scene.cameraUp.x, scene.cameraUp.y, scene.cameraUp.z);
-			glm::vec3 lookat = scene.cameraPos + scene.cameraFront;
-			vec3 vlookat = vec3(lookat.x, lookat.y, lookat.z);
+			dvec3 veccameraPos = dvec3(scene.cameraPos.x, scene.cameraPos.y, scene.cameraPos.z);
+			dvec3 veccameraUp = dvec3(scene.cameraUp.x, scene.cameraUp.y, scene.cameraUp.z);
+			glm::dvec3 lookat = scene.cameraPos + scene.cameraFront;
+			dvec3 vlookat = dvec3(lookat.x, lookat.y, lookat.z);
 			scene.renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(scene.vfov)), static_cast<double>(scene.scene_json["img_width"].get<int>())/scene.scene_json["img_height"].get<int>());
 			scene.renderer.preview_img_flag = false;
 			scene.renderer.LoadMaterials(scene.obj_materials);

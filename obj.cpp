@@ -75,7 +75,7 @@ bool obj::LoadObject(void)
 				file.seekg(oldpos);
 				return true;
 			} else if (s == "v") {
-				vec3 v;
+				dvec3 v;
 				iss >> s;
 				v.e[0] = atof(s.c_str());
 				iss >> s;
@@ -84,7 +84,7 @@ bool obj::LoadObject(void)
 				v.e[2] = atof(s.c_str());
 				this->v.push_back(v);
 			} else if (s == "vt") {
-				vec3 vt;
+				dvec3 vt;
 				iss >> s;
 				vt.e[0] = atof(s.c_str());
 				iss >> s;
@@ -92,7 +92,7 @@ bool obj::LoadObject(void)
 				vt.e[2] = 0;
 				this->vt.push_back(vt);
 			} else if (s == "vn") {
-				vec3 vn;
+				dvec3 vn;
 				iss >> s;
 				vn.e[0] = atof(s.c_str());
 				iss >> s;

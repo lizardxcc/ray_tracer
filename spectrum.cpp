@@ -160,18 +160,18 @@ double Spectrum::get(double wavelength) const
 	return data[i];
 }
 
-vec3 xyz(const Spectrum &s)
+dvec3 xyz(const Spectrum &s)
 {
-	vec3 xyz;
+	dvec3 xyz;
 	xyz.e[0] = (s * X).integrate(400, 699.999);
 	xyz.e[1] = (s * Y).integrate(400, 699.999);
 	xyz.e[2] = (s * Z).integrate(400, 699.999);
 	return xyz;
 }
 
-vec3 r_xyz(const Spectrum &s)
+dvec3 r_xyz(const Spectrum &s)
 {
-	vec3 _xyz;
+	dvec3 _xyz;
 	_xyz = xyz(s);
 	double k = 1.0 / Y.integrate(400, 699.999);
 	_xyz *= k;
@@ -180,10 +180,10 @@ vec3 r_xyz(const Spectrum &s)
 
 
 
-vec3 rgb(const Spectrum &s)
+dvec3 rgb(const Spectrum &s)
 {
-	vec3 _xyz = xyz(s);
-	vec3 rgb;
+	dvec3 _xyz = xyz(s);
+	dvec3 rgb;
 	rgb.e[0] = 3.240479 * _xyz.x() +
 		(-1.537150) * _xyz.y() +
 		(-0.498535) * _xyz.z();
@@ -197,10 +197,10 @@ vec3 rgb(const Spectrum &s)
 	return rgb;
 }
 
-vec3 r_rgb(const Spectrum &s)
+dvec3 r_rgb(const Spectrum &s)
 {
-	vec3 _xyz = r_xyz(s);
-	vec3 rgb;
+	dvec3 _xyz = r_xyz(s);
+	dvec3 rgb;
 	rgb.e[0] = 3.240479 * _xyz.x() +
 		(-1.537150) * _xyz.y() +
 		(-0.498535) * _xyz.z();
@@ -215,7 +215,7 @@ vec3 r_rgb(const Spectrum &s)
 }
 
 
-Spectrum RGBtoSpectrum(const vec3& rgb)
+Spectrum RGBtoSpectrum(const dvec3& rgb)
 {
 	Spectrum s;
 	for (int i = 0; i < N_SAMPLE/3.0; i++) {

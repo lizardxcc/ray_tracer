@@ -7,22 +7,22 @@ class ONB
 {
 	public:
 		ONB() {}
-		inline vec3 operator[](int i) const
+		inline dvec3 operator[](int i) const
 		{
 			return axis[i];
 		}
 
 
-		vec3 u() const;
-		vec3 v() const;
-		vec3 w() const;
+		dvec3 u() const;
+		dvec3 v() const;
+		dvec3 w() const;
 
-		vec3 LocalToWorld(double a, double b, double c) const;
-		vec3 LocalToWorld(const vec3& a) const;
-		vec3 WorldToLocal(const vec3& a) const;
-		void BuildFromW(const vec3&);
+		dvec3 LocalToWorld(double a, double b, double c) const;
+		dvec3 LocalToWorld(const dvec3& a) const;
+		dvec3 WorldToLocal(const dvec3& a) const;
+		void BuildFromW(const dvec3&);
 
-		vec3 axis[3];
+		dvec3 axis[3];
 
 };
 

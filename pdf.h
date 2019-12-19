@@ -13,43 +13,43 @@ class Hittable;
 class Pdf {
 	public:
 		virtual ~Pdf(void);
-		virtual vec3 Generate() const = 0;
-		virtual double PdfVal(const vec3& direction) const = 0;
+		virtual dvec3 Generate() const = 0;
+		virtual double PdfVal(const dvec3& direction) const = 0;
 };
 
 class UniformPdf : public Pdf {
 	public:
-		UniformPdf(const vec3& w)
+		UniformPdf(const dvec3& w)
 		{
 			uvw.BuildFromW(w);
 		}
-		vec3 Generate() const override;
-		double PdfVal(const vec3& direction) const override;
+		dvec3 Generate() const override;
+		double PdfVal(const dvec3& direction) const override;
 
 		ONB uvw;
 };
 
 class CosinePdf : public Pdf {
 	public:
-		CosinePdf(const vec3& w)
+		CosinePdf(const dvec3& w)
 		{
 			uvw.BuildFromW(w);
 		}
-		vec3 Generate() const override;
-		double PdfVal(const vec3& direction) const override;
+		dvec3 Generate() const override;
+		double PdfVal(const dvec3& direction) const override;
 
 		ONB uvw;
 };
 
 class toward_object_Pdf : public Pdf {
 	public:
-		toward_object_Pdf(const vec3& w, double _theta_max)
+		toward_object_Pdf(const dvec3& w, double _theta_max)
 		{
 			uvw.BuildFromW(w);
 			this->theta_max = _theta_max;
 		}
-		vec3 Generate() const override;
-		double PdfVal(const vec3& direction) const override;
+		dvec3 Generate() const override;
+		double PdfVal(const dvec3& direction) const override;
 
 		ONB uvw;
 		double theta_max;
@@ -58,16 +58,16 @@ class toward_object_Pdf : public Pdf {
 
 class HittablePdf : public Pdf {
 	public:
-		HittablePdf(std::shared_ptr<Hittable> p, const vec3& origin)
+		HittablePdf(std::shared_ptr<Hittable> p, const dvec3& origin)
 		{
 			ptr = p;
 			o = origin;
 			pdf_ptr = p->GeneratePdfObject(origin);
 		}
-		vec3 Generate() const override;
-		double PdfVal(const vec3& direction) const override;
+		dvec3 Generate() const override;
+		double PdfVal(const dvec3& direction) const override;
 
-		vec3 o;
+		dvec3 o;
 		std::shared_ptr<Hittable> ptr;
 
 		std::unique_ptr<Pdf> pdf_ptr;
@@ -80,8 +80,8 @@ class MixturePdf : public Pdf {
 		{
 		}
 
-		vec3 Generate() const override;
-		double PdfVal(const vec3& direction) const override;
+		dvec3 Generate() const override;
+		double PdfVal(const dvec3& direction) const override;
 
 		std::vector<std::unique_ptr<Pdf> > pdf_list;
 };

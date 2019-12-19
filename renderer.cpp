@@ -108,7 +108,7 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 #endif
 			for (i = 0; i < nx; i++) {
 				for (j = 0; j < ny; j++) {
-					vec3 rgb_col = rgb(spectrum_img[i*ny+j]*(ns/static_cast<double>(s+1)));
+					dvec3 rgb_col = rgb(spectrum_img[i*ny+j]*(ns/static_cast<double>(s+1)));
 					for (c = 0; c < 3; c++) {
 						if (rgb_col[c] >= 0.0) {
 							rgb_col[c] = pow(rgb_col[c], 1.0/2.2);
@@ -147,7 +147,7 @@ double Renderer::NaivePathTracing(const ray& r)
 	double radiance = 0.0;
 	double beta = 1.0;
 	Sphere sphere;
-	sphere.center = vec3(0.0, 0.0, 0.0);
+	sphere.center = dvec3(0.0, 0.0, 0.0);
 	sphere.radius = 100.0;
 	while (1) {
 		bool hit = world->Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
@@ -157,13 +157,13 @@ double Renderer::NaivePathTracing(const ray& r)
 				break;
 			bool hit = sphere.Hit(_ray, 0.001, std::numeric_limits<double>::max(), rec);
 			if (hit) {
-				vec3 p = unit_vector(_ray.point_at_parameter(rec.t));
+				dvec3 p = unit_vector(_ray.point_at_parameter(rec.t));
 				double theta = acos(p.y());
 				double phi = atan2(p.x()/sin(theta), p.z()/sin(theta));
 				phi += M_PI;
 				int x = env_mapping_width - (int)(phi/ (2.0*M_PI) * env_mapping_width);
 				int y = (int)(theta/ M_PI * env_mapping_height);
-				vec3 rgb;
+				dvec3 rgb;
 				rgb[0] = static_cast<double>(env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)])/255.0;
 				rgb[1] = static_cast<double>(env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+1])/255.0;
 				rgb[2] = static_cast<double>(env_mapping_texture[env_mapping_bpp*(x+y*env_mapping_width)+2])/255.0;
@@ -180,7 +180,7 @@ double Renderer::NaivePathTracing(const ray& r)
 		double bxdf, pdf;
 		ONB uvw;
 		uvw.BuildFromW(rec.normal);
-		vec3 generated_vi;
+		dvec3 generated_vi;
 		double wli;
 		bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
 		if (respawn)
@@ -227,7 +227,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 		// sample light
 		{
 			int selected_light = mt() % light_objects.size();
-			vec3 p;
+			dvec3 p;
 			double area;
 			light_objects[selected_light]->GetRandomPointOnPolygon(p, area);
 			ray shadow_ray = ray(rec.p, unit_vector(p - rec.p));
@@ -242,8 +242,8 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 				}
 				ONB uvw_;
 				uvw_.BuildFromW(rec.normal);
-				const vec3 vi = uvw_.WorldToLocal(unit_vector(p - rec.p));
-				const vec3 vo = uvw_.WorldToLocal(-_ray.direction());
+				const dvec3 vi = uvw_.WorldToLocal(unit_vector(p - rec.p));
+				const dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
 				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
@@ -262,7 +262,7 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 		}
 
 
-		vec3 generated_vi;
+		dvec3 generated_vi;
 		double wli;
 		double bxdf_divided_by_pdf;
 		double bxdf, pdf;
@@ -327,7 +327,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 		int selected_light = mt() % light_objects.size();
 		// sample light
 		{
-			vec3 p;
+			dvec3 p;
 			double area;
 			light_objects[selected_light]->GetRandomPointOnPolygon(p, area);
 			ray shadow_ray = ray(rec.p, unit_vector(p - rec.p));
@@ -350,8 +350,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				}
 				ONB uvw_;
 				uvw_.BuildFromW(rec.normal);
-				const vec3 vi = uvw_.WorldToLocal(unit_vector(p - rec.p));
-				const vec3 vo = uvw_.WorldToLocal(-_ray.direction());
+				const dvec3 vi = uvw_.WorldToLocal(unit_vector(p - rec.p));
+				const dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
 				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
@@ -380,7 +380,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 			double bxdf, scattering_pdf;
 			ONB uvw;
 			uvw.BuildFromW(rec.normal);
-			vec3 generated_vi;
+			dvec3 generated_vi;
 			double wli;
 			bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, scattering_pdf);
 			if (respawn) {
@@ -411,7 +411,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 		}
 
 
-		vec3 generated_vi;
+		dvec3 generated_vi;
 		double wli;
 		double bxdf_divided_by_pdf;
 		double bxdf, pdf;
@@ -471,12 +471,12 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //		if (rec.mat_ptr->specular_flag == false) {
 //			/*
 //			if (!enableNEE) {
-//				vec3 generated_vi;
+//				dvec3 generated_vi;
 //				double wli;
 //				ONB uvw_;
 //				uvw_.BuildFromW(rec.normal);
 //				UniformPdf pdf(rec.normal);
-//				vec3 generated_direction = pdf.Generate();
+//				dvec3 generated_direction = pdf.Generate();
 //				//bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw_, uvw_.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
 //				generated_vi = uvw_.WorldToLocal(generated_direction);
 //				bool respawn = true;
@@ -504,7 +504,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //				ONB uvw_;
 //				uvw_.BuildFromW(rec.normal);
 //				HittablePdf pdf(Material::lights[selectedLight], rec.p);
-//				vec3 generated_direction = pdf.Generate();
+//				dvec3 generated_direction = pdf.Generate();
 //
 //				HitRecord light_rec;
 //				ray scattered = ray(rec.p, generated_direction);
@@ -514,8 +514,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //				bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 //				if (hit) {
 //					double pdfval = pdf.PdfVal(generated_direction);
-//					vec3 vi = uvw_.WorldToLocal(generated_direction);
-//					vec3 vo = uvw_.WorldToLocal(-_ray.direction());
+//					dvec3 vi = uvw_.WorldToLocal(generated_direction);
+//					dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 //					double wlo = _ray.central_wl;
 //					double wli = wlo;
 //					double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
@@ -527,7 +527,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //
 //		if (rec.mat_ptr->light_flag)
 //			break;
-//		vec3 generated_vi;
+//		dvec3 generated_vi;
 //		double wli;
 //		bool respawn;
 //		double bxdf, pdf;
@@ -620,14 +620,14 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //
 //		bool respawn = false;
 //		double scattering_coefficient = 0.0;
-//		vec3 scattered_point; // in world cooredinate
-//		vec3 scattered_direction; // in world cooredinate
+//		dvec3 scattered_point; // in world cooredinate
+//		dvec3 scattered_direction; // in world cooredinate
 //
 //		if (SampleMedium) {
 //			std::random_device rnd;
 //			int selectedLight = rnd() % Material::lights.size();
 //			HittablePdf pdf(Material::lights[selectedLight], _ray.point_at_parameter(medium_t));
-//			vec3 generated_direction = pdf.Generate();
+//			dvec3 generated_direction = pdf.Generate();
 //
 //
 //
@@ -639,7 +639,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //
 //			bool hit_anything = false;
 //			unsigned int medium_object_id = inside_object_stack.top();
-//			vec3 last_smoke_point;
+//			dvec3 last_smoke_point;
 //			while (true) {
 //				bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), tmp_rec);
 //				hit_anything = hit;
@@ -666,7 +666,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //				radiance += Material::lights.size() * p * tr * beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) / pdfval;
 //			}
 //
-//			vec3 vi;
+//			dvec3 vi;
 //			double wli;
 //			double phase, pdfval;
 //			respawn = mi->Sample_p(-_ray.direction(), _ray.central_wl, vi, wli, phase, pdfval);
@@ -694,12 +694,12 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //			// calculate direct lighting
 //			if (rec.mat_ptr->specular_flag == false) {
 //				if (!enableNEE) {
-//					vec3 generated_vi;
+//					dvec3 generated_vi;
 //					double wli;
 //					ONB uvw_;
 //					uvw_.BuildFromW(rec.normal);
 //					UniformPdf pdf(rec.normal);
-//					vec3 generated_direction = pdf.Generate();
+//					dvec3 generated_direction = pdf.Generate();
 //					//bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw_, uvw_.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf, pdfval);
 //					generated_vi = uvw_.WorldToLocal(generated_direction);
 //					bool respawn = true;
@@ -726,7 +726,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //						ONB uvw_;
 //						uvw_.BuildFromW(rec.normal);
 //						HittablePdf pdf(Material::lights[selectedLight], rec.p);
-//						vec3 generated_direction = pdf.Generate();
+//						dvec3 generated_direction = pdf.Generate();
 //
 //						HitRecord light_rec;
 //						ray scattered = ray(rec.p, generated_direction);
@@ -736,8 +736,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //						bool hit = world->Hit(scattered, 0.001, std::numeric_limits<double>::max(), light_rec);
 //						if (hit) {
 //							double pdfval = pdf.PdfVal(generated_direction);
-//							vec3 vi = uvw_.WorldToLocal(generated_direction);
-//							vec3 vo = uvw_.WorldToLocal(-_ray.direction());
+//							dvec3 vi = uvw_.WorldToLocal(generated_direction);
+//							dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 //							double wlo = _ray.central_wl;
 //							double wli = wlo;
 //							double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
@@ -754,7 +754,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //
 //			if (rec.mat_ptr->light_flag)
 //				break;
-//			vec3 generated_vi;
+//			dvec3 generated_vi;
 //			double wli;
 //			double bxdf, pdf;
 //			ONB uvw;

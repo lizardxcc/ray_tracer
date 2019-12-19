@@ -14,13 +14,13 @@ class Hittable;
 
 struct HitRecord {
 	double t;
-	vec3 p;
-	vec3 normal;
+	dvec3 p;
+	dvec3 normal;
 	//std::shared_ptr<Material> mat_ptr;
 	NodeMaterial *mat_ptr;
 	const Hittable *hit_object;
 	unsigned int hit_object_id;
-	vec3 vt;
+	dvec3 vt;
 	ONB tbn;
 };
 
@@ -36,7 +36,7 @@ class Hittable: public std::enable_shared_from_this<Hittable> {
 				return true;
 			return false;
 		}
-		virtual std::unique_ptr<Pdf> GeneratePdfObject(const vec3& o);
+		virtual std::unique_ptr<Pdf> GeneratePdfObject(const dvec3& o);
 		virtual bool BoundingBox(AABB& box) const = 0;
 		virtual void SetMaterial(NodeMaterial *mat);
 		//std::shared_ptr<Material> mat_ptr;

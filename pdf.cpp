@@ -1,16 +1,16 @@
 #include "pdf.h"
 
 
-vec3 FromSphericalToXYZ(double theta, double phi)
+dvec3 FromSphericalToXYZ(double theta, double phi)
 {
-	return vec3(
+	return dvec3(
 	sin(theta)*cos(phi),
 	sin(theta)*sin(phi),
 	cos(theta)
 	);
 }
 
-vec3 RandomOnUnitHemiSphere(void)
+dvec3 RandomOnUnitHemiSphere(void)
 {
 	double r1 = drand48();
 	double r2 = drand48();
@@ -19,11 +19,11 @@ vec3 RandomOnUnitHemiSphere(void)
 	double x = sin_theta * cos(phi);
 	double y = sin_theta * sin(phi);
 	double z = 1-r2;
-	return vec3(x, y, z);
+	return dvec3(x, y, z);
 }
 
 
-vec3 RandomOnUnitHemiSphere(double theta_max)
+dvec3 RandomOnUnitHemiSphere(double theta_max)
 {
 	double r1 = drand48();
 	double r2 = drand48();
@@ -33,7 +33,7 @@ vec3 RandomOnUnitHemiSphere(double theta_max)
 }
 
 
-vec3 CosineWeightedRandomOnUnitHemiSphere(void)
+dvec3 CosineWeightedRandomOnUnitHemiSphere(void)
 {
 	double r1 = drand48();
 	double r2 = drand48();
@@ -42,7 +42,7 @@ vec3 CosineWeightedRandomOnUnitHemiSphere(void)
 	double x = sin_theta * cos(phi);
 	double y = sin_theta * sin(phi);
 	double z = 1-r2;
-	return vec3(x, y, z);
+	return dvec3(x, y, z);
 }
 
 
@@ -51,13 +51,13 @@ Pdf::~Pdf(void)
 }
 
 
-vec3 UniformPdf::Generate() const
+dvec3 UniformPdf::Generate() const
 {
 	return uvw.LocalToWorld(RandomOnUnitHemiSphere());
 }
 
 
-double UniformPdf::PdfVal(const vec3& direction) const
+double UniformPdf::PdfVal(const dvec3& direction) const
 {
 	if (dot(direction, uvw.w()) >= 0.0) {
 		return 1.0/(2.0*M_PI);
@@ -67,13 +67,13 @@ double UniformPdf::PdfVal(const vec3& direction) const
 }
 
 
-vec3 CosinePdf::Generate() const
+dvec3 CosinePdf::Generate() const
 {
 	return uvw.LocalToWorld(CosineWeightedRandomOnUnitHemiSphere());
 }
 
 
-double CosinePdf::PdfVal(const vec3& direction) const
+double CosinePdf::PdfVal(const dvec3& direction) const
 {
 	double cos_theta = dot(direction, uvw.w());
 	if (cos_theta >= 0.0) {
@@ -85,12 +85,12 @@ double CosinePdf::PdfVal(const vec3& direction) const
 
 
 
-vec3 toward_object_Pdf::Generate() const
+dvec3 toward_object_Pdf::Generate() const
 {
 	return uvw.LocalToWorld(RandomOnUnitHemiSphere(theta_max));
 }
 
-double toward_object_Pdf::PdfVal(const vec3& direction) const
+double toward_object_Pdf::PdfVal(const dvec3& direction) const
 {
 	double cosine = dot(unit_vector(direction), uvw.w());
 	if (cosine >= cos(theta_max)) {
@@ -101,19 +101,19 @@ double toward_object_Pdf::PdfVal(const vec3& direction) const
 }
 
 
-vec3 HittablePdf::Generate() const
+dvec3 HittablePdf::Generate() const
 {
 	return pdf_ptr->Generate();
 }
 
-double HittablePdf::PdfVal(const vec3& direction) const
+double HittablePdf::PdfVal(const dvec3& direction) const
 {
 	return pdf_ptr->PdfVal(direction);
 }
 
 
 
-vec3 MixturePdf::Generate() const
+dvec3 MixturePdf::Generate() const
 {
 	double r = drand48();
 	size_t l = pdf_list.size();
@@ -125,7 +125,7 @@ vec3 MixturePdf::Generate() const
 	return pdf_list[l-1]->Generate();
 }
 
-double MixturePdf::PdfVal(const vec3& direction) const
+double MixturePdf::PdfVal(const dvec3& direction) const
 {
 	double sum = 0.0;
 	for (size_t i = 0; i < pdf_list.size(); i++) {

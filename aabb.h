@@ -10,7 +10,7 @@ class AABB {
 		{
 		}
 
-		AABB(const vec3& a, const vec3& b)
+		AABB(const dvec3& a, const dvec3& b)
 		{
 			minp = a;
 			maxp = b;
@@ -20,9 +20,9 @@ class AABB {
 		bool Hit(const ray& r, double t_min, double t_max) const;
 		double SurfaceArea(void) const;
 
-		vec3 minp;
-		vec3 maxp;
-		vec3 center;
+		dvec3 minp;
+		dvec3 maxp;
+		dvec3 center;
 };
 
 

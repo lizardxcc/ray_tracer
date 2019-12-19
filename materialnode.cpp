@@ -182,7 +182,7 @@ void MaterialNode::Compute(const Argument& global_arg, double& data) const
 void MaterialNode::Compute(const Argument& global_arg, Spectrum& data) const
 {
 }
-void MaterialNode::Compute(const Argument& global_arg, vec3& data) const
+void MaterialNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 }
 
@@ -217,7 +217,7 @@ void MaterialNode::DumpSpectrum(json& j, const Spectrum& s, const char *name) co
 	}
 }
 
-void MaterialNode::UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, vec3& new_normal) const
+void MaterialNode::UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, dvec3& new_normal) const
 {
 	new_normal = rec.normal;
 	if (!normal_pin->connected_links.empty()) {
@@ -228,10 +228,10 @@ void MaterialNode::UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec,
 		const PinInfo *connected_pin = normal_pin->connected_links[0]->input;
 		assert(connected_pin != nullptr);
 		const MaterialNode *parent = connected_pin->parent_node;
-		vec3 normal;
+		dvec3 normal;
 		Argument global_arg = { rec.vt };
 		parent->Compute(global_arg, normal);
-		normal = unit_vector(normal*2-vec3(1.0, 1.0, 1.0));
+		normal = unit_vector(normal*2.0-dvec3(1.0, 1.0, 1.0));
 		new_normal = rec.tbn.LocalToWorld(normal);
 
 		if (dot(rec.normal, rec.tbn.axis[2]) < 0.0) {
@@ -319,15 +319,15 @@ void MaterialNode::AddOutput(int &unique_id, PinType type, const char *name)
 void BSDFMaterialNode::PreProcess(const Argument& global_arg, HitRecord &rec) const
 {
 }
-bool BSDFMaterialNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const
+bool BSDFMaterialNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	return false;
 }
-double BSDFMaterialNode::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double BSDFMaterialNode::BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	return 0.0;
 }
-double BSDFMaterialNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double BSDFMaterialNode::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	return 0.0;
 }
@@ -379,16 +379,16 @@ void LambertianNode::Render(void)
 
 void LambertianNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
-	vec3 new_normal;
+	dvec3 new_normal;
 	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 
-bool LambertianNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool LambertianNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	CosinePdf Pdf(rec.normal);
 
-	vec3 generated_direction = Pdf.Generate();
+	dvec3 generated_direction = Pdf.Generate();
 	pdfval = Pdf.PdfVal(generated_direction);
 	vi = uvw.WorldToLocal(generated_direction);
 	wli = wlo;
@@ -397,7 +397,7 @@ bool LambertianNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec
 	return true;
 }
 
-double LambertianNode::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double LambertianNode::BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	if (vi.z() < 0.0)
 		return 0.0;
@@ -412,7 +412,7 @@ double LambertianNode::BxDF(const Argument& global_arg, const vec3& vi, double w
 	parent->Compute(global_arg, albedo);
 	return albedo.get(wli)/M_PI;
 }
-double LambertianNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double LambertianNode::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	if (vi.z() < 0.0)
 		return 0.0;
@@ -475,12 +475,12 @@ void DielectricNode::Render(void)
 }
 void DielectricNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
-	vec3 new_normal;
+	dvec3 new_normal;
 	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 
-bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -498,13 +498,13 @@ bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec
 
 	double cos_o = vo.z();
 	double n_vacuum = 1.0;
-	vec3 normal = vec3(0, 0, 1);
+	dvec3 normal = dvec3(0, 0, 1);
 	double n1, n2;
 	if (cos_o >= 0.0) {
 		n1 = n_vacuum;
 		n2 = ref_idx;
 	} else {
-		normal = vec3(0, 0, -1);
+		normal = dvec3(0, 0, -1);
 		n1 = ref_idx;
 		n2 = n_vacuum;
 		cos_o = abs(cos_o);
@@ -525,19 +525,19 @@ bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec
 		double sin_o = sqrt(1.0-cos_o*cos_o);
 		double sin_t = sin_o/relative_ref_idx;
 		double cos_t = sqrt(1.0-sin_t*sin_t);
-		vi = (-cos_t)*normal - sin_t*unit_vector(vec3(vo[0], vo[1], 0));
+		vi = (-cos_t)*normal - sin_t*unit_vector(dvec3(vo[0], vo[1], 0));
 		bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 2) / cos_t;
 	}
 
 	return true;
 }
-double DielectricNode::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double DielectricNode::BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	//if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 	//	return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
-double DielectricNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double DielectricNode::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	//if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 	//	return std::numeric_limits<double>::infinity();
@@ -597,12 +597,12 @@ void ConductorNode::Render(void)
 }
 void ConductorNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
-	vec3 new_normal;
+	dvec3 new_normal;
 	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 
-bool ConductorNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool ConductorNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -632,13 +632,13 @@ bool ConductorNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec,
 
 	return true;
 }
-double ConductorNode::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double ConductorNode::BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
-double ConductorNode::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double ConductorNode::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
@@ -690,12 +690,12 @@ void ColoredMetal::Render(void)
 }
 void ColoredMetal::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
-	vec3 new_normal;
+	dvec3 new_normal;
 	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
 
-bool ColoredMetal::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool ColoredMetal::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	wli = wlo;
 
@@ -719,13 +719,13 @@ bool ColoredMetal::SampleBSDF(const Argument& global_arg, const HitRecord& rec, 
 
 	return true;
 }
-double ColoredMetal::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double ColoredMetal::BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
 	return 0.0;
 }
-double ColoredMetal::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double ColoredMetal::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 	if (-vi[0] == vo[0] && -vi[1] == vo[1] && vi[2] == vo[2])
 		return std::numeric_limits<double>::infinity();
@@ -784,7 +784,7 @@ void GGXReflection::Render(void)
 void GGXReflection::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
 }
-bool GGXReflection::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool GGXReflection::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	double phi = 2 * M_PI * drand48();
 	double u = drand48();
@@ -793,7 +793,7 @@ bool GGXReflection::SampleBSDF(const Argument& global_arg, const HitRecord& rec,
 	double cos_theta_squared = cos(theta)*cos(theta);
 	double sin_theta = sin(theta);
 
-	vec3 micro_normal;
+	dvec3 micro_normal;
 	micro_normal[0] = sin_theta * cos(phi);
 	micro_normal[1] = sin_theta * sin(phi);
 	micro_normal[2] = sqrt(cos_theta_squared);
@@ -827,10 +827,10 @@ bool GGXReflection::SampleBSDF(const Argument& global_arg, const HitRecord& rec,
 
 	return true;
 }
-double GGXReflection::BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double GGXReflection::BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 }
-double GGXReflection::PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const
+double GGXReflection::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
 }
 
@@ -875,7 +875,7 @@ void DiffuseLightNode::Render(void)
 }
 void DiffuseLightNode::PreProcess(const Argument& global_arg, HitRecord &rec) const
 {
-	vec3 new_normal;
+	dvec3 new_normal;
 	UpdateNormal(normal_pin, rec, new_normal);
 	rec.normal = new_normal;
 }
@@ -927,7 +927,7 @@ void MixBSDFNode::PreProcess(HitRecord& rec) const
 	dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->PreProcess(rec);
 }
 
-bool MixBSDFNode::SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const
+bool MixBSDFNode::SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BxDF, double& pdfval) const
 {
 	size_t i;
 	if (drand48() < ratio) {
@@ -942,7 +942,7 @@ bool MixBSDFNode::SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& v
 	return dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->SampleBSDF(rec, uvw, vo, wlo, vi, wli, BxDF, pdfval);
 }
 
-double MixBSDFNode::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double MixBSDFNode::BxDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const
 {
 	size_t i;
 	if (drand48() < ratio) {
@@ -1041,7 +1041,7 @@ UVNode::UVNode(const json& j) : MaterialNode(j)
 	this->type = UVType;
 }
 
-void UVNode::Compute(const Argument& global_arg, vec3& data) const
+void UVNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	data = global_arg.vt;
 }
@@ -1083,7 +1083,7 @@ void RGBColorNode::Render(void)
 #endif
 }
 
-void RGBColorNode::Compute(const Argument& global_arg, vec3& data) const
+void RGBColorNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	data[0] = col[0];
 	data[1] = col[1];
@@ -1103,7 +1103,7 @@ RGBtoSpectrumNode::RGBtoSpectrumNode(const json& j) : MaterialNode(j)
 }
 void RGBtoSpectrumNode::Compute(const Argument& global_arg, Spectrum& data) const
 {
-	vec3 RGB;
+	dvec3 RGB;
 	const MaterialNode *parent = GetInputParentNode(&inputs[0]);
 	if (parent == nullptr)
 		return;
@@ -1156,14 +1156,14 @@ void ImageTextureNode::Render(void)
 	ImGui::PopID();
 #endif
 }
-void ImageTextureNode::Compute(const Argument& global_arg, vec3& data) const
+void ImageTextureNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	if (texture == nullptr)
 		return;
 
 	assert(inputs[0].connected_links.size() == 1);
 	assert(inputs[0].connected_links[0]->input != nullptr);
-	vec3 vt;
+	dvec3 vt;
 	inputs[0].connected_links[0]->input->parent_node->Compute(global_arg, vt);
 
 
@@ -1191,18 +1191,18 @@ void CheckerboardNode::DumpJson(json& j) const
 	j["size"] = size;
 	DumpIO(j);
 }
-void CheckerboardNode::Compute(const Argument& global_arg, vec3& data) const
+void CheckerboardNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	assert(inputs[0].connected_links.size() == 1);
 	assert(inputs[0].connected_links[0]->input != nullptr);
-	vec3 vt;
+	dvec3 vt;
 	inputs[0].connected_links[0]->input->parent_node->Compute(global_arg, vt);
 	int x = (vt[0] - fmod(vt[0], size))/size;
 	int y = (vt[1] - fmod(vt[1], size))/size;
 	if (x%2 == y%2)
-		data = vec3(1.0, 1.0, 1.0);
+		data = dvec3(1.0, 1.0, 1.0);
 	else
-		data = vec3(0.0, 0.0, 0.0);
+		data = dvec3(0.0, 0.0, 0.0);
 }
 
 
@@ -1250,16 +1250,16 @@ void AdditionNode::Compute(const Argument& global_arg, double &data) const
 		data += d;
 	}
 }
-void AdditionNode::Compute(const Argument& global_arg, vec3& data) const
+void AdditionNode::Compute(const Argument& global_arg, dvec3& data) const
 {
-	data = vec3(0.0, 0.0, 0.0);
+	data = dvec3(0.0, 0.0, 0.0);
 	for (size_t i = 0; i < 2; i++) {
 		assert(inputs[i].connected_links.size() == 1);
 		if (!(inputs[i].connected_links[0]->input->type == PinVec3 ||
 				inputs[i].connected_links[0]->input->type == PinUniversal)) {
 			std::cout << "Error" << std::endl;
 		}
-		vec3 d;
+		dvec3 d;
 		inputs[i].connected_links[0]->input->parent_node->Compute(global_arg, d);
 		data += d;
 	}
@@ -1324,14 +1324,14 @@ void ScalarMultiplicationNode::Compute(const Argument& global_arg, double &data)
 	inputs[0].connected_links[0]->input->parent_node->Compute(global_arg, d);
 	data = d * scale;
 }
-void ScalarMultiplicationNode::Compute(const Argument& global_arg, vec3& data) const
+void ScalarMultiplicationNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	assert(inputs[0].connected_links.size() == 1);
 	if (!(inputs[0].connected_links[0]->input->type == PinVec3 ||
 			inputs[0].connected_links[0]->input->type == PinUniversal)) {
 		std::cout << "Error" << std::endl;
 	}
-	vec3 d;
+	dvec3 d;
 	inputs[0].connected_links[0]->input->parent_node->Compute(global_arg, d);
 	data = d * scale;
 }
@@ -1371,15 +1371,15 @@ void MultiplicationNode::Compute(const Argument& global_arg, double &data) const
 		data *= d;
 	}
 }
-void MultiplicationNode::Compute(const Argument& global_arg, vec3& data) const
+void MultiplicationNode::Compute(const Argument& global_arg, dvec3& data) const
 {
-	data = vec3(1.0, 1.0, 1.0);
+	data = dvec3(1.0, 1.0, 1.0);
 	for (size_t i = 0; i < 2; i++) {
 		assert(inputs[i].connected_links.size() == 1);
 		if (inputs[i].connected_links[0]->input->type != PinVec3) {
 			std::cout << "Error" << std::endl;
 		}
-		vec3 d;
+		dvec3 d;
 		inputs[i].connected_links[0]->input->parent_node->Compute(global_arg, d);
 		data *= d;
 	}
@@ -1432,7 +1432,7 @@ void RandomSamplingNode::Compute(const Argument& global_arg, double &data) const
 	}
 	inputs[i].connected_links[0]->input->parent_node->Compute(global_arg, data);
 }
-void RandomSamplingNode::Compute(const Argument& global_arg, vec3& data) const
+void RandomSamplingNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	size_t i;
 	if (drand48() < ratio) {
@@ -1493,7 +1493,7 @@ AccessVec3ComponentNode::AccessVec3ComponentNode(const json& j) : MaterialNode(j
 
 void AccessVec3ComponentNode::Compute(const Argument& global_arg, double &data) const
 {
-	vec3 v;
+	dvec3 v;
 	const MaterialNode *node = GetInputParentNode(&inputs[0]);
 	node->Compute(global_arg, v);
 	data = v[index];
@@ -1532,7 +1532,7 @@ CombineVec3ComponentNode::CombineVec3ComponentNode(const json& j) : MaterialNode
 }
 
 
-void CombineVec3ComponentNode::Compute(const Argument& global_arg, vec3& data) const
+void CombineVec3ComponentNode::Compute(const Argument& global_arg, dvec3& data) const
 {
 	for (size_t i = 0; i < 3; i++) {
 		const MaterialNode *node = GetInputParentNode(&inputs[i]);
@@ -1735,9 +1735,9 @@ void RodriguesRotationNode::DumpJson(json& j) const
 }
 
 
-void RodriguesRotationNode::Compute(const Argument& global_arg, vec3& data) const
+void RodriguesRotationNode::Compute(const Argument& global_arg, dvec3& data) const
 {
-	vec3 nn;
+	dvec3 nn;
 	if (inputs[1].connected_links.empty()) {
 		nn = unit_vector(n);
 	} else {
@@ -1765,13 +1765,13 @@ void RodriguesRotationNode::Compute(const Argument& global_arg, vec3& data) cons
 	double nx = nn[0];
 	double ny = nn[1];
 	double nz = nn[2];
-	vec3 r0 = vec3(c+nx*nx*(1.0-c), nx*ny*(1.0-c)-nz*s, nx*nz*(1.0-c)+ny*s);
-	vec3 r1 = vec3(ny*nx*(1.0-c)+nz*s, c+ny*ny*(1.0-c), ny*nz*(1.0-c)-nx*s);
-	vec3 r2 = vec3(nz*nx*(1.0-c)-ny*s, nz*ny*(1.0-c)+nx*s, c+nz*nz*(1.0-c));
+	dvec3 r0 = dvec3(c+nx*nx*(1.0-c), nx*ny*(1.0-c)-nz*s, nx*nz*(1.0-c)+ny*s);
+	dvec3 r1 = dvec3(ny*nx*(1.0-c)+nz*s, c+ny*ny*(1.0-c), ny*nz*(1.0-c)-nx*s);
+	dvec3 r2 = dvec3(nz*nx*(1.0-c)-ny*s, nz*ny*(1.0-c)+nx*s, c+nz*nz*(1.0-c));
 	const MaterialNode *node = GetInputParentNode(&inputs[0]);
 	if (node == nullptr)
 		return;
-	vec3 v;
+	dvec3 v;
 	node->Compute(global_arg, v);
 	data[0] = dot(r0, v);
 	data[1] = dot(r1, v);
@@ -2132,7 +2132,7 @@ void NodeMaterial::PreProcess(HitRecord& rec) const
 	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
 	p->PreProcess(global_arg, rec);
 }
-bool NodeMaterial::SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
+bool NodeMaterial::SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
@@ -2142,7 +2142,7 @@ bool NodeMaterial::SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& 
 	Argument global_arg = { rec.vt };
 	return p->SampleBSDF(global_arg, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BxDF, pdfval);
 }
-double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double NodeMaterial::BxDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
@@ -2153,7 +2153,7 @@ double NodeMaterial::BxDF(const vec3& vi, double wli, const vec3& vo, double wlo
 	Argument global_arg = { vt };
 	return p->BxDF(global_arg, vi, wli, vo, wlo);
 }
-double NodeMaterial::PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const
+double NodeMaterial::PDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
@@ -2164,7 +2164,7 @@ double NodeMaterial::PDF(const vec3& vi, double wli, const vec3& vo, double wlo,
 	Argument global_arg = { vt };
 	return p->PDF(global_arg, vi, wli, vo, wlo);
 }
-double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const
+double NodeMaterial::Emitted(const ray& r, const HitRecord& rec, const dvec3& vt) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);

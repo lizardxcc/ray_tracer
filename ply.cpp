@@ -44,7 +44,7 @@ void ply::Load(const char *filename)
 		std::istringstream iss(line);
 		std::string s;
 
-		vec3 vertex, normal;
+		dvec3 vertex, normal;
 		for (size_t j = 0; j < 3; j++) {
 			iss >> s;
 			vertex.e[j] = atof(s.c_str());

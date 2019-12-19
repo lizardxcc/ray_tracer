@@ -9,20 +9,20 @@ public:
 	{
 	}
 
-	ray(const vec3& a, const vec3& b)
+	ray(const dvec3& a, const dvec3& b)
 	{
 		A = a;
 		B = b;
 	}
 
-	vec3 origin() const { return A; }
-	vec3 direction() const { return B; }
-	vec3 point_at_parameter(double t) const {
+	dvec3 origin() const { return A; }
+	dvec3 direction() const { return B; }
+	dvec3 point_at_parameter(double t) const {
 		return A + t * B;
 	}
 
-	vec3 A;
-	vec3 B;
+	dvec3 A;
+	dvec3 B;
 	double central_wl;
 	double min_wl;
 	double max_wl;

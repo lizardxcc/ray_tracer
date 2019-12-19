@@ -65,7 +65,7 @@ struct PinInfo {
 
 
 struct Argument {
-	vec3 vt;
+	dvec3 vt;
 };
 
 
@@ -106,7 +106,7 @@ class MaterialNode {
 		const MaterialNode *GetInputParentNode(const PinInfo *pin) const;
 		virtual void Compute(const Argument& global_arg, double& data) const;
 		virtual void Compute(const Argument& global_arg, Spectrum& data) const;
-		virtual void Compute(const Argument& global_arg, vec3& data) const;
+		virtual void Compute(const Argument& global_arg, dvec3& data) const;
 		void AddInput(int &unique_id, PinType type, const char *name);
 		void AddOutput(int &unique_id, PinType type, const char *name);
 
@@ -125,15 +125,15 @@ class MaterialNode {
 		std::vector<PinInfo> inputs;
 		std::vector<PinInfo> outputs;
 	protected:
-		void UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, vec3& new_normal) const;
+		void UpdateNormal(const PinInfo *normal_pin, const HitRecord& rec, dvec3& new_normal) const;
 };
 
 class BSDFMaterialNode : public virtual MaterialNode {
 	public:
 		virtual void PreProcess(const Argument& global_arg, HitRecord &rec) const;
-		virtual bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const;
-		virtual double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const;
-		virtual double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const;
+		virtual bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BxDF_divided_by_pdf, double& BxDF, double& pdfval) const;
+		virtual double BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const;
+		virtual double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const;
 		virtual double Emitted(const Argument& global_arg, const ray& r, const HitRecord& rec) const;
 };
 class SpectrumNode : public MaterialNode {
@@ -154,9 +154,9 @@ class LambertianNode : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
-		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
+		double BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
+		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
@@ -170,9 +170,9 @@ class DielectricNode : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
-		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
+		double BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
+		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
 		Spectrum n = Spectrum(2.4);
 		Spectrum surface_color = Spectrum(1.0);
@@ -186,9 +186,9 @@ class ConductorNode : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
-		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
+		double BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
+		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
 		Spectrum n = Spectrum(0.2);
 		Spectrum k = Spectrum(1.0);
@@ -203,9 +203,9 @@ class ColoredMetal : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
-		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
+		double BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
+		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
 		Spectrum albedo = Spectrum(1.0);
 		const PinInfo *albedo_pin;
@@ -219,9 +219,9 @@ class GGXReflection : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
-		double BxDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
-		double PDF(const Argument& global_arg, const vec3& vi, double wli, const vec3& vo, double wlo) const override;
+		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const override;
+		double BxDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
+		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
 		Spectrum n = Spectrum(1.0);
 		Spectrum k = Spectrum(0.0);
@@ -254,8 +254,8 @@ class MixBSDFNode : public MaterialNode, public Material {
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 		void PreProcess(HitRecord& rec) const override;
-		bool SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& BxDF, double& pdfval) const override;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt = default_vt) const override;
+		bool SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BxDF, double& pdfval) const override;
+		double BxDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt = default_vt) const override;
 		double ratio = 0.5;
 	private:
 		size_t selected_node;
@@ -273,7 +273,7 @@ class UVNode : public MaterialNode {
 	public:
 		UVNode(int &unique_id, PinType type, const char *name = "");
 		UVNode(const json& j);
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 };
 
 
@@ -283,7 +283,7 @@ class RGBColorNode : public MaterialNode {
 		RGBColorNode(const json& j);
 		void DumpJson(json& j) const override;
 		void Render(void) override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 	private:
 		float col[3] = {0.0f, 0.0f, 0.0f};
 };
@@ -301,7 +301,7 @@ class ImageTextureNode : public MaterialNode {
 		ImageTextureNode(const json& j);
 		void DumpJson(json& j) const override;
 		void Render(void) override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 	private:
 		std::string path;
 		uint8_t *texture = nullptr;
@@ -314,7 +314,7 @@ class CheckerboardNode : public MaterialNode {
 		CheckerboardNode(int &unique_id, const char *name = "Checkerboard");
 		CheckerboardNode(const json& j);
 		void DumpJson(json& j) const override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 		void Render(void) override;
 	private:
 		double size = 0.5;
@@ -325,7 +325,7 @@ class AdditionNode : public MaterialNode {
 		AdditionNode(int &unique_id, const char *name = "Add");
 		AdditionNode(const json& j);
 		void Compute(const Argument& global_arg, double& data) const override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 		void Compute(const Argument& global_arg, Spectrum& data) const override;
 };
 
@@ -334,7 +334,7 @@ class MultiplicationNode : public MaterialNode {
 		MultiplicationNode(int &unique_id, const char *name = "Multiply");
 		MultiplicationNode(const json& j);
 		void Compute(const Argument& global_arg, double& data) const override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 		void Compute(const Argument& global_arg, Spectrum& data) const override;
 };
 
@@ -344,7 +344,7 @@ class ScalarMultiplicationNode : public MaterialNode {
 		ScalarMultiplicationNode(const json& j);
 		void DumpJson(json& j) const override;
 		void Compute(const Argument& global_arg, double& data) const override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 		void Compute(const Argument& global_arg, Spectrum& data) const override;
 		void Render(void) override;
 	private:
@@ -357,7 +357,7 @@ class RandomSamplingNode : public MaterialNode {
 		RandomSamplingNode(const json& j);
 		void DumpJson(json& j) const override;
 		void Compute(const Argument& global_arg, double& data) const override;
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 		void Compute(const Argument& global_arg, Spectrum& data) const override;
 		void Render(void) override;
 	private:
@@ -380,7 +380,7 @@ class CombineVec3ComponentNode : public MaterialNode {
 	public:
 		CombineVec3ComponentNode(int &unique_id, const char *name = "CombineVec3ComponentNode");
 		CombineVec3ComponentNode(const json& j);
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 	private:
 };
 
@@ -416,11 +416,11 @@ class RodriguesRotationNode : public MaterialNode {
 	public:
 		RodriguesRotationNode(int &unique_id, const char *name = "Rodrigues' Rotation Node");
 		RodriguesRotationNode(const json& j);
-		void Compute(const Argument& global_arg, vec3& data) const override;
+		void Compute(const Argument& global_arg, dvec3& data) const override;
 		void DumpJson(json& j) const override;
 		void Render(void) override;
 	private:
-		vec3 n = vec3(0.0, 0.0, 1.0);
+		dvec3 n = dvec3(0.0, 0.0, 1.0);
 		double theta;
 };
 
@@ -441,10 +441,10 @@ class NodeMaterial {
 		void AddLink(PinInfo *input, PinInfo *b);
 		void DumpJson(json& j) const;
 		void PreProcess(HitRecord& rec) const;
-		bool SampleBSDF(const HitRecord& rec, const ONB& uvw, const vec3& vo, double wlo, vec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const;
-		double BxDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const;
-		double PDF(const vec3& vi, double wli, const vec3& vo, double wlo, const vec3& vt) const;
-		double Emitted(const ray& r, const HitRecord& rec, const vec3& vt) const;
+		bool SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BxDF, double& pdfval) const;
+		double BxDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const;
+		double PDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const;
+		double Emitted(const ray& r, const HitRecord& rec, const dvec3& vt) const;
 		std::string name;
 		std::string settings_file;
 #ifndef _CLI

@@ -28,7 +28,7 @@ class Renderer {
 		double NEEMISPathTracing(const ray& r);
 		enum RenderingAlgorithm algorithm_type = MIS;
 		std::vector<Spectrum> spectrum_img;
-		std::vector<vec3> preview_img;
+		std::vector<dvec3> preview_img;
 		obj obj_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;

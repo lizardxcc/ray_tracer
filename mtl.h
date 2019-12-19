@@ -8,10 +8,10 @@
 class Mtl {
 	public:
 		double Ns;
-		vec3 Ka;
-		vec3 Kd;
-		vec3 Ks;
-		vec3 Ke;
+		dvec3 Ka;
+		dvec3 Kd;
+		dvec3 Ks;
+		dvec3 Ke;
 		double Ni;
 		double d;
 		size_t illum;
