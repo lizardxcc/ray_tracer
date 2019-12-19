@@ -54,7 +54,9 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 
 	rendering_runnnig = true;
 	if (print_progress) {
+#ifdef _OPENMP
 		std::cout << "max threads: " << omp_get_max_threads() << std::endl;
+#endif
 	}
 
 	int s;
@@ -98,8 +100,10 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 					spectrum_img[i*ny+j].add(rad/ns, min_wl, max_wl);
 				}
 			}
+#ifdef _OPENMP
 			if (print_progress)
 				count = omp_get_num_threads();
+#endif
 		}
 		if (preview_img_flag || s == ns-1) {
 			int c;

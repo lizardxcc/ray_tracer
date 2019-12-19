@@ -196,7 +196,11 @@ void Scene::LoadProject(const char *path)
 		for (int i = 0; i < 3; i++)
 			cameraUp[i] = scene_json["camera_up"][i].get<double>();
 	}
-	//scene_json["vfov"] = scene_json.value("vfov", 60.0);
+	if (scene_json.find("pyr") != scene_json.end()) {
+		for (int i = 0; i < 3; i++)
+			pyr[i] = scene_json["pyr"][i].get<double>();
+	}
+	vfov = scene_json.value("vfov", 60.0);
 }
 void Scene::WriteProject(const char *path)
 {
@@ -207,8 +211,9 @@ void Scene::WriteProject(const char *path)
 		scene_json["camera_pos"][i] = cameraPos[i];
 		scene_json["camera_front"][i] = cameraFront[i];
 		scene_json["camera_up"][i] = cameraUp[i];
+		scene_json["pyr"][i] = pyr[i];
 	}
-	//scene_json["vfov"] = vfov;
+	scene_json["vfov"] = vfov;
 	o << scene_json.dump(4);
 	o.close();
 }
