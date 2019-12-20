@@ -250,14 +250,14 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 				const dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
-				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
+				const double BSDF = rec.mat_ptr->BSDF(vi, wli, vo, wlo, rec.vt);
 				const double G = abs(dot(shadow_ray.direction(), light_objects[selected_light]->face_normal) * dot(shadow_ray.direction(), rec.normal) / (p-rec.p).squared_length());
 				const double pdfarea = 1.0 / area / light_objects.size();
 				HitRecord light_rec;
 				if (light_objects[selected_light]->Hit(shadow_ray, 0.0001, (p-rec.p).length()+0.0001, light_rec)) {
 					light_rec.mat_ptr->PreProcess(light_rec);
 					const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
-					const double add = BxDF * beta * light * G / pdfarea;
+					const double add = BSDF * beta * light * G / pdfarea;
 					radiance += add;
 				} else {
 					// bug?
@@ -358,7 +358,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				const dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
-				const double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo, rec.vt);
+				const double BSDF = rec.mat_ptr->BSDF(vi, wli, vo, wlo, rec.vt);
 				const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
 				const double lightpdfarea = 1.0 / area / light_objects.size();
 				//const double lightpdf = lightpdfarea * abs(dot(shadow_ray.direction(), light_rec.normal)) / (light_rec.t*light_rec.t);
@@ -372,8 +372,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 					mis_weight = 0.0;
 				else
 					mis_weight = lightpdf_solidangle*lightpdf_solidangle/(lightpdf_solidangle*lightpdf_solidangle + scatteringpdf * scatteringpdf);
-				//const double add = BxDF * beta * light * abs(vi.z()) * G / pdfarea;
-				const double add = BxDF * beta * light * abs(vi.z()) * mis_weight / lightpdf_solidangle;
+				//const double add = BSDF * beta * light * abs(vi.z()) * G / pdfarea;
+				const double add = BSDF * beta * light * abs(vi.z()) * mis_weight / lightpdf_solidangle;
 				radiance += add;
 			}
 		}
@@ -496,7 +496,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //					if (hit) {
 //						double bxdf, pdfval;
 //						pdfval = pdf.PdfVal(generated_direction);
-//						bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.WorldToLocal(-_ray.direction()), r.central_wl);
+//						bxdf = rec.mat_ptr->BSDF(generated_vi, wli, uvw_.WorldToLocal(-_ray.direction()), r.central_wl);
 //						radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdfval);
 //					}
 //				}
@@ -522,8 +522,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //					dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 //					double wlo = _ray.central_wl;
 //					double wli = wlo;
-//					double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-//					radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdfval;
+//					double BSDF = rec.mat_ptr->BSDF(vi, wli, vo, wlo);
+//					radiance += Material::lights.size() * BSDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdfval;
 //				}
 //			}
 //		}
@@ -719,7 +719,7 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //						if (hit) {
 //							double bxdf, pdfval;
 //							pdfval = pdf.PdfVal(generated_direction);
-//							bxdf = rec.mat_ptr->BxDF(generated_vi, wli, uvw_.WorldToLocal(-_ray.direction()), r.central_wl);
+//							bxdf = rec.mat_ptr->BSDF(generated_vi, wli, uvw_.WorldToLocal(-_ray.direction()), r.central_wl);
 //							radiance += bxdf * (beta * tmp_rec.mat_ptr->Emitted(scattered, tmp_rec) * abs(generated_vi.z()) / pdfval);
 //						}
 //					}
@@ -744,8 +744,8 @@ double Renderer::NEEMISPathTracing(const ray& r)
 //							dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 //							double wlo = _ray.central_wl;
 //							double wli = wlo;
-//							double BxDF = rec.mat_ptr->BxDF(vi, wli, vo, wlo);
-//							radiance += Material::lights.size() * BxDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdfval;
+//							double BSDF = rec.mat_ptr->BSDF(vi, wli, vo, wlo);
+//							radiance += Material::lights.size() * BSDF * (beta * light_rec.mat_ptr->Emitted(scattered, light_rec) * abs(vi.z())) / pdfval;
 //						}
 //
 //
