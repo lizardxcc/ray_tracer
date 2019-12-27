@@ -133,3 +133,14 @@ double MixturePdf::PdfVal(const dvec3& direction) const
 	}
 	return sum/(double)pdf_list.size();
 }
+
+
+
+double PowerHeuristic(double pdf1, double pdf2, double beta)
+{
+	if (std::isinf(pdf1)) {
+		return 1.0;
+	} else {
+		return pow(pdf1, beta)/(pow(pdf1, beta) + pow(pdf2, beta));
+	}
+}

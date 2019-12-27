@@ -86,4 +86,6 @@ class MixturePdf : public Pdf {
 		std::vector<std::unique_ptr<Pdf> > pdf_list;
 };
 
+double PowerHeuristic(double pdf1, double pdf2, double beta);
+
 #endif

@@ -75,7 +75,8 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 
 				double u = (i + drand48()) / nx;
 				double v = (j + drand48()) / ny;
-				ray r = cam.get_ray(u, v);
+				double p_image, p_lens, cos_theta;
+				ray r = cam.get_ray(u, v, p_image, p_lens, cos_theta);
 
 				int k = mt()%spectral_samples;
 				double min_wl = 400.0 + 300.0/spectral_samples*k;
@@ -96,6 +97,8 @@ void Renderer::RenderImage(int nx, int ny, int ns, int spectral_samples, bool en
 					case MIS:
 						rad = NEEMISPathTracing(r);
 				}
+				double geometry_factor = pow(cos_theta, 4.0)/(cam.d*cam.d);
+				rad *= cam.film_sensitivity * geometry_factor /(p_image*p_lens);
 				if (!std::isnan(rad)) {
 					spectrum_img[i*ny+j].add(rad/ns, min_wl, max_wl);
 				}
@@ -183,12 +186,15 @@ double Renderer::NaivePathTracing(const ray& r)
 		double bxdf_divided_by_pdf;
 		double bxdf, pdf;
 		ONB uvw;
-		uvw.BuildFromW(rec.normal);
+		uvw.BuildFromW(rec.normal); //法線をW軸としてローカルONBを生成
 		dvec3 generated_vi;
 		double wli;
 		bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, pdf);
-		if (respawn)
-			beta *= (bxdf_divided_by_pdf * abs(generated_vi.z()));
+		if (!respawn)
+			break;
+		beta *= (bxdf_divided_by_pdf * abs(generated_vi.z()));
+
+		// パスを打ち切るロシアンルーレット
 		double prr = 0.5;
 		double d = drand48();
 		if (d < prr)
@@ -220,14 +226,16 @@ double Renderer::NEEPathTracingWithoutSpecular(const ray& r)
 
 		bool preprocessed = false;
 
-		if (bounce == 0) {
 			if (rec.mat_ptr->light_flag) {
+				if (bounce != 0) {
+					// we assume that light objects absorb light completeley
+					break;
+				}
 				rec.mat_ptr->PreProcess(rec);
 				preprocessed = true;
 				const double light = rec.mat_ptr->Emitted(_ray, rec, rec.vt);
 				radiance += light;
 			}
-		}
 		// sample light
 		{
 			int selected_light = mt() % light_objects.size();
@@ -320,28 +328,34 @@ double Renderer::NEEMISPathTracing(const ray& r)
 
 		bool preprocessed = false;
 
-		if (bounce == 0) {
-			if (rec.mat_ptr->light_flag) {
-				rec.mat_ptr->PreProcess(rec);
-				preprocessed = true;
-				const double light = rec.mat_ptr->Emitted(_ray, rec, rec.vt);
-				radiance += light;
+		if (rec.mat_ptr->light_flag) {
+			// We assume that light objects absorb light completeley
+			if (bounce != 0) {
+				break;
 			}
+			rec.mat_ptr->PreProcess(rec);
+			preprocessed = true;
+			const double light = rec.mat_ptr->Emitted(_ray, rec, rec.vt);
+			radiance += light;
 		}
 		int selected_light = mt() % light_objects.size();
+
+		double addition = 0.0;
+		size_t number_of_samples = 0;
+
 		// sample light
 		{
-			dvec3 p;
+			dvec3 point_on_light;
 			double area;
-			light_objects[selected_light]->GetRandomPointOnPolygon(p, area);
-			ray shadow_ray = ray(rec.p, unit_vector(p - rec.p));
+			light_objects[selected_light]->GetRandomPointOnPolygon(point_on_light, area);
+			ray shadow_ray = ray(rec.p, unit_vector(point_on_light - rec.p));
 			shadow_ray.central_wl = r.central_wl;
 			shadow_ray.min_wl = r.min_wl;
 			shadow_ray.max_wl = r.max_wl;
 
 			bool notoccluded = false;
 			HitRecord light_rec;
-			bool light_hit = world->Hit(shadow_ray, 0.001, (p-rec.p).length()+0.001, light_rec);
+			bool light_hit = world->Hit(shadow_ray, 0.001, (point_on_light-rec.p).length()+0.001, light_rec);
 			if (light_hit) {
 				if (light_rec.hit_object == light_objects[selected_light])
 					notoccluded = true;
@@ -354,39 +368,36 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				}
 				ONB uvw_;
 				uvw_.BuildFromW(rec.normal);
-				const dvec3 vi = uvw_.WorldToLocal(unit_vector(p - rec.p));
+				const dvec3 vi = uvw_.WorldToLocal(unit_vector(point_on_light - rec.p));
 				const dvec3 vo = uvw_.WorldToLocal(-_ray.direction());
 				const double wlo = _ray.central_wl;
 				const double wli = wlo;
 				const double BSDF = rec.mat_ptr->BSDF(vi, wli, vo, wlo, rec.vt);
-				const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
-				const double lightpdfarea = 1.0 / area / light_objects.size();
-				//const double lightpdf = lightpdfarea * abs(dot(shadow_ray.direction(), light_rec.normal)) / (light_rec.t*light_rec.t);
-				const double lightpdf_solidangle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * lightpdfarea;
+				//const double G = GeometryTerm(dot(shadow_ray.direction(), light_rec.normal), dot(shadow_ray.direction(), rec.normal), light_rec.t);
+				const double G = GeometryTerm(light_rec, rec);
+				const double light_pdf_area = 1.0 / area / light_objects.size();
 				light_rec.mat_ptr->PreProcess(light_rec);
 				const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
+				const double light_scale = beta * BSDF * G / light_pdf_area;
 
-				const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo, rec.vt);
-				double mis_weight;
-				if (isinf(scatteringpdf))
-					mis_weight = 0.0;
-				else
-					mis_weight = lightpdf_solidangle*lightpdf_solidangle/(lightpdf_solidangle*lightpdf_solidangle + scatteringpdf * scatteringpdf);
-				//const double add = BSDF * beta * light * abs(vi.z()) * G / pdfarea;
-				const double add = BSDF * beta * light * abs(vi.z()) * mis_weight / lightpdf_solidangle;
-				radiance += add;
+				const double scattering_pdf_solidangle = rec.mat_ptr->PDF(vi, wli, vo, wlo, rec.vt);
+				//const double scattering_pdf_area = scattering_pdf_solidangle * GeometryTerm(dot(shadow_ray.direction(), light_rec.normal), dot(shadow_ray.direction(), rec.normal), light_rec.t*light_rec.t)/std::abs(dot(shadow_ray.direction(), rec.normal));
+				const double scattering_pdf_area = scattering_pdf_solidangle * G/std::abs(dot(shadow_ray.direction(), rec.normal));
+				double mis_weight = PowerHeuristic(light_pdf_area, scattering_pdf_area, 2.0);
+				addition += mis_weight * light_scale * light;
+				number_of_samples++;
 			}
 		}
 
 		// sample bsdf
 		{
-			double bxdf_divided_by_pdf;
-			double bxdf, scattering_pdf;
+			double bsdf_divided_by_pdf;
+			double bsdf, bsdf_scattering_pdf_solidangle;
 			ONB uvw;
 			uvw.BuildFromW(rec.normal);
 			dvec3 generated_vi;
 			double wli;
-			bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bxdf_divided_by_pdf, bxdf, scattering_pdf);
+			bool respawn = rec.mat_ptr->SampleBSDF(rec, uvw, uvw.WorldToLocal(-_ray.direction()), r.central_wl, generated_vi, wli, bsdf_divided_by_pdf, bsdf, bsdf_scattering_pdf_solidangle);
 			if (respawn) {
 				ray shadow_ray = ray(rec.p, uvw.LocalToWorld(generated_vi));
 				shadow_ray.central_wl = r.central_wl;
@@ -397,22 +408,24 @@ double Renderer::NEEMISPathTracing(const ray& r)
 				if (light_hit) {
 					if (light_rec.hit_object == light_objects[selected_light]) {
 						const double light = light_rec.mat_ptr->Emitted(shadow_ray, light_rec, light_rec.vt);
-						const double lightpdfarea = 1.0 / light_objects[selected_light]->polygon_area / light_objects.size();
-						const double light_pdf_solid_angle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * lightpdfarea;
-						//const double scatteringpdf = rec.mat_ptr->PDF(vi, wli, vo, wlo);
-						double mis_weight;
-						if (isinf(light_pdf_solid_angle))
-							mis_weight = 0.0;
-						else if (isinf(scattering_pdf))
-							mis_weight = 1.0;
-						else
-							mis_weight = scattering_pdf*scattering_pdf/(scattering_pdf*scattering_pdf + light_pdf_solid_angle*light_pdf_solid_angle);
-						const double add = bxdf_divided_by_pdf * beta * light * abs(generated_vi.z()) * mis_weight;
-						radiance += add;
+						//const double G = abs(dot(shadow_ray.direction(), light_rec.normal) * dot(shadow_ray.direction(), rec.normal) / (light_rec.t*light_rec.t));
+						const double G = GeometryTerm(light_rec, rec);
+						const double light_pdf_area = 1.0 / light_objects[selected_light]->polygon_area / light_objects.size();
+						//const double light_pdf_solid_angle = light_rec.t*light_rec.t / abs(dot(shadow_ray.direction(), light_rec.normal)) * light_pdf_area;
+						const double bsdf_scale = beta * bsdf_divided_by_pdf * abs(generated_vi.z());
+						const double bsdf_scattering_pdf_area = G * bsdf_scattering_pdf_solidangle / abs(generated_vi.z());
+
+						//const double add = bxdf_divided_by_pdf * beta * light * abs(generated_vi.z()) * mis_weight;
+						const double mis_weight = PowerHeuristic(bsdf_scattering_pdf_area, light_pdf_area, 2.0);
+						addition += mis_weight * bsdf_scale * light;
+						number_of_samples++;
 					}
 				}
 			}
 		}
+
+		if (number_of_samples != 0)
+			radiance += (addition/static_cast<double>(number_of_samples));
 
 
 		dvec3 generated_vi;
@@ -451,6 +464,17 @@ double Renderer::NEEMISPathTracing(const ray& r)
 
 	}
 	return radiance;
+}
+
+double Renderer::GeometryTerm(double cos_theta0, double cos_theta1, double r)
+{
+	return std::abs(cos_theta0*cos_theta1)/(r*r);
+}
+double Renderer::GeometryTerm(const HitRecord& rec0, const HitRecord& rec1)
+{
+	dvec3 v = rec1.p - rec0.p;
+	dvec3 dir = unit_vector(rec1.p - rec0.p);
+	return std::abs(dot(dir, rec0.normal)*dot(dir, rec1.normal)/v.squared_length());
 }
 
 //double Renderer::NEEPathTracing(const ray& r)

@@ -607,7 +607,14 @@ void Scene::RenderScene(void)
 				if (renderer.world->models[index-1]->BoundingBox(box)) {
 					glm::dvec3 v(box.center[0], box.center[1], box.center[2]);
 					double a = glm::length(v-cameraPos);
-					d = 1.0/(1.0/focal_length-1.0/a);
+					if (focus_adjustment_variable == FocalLength) {
+						double theta = vfov*M_PI/180;
+						double d = 0.5*film_height/tan(theta/2.0);
+						focal_length = 1.0/(1.0/d + 1.0/a);
+					} else if (focus_adjustment_variable == VFov) {
+						double d = 1.0/(1.0/focal_length-1.0/a);
+						vfov = 2.0*atan(0.5*film_height/d) / M_PI*180.0;
+					}
 				}
 			}
 		}
@@ -633,6 +640,39 @@ void Scene::RenderScene(void)
 			const double min = 0.00001;
 			const double max = 180;
 			ImGui::SliderScalar("vfov", ImGuiDataType_Double, &vfov, &min, &max, "%f");
+		}
+		{
+			const double min = 0.00001;
+			const double max = 2.0;
+			ImGui::SliderScalar("focal length", ImGuiDataType_Double, &focal_length, &min, &max, "%f");
+		}
+		{
+			const double min = 0.00001;
+			const double max = 2;
+			ImGui::SliderScalar("aperture", ImGuiDataType_Double, &aperture, &min, &max, "%f");
+		}
+		{
+			const double min = 0.00001;
+			const double max = 100;
+			ImGui::SliderScalar("film sensitivity", ImGuiDataType_Double, &film_sensitivity, &min, &max, "%f");
+		}
+		{
+			const double min = 0.00001;
+			const double max = 0.100;
+			ImGui::SliderScalar("film height", ImGuiDataType_Double, &film_height, &min, &max, "%f");
+		}
+		ImGui::Text("F number: %f", focal_length/aperture);
+		const char *focus_adjustment_options[] = {"Change Focal Length", "Change VFOV"};
+		if (ImGui::BeginCombo("Select Focus Adjustment Variable", focus_adjustment_options[focus_adjustment_variable])) {
+			for (size_t i = 0; i < 3; i++) {
+				bool is_selected = (focus_adjustment_variable == i);
+				if (ImGui::Selectable(focus_adjustment_options[i], is_selected)) {
+					focus_adjustment_variable = static_cast<FocusAdjustmentVariable>(i);
+				}
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
 		}
 		{
 			const double min = -10.0;
@@ -745,8 +785,10 @@ void Scene::RenderPreviewWindow(void)
 					dvec3 veccameraUp = dvec3(cameraUp.x, cameraUp.y, cameraUp.z);
 					glm::dvec3 lookat = cameraPos + cameraFront;
 					dvec3 vlookat = dvec3(lookat.x, lookat.y, lookat.z);
-					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>());
-					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(img_width)/scene_json["img_height"].get<int>(), d, focal_length, aperture);
+					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>());
+					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>(), d, focal_length, aperture);
+					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, vfov, static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>(), focal_length, aperture, film_height);
+					renderer.cam.film_sensitivity = film_sensitivity;
 					renderer.LoadMaterials(obj_materials);
 					std::thread t(&Renderer::RenderImage, &renderer, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>(), scene_json["img_samples"].get<int>(), img_spectral_samples, enable_openmp, false);
 					t.detach();
@@ -819,6 +861,7 @@ void Scene::RenderPreviewWindow(void)
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
 #ifndef _CLI
+	ImGui::BeginChild("left pane", ImVec2(800, 0));
 	//ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -891,15 +934,34 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 	}
 
 
+	std::vector<ax::NodeEditor::NodeId> selected_nodes;
 	if (selected_material != nullptr){
 		ImGui::Checkbox("Light", &selected_material->light_flag);
 		ax::NodeEditor::SetCurrentEditor(selected_material->context);
 		ax::NodeEditor::Begin("material node editor##tmp");
-		selected_material->Render();
+		selected_material->RenderNode();
+
+		int selected_objs_count = ax::NodeEditor::GetSelectedObjectCount();
+		selected_nodes.resize(selected_objs_count);
+		int selected_node_count = GetSelectedNodes(selected_nodes.data(), selected_objs_count);
+		selected_nodes.resize(selected_node_count);
 
 		ax::NodeEditor::End();
 		ax::NodeEditor::SetCurrentEditor(nullptr);
 	}
+	ImGui::EndChild();
+	ImGui::SameLine();
+	ImGui::BeginChild("right pane", ImVec2(0, 0));
+	ImGui::Text("Material Editor");
+	if (selected_nodes.size() >= 1){
+		for (int i = 0; i < selected_material->material_nodes.size(); i++) {
+			if (selected_material->material_nodes[i]->id == selected_nodes[0]) {
+				selected_material->material_nodes[i]->RenderEditor();
+				ImGui::Text("%s", selected_material->material_nodes[i]->name.c_str());
+			}
+		}
+	}
+	ImGui::EndChild();
 	//ImGui::End();
 #endif
 }

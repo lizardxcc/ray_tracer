@@ -290,7 +290,7 @@ void MaterialNode::RenderSpectrum(Spectrum &data, double min, double max)
 #endif
 }
 
-void MaterialNode::Render(void)
+void MaterialNode::RenderNode(void)
 {
 #ifndef _CLI
 	ax::NodeEditor::BeginNode(id);
@@ -299,6 +299,14 @@ void MaterialNode::Render(void)
 	RenderPins();
 
 	ax::NodeEditor::EndNode();
+#endif
+}
+
+
+void MaterialNode::RenderEditor(void)
+{
+#ifndef _CLI
+	ImGui::Text("%s", name.c_str());
 #endif
 }
 
@@ -361,17 +369,13 @@ void LambertianNode::DumpJson(json& j) const
 	DumpIO(j);
 }
 
-void LambertianNode::Render(void)
+void LambertianNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
-	ImGui::Text("%s", name.c_str());
 	if (albedo_pin->connected_links.empty())
 		RenderSpectrum(albedo, 0.0, 1.0);
 
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -402,7 +406,7 @@ double LambertianNode::BSDF(const Argument& global_arg, const dvec3& vi, double 
 	if (vi.z() < 0.0)
 		return 0.0;
 	if (albedo_pin->connected_links.empty())
-		return albedo.get(wli)/M_PI/pow(outer_ref_idx.get(wli), 3);
+		return albedo.get(wli)/M_PI;
 
 
 	const MaterialNode *parent = GetInputParentNode(albedo_pin);
@@ -410,7 +414,7 @@ double LambertianNode::BSDF(const Argument& global_arg, const dvec3& vi, double 
 		return 0.0;
 	Spectrum albedo;
 	parent->Compute(global_arg, albedo);
-	return albedo.get(wli)/M_PI/pow(outer_ref_idx.get(wli), 3);
+	return albedo.get(wli)/M_PI;
 }
 double LambertianNode::PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const
 {
@@ -451,11 +455,10 @@ void DielectricNode::DumpJson(json& j) const
 	DumpIO(j);
 }
 
-void DielectricNode::Render(void)
+void DielectricNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	ImGui::PushID(0);
 	ImGui::Text("n");
@@ -468,8 +471,6 @@ void DielectricNode::Render(void)
 		RenderSpectrum(surface_color, 0.0, 1.0);
 		ImGui::PopID();
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -526,7 +527,7 @@ bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec
 		double sin_t = sin_o/relative_ref_idx;
 		double cos_t = sqrt(1.0-sin_t*sin_t);
 		vi = (-cos_t)*normal - sin_t*unit_vector(dvec3(vo[0], vo[1], 0));
-		bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 2) / cos_t;
+		bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 3) / cos_t;
 	}
 
 	return true;
@@ -575,11 +576,10 @@ void ConductorNode::DumpJson(json& j) const
 	DumpIO(j);
 }
 
-void ConductorNode::Render(void)
+void ConductorNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Conductor");
 	ImGui::Text("%s", name.c_str());
 	ImGui::PushID(0);
@@ -590,8 +590,6 @@ void ConductorNode::Render(void)
 	ImGui::Text("k");
 	RenderSpectrum(k, 0.0, 10.0);
 	ImGui::PopID();
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -673,18 +671,15 @@ void ColoredMetal::DumpJson(json& j) const
 	DumpIO(j);
 }
 
-void ColoredMetal::Render(void)
+void ColoredMetal::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	if (albedo_pin->connected_links.empty()) {
 		ImGui::Text("albedo");
 		RenderSpectrum(albedo, 0.0, 1.0);
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -761,11 +756,10 @@ void GGXReflection::DumpJson(json& j) const
 	DumpIO(j);
 }
 
-void GGXReflection::Render(void)
+void GGXReflection::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	if (n_pin->connected_links.empty()) {
 		ImGui::Text("n");
@@ -775,8 +769,6 @@ void GGXReflection::Render(void)
 		ImGui::Text("k");
 		RenderSpectrum(n, 0.0, 1.0);
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -858,18 +850,15 @@ void DiffuseLightNode::DumpJson(json& j) const
 	DumpSpectrum(j, color, "color");
 	DumpIO(j);
 }
-void DiffuseLightNode::Render(void)
+void DiffuseLightNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	if (color_pin->connected_links.empty()) {
 		ImGui::Text("color");
 		RenderSpectrum(color, 0.0, 1.0);
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -957,7 +946,7 @@ double MixBSDFNode::BSDF(const dvec3& vi, double wli, const dvec3& vo, double wl
 	return dynamic_cast<const Material *>(inputs[i].connected_links[0]->input->parent_node)->BSDF(vi, wli, vo, wlo, vt);
 }
 
-void MixBSDFNode::Render(void)
+void MixBSDFNode::RenderEditor(void)
 {
 	ImGui::PushID(iid);
 	ax::NodeEditor::BeginNode(id);
@@ -982,14 +971,11 @@ OutputNode::OutputNode(const json& j) : MaterialNode(j)
 {
 	type = OutputType;
 }
-void OutputNode::Render(void)
+void OutputNode::RenderEditor(void)
 {
 #ifndef _CLI
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Final Output");
 	//ImGui::Text(name.c_str());
-	RenderPins();
-	ax::NodeEditor::EndNode();
 #endif
 }
 
@@ -1010,18 +996,15 @@ void SpectrumNode::DumpJson(json& j) const
 	DumpSpectrum(j, data, "data");
 	DumpIO(j);
 }
-void SpectrumNode::Render(void)
+void SpectrumNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Spectrum");
 	ImGui::Text("%s", name.c_str());
 	RenderSpectrum(data, 0.0, 1.0);
 
 	RenderPins();
-	ax::NodeEditor::EndNode();
-	ImGui::PopID();
 #endif
 }
 
@@ -1066,19 +1049,15 @@ void RGBColorNode::DumpJson(json& j) const
 	j["col"][1] = col[1];
 	j["col"][2] = col[2];
 }
-void RGBColorNode::Render(void)
+void RGBColorNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.15f);
 	ImGui::ColorPicker3("Color", col);
 	ImGui::PopItemWidth();
 
-	RenderPins();
-
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1131,11 +1110,10 @@ void ImageTextureNode::DumpJson(json& j) const
 	DumpIO(j);
 }
 
-void ImageTextureNode::Render(void)
+void ImageTextureNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("Image Texture Node");
 	if (path == "") {
 		ImGui::Text("texture is not loaded yet");
@@ -1151,8 +1129,6 @@ void ImageTextureNode::Render(void)
 			free(path);
 		}
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1206,19 +1182,16 @@ void CheckerboardNode::Compute(const Argument& global_arg, dvec3& data) const
 }
 
 
-void CheckerboardNode::Render(void)
+void CheckerboardNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	const double min = 0.001;
 	const double max = 1.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
 	ImGui::SliderScalar("size", ImGuiDataType_Double, &size, &min, &max, "%f");
 	ImGui::PopItemWidth();
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1296,19 +1269,16 @@ void ScalarMultiplicationNode::DumpJson(json& j) const
 	j["scale"] = scale;
 	DumpIO(j);
 }
-void ScalarMultiplicationNode::Render(void)
+void ScalarMultiplicationNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	const double min = -100.0;
 	const double max = 100.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
 	ImGui::SliderScalar("scale", ImGuiDataType_Double, &scale, &min, &max, "%f");
 	ImGui::PopItemWidth();
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1461,19 +1431,16 @@ void RandomSamplingNode::Compute(const Argument& global_arg, Spectrum& data) con
 	inputs[i].connected_links[0]->input->parent_node->Compute(global_arg, data);
 }
 
-void RandomSamplingNode::Render(void)
+void RandomSamplingNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	const double min = 0.0;
 	const double max = 1.0;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
 	ImGui::SliderScalar("ratio", ImGuiDataType_Double, &ratio, &min, &max, "%f");
 	ImGui::PopItemWidth();
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1500,19 +1467,16 @@ void AccessVec3ComponentNode::Compute(const Argument& global_arg, double &data) 
 }
 
 
-void AccessVec3ComponentNode::Render(void)
+void AccessVec3ComponentNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	const uint32_t min = 0;
 	const uint32_t max = 2;
 	ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.25f);
 	ImGui::SliderScalar("index", ImGuiDataType_U32, &index, &min, &max, "%u");
 	ImGui::PopItemWidth();
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1587,11 +1551,10 @@ void ValueNoiseNode::DumpJson(json& j) const
 }
 
 
-void ValueNoiseNode::Render(void)
+void ValueNoiseNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	const uint32_t min = 1;
 	const uint32_t max = 1024;
@@ -1601,8 +1564,6 @@ void ValueNoiseNode::Render(void)
 	if (ImGui::Button("Generate Random")) {
 		GenerateRand();
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1677,11 +1638,10 @@ void ValueNoise2DNode::Compute(const Argument& global_arg, double &data) const
 }
 
 
-void ValueNoise2DNode::Render(void)
+void ValueNoise2DNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	const uint32_t min = 1;
 	const uint32_t max = 1024;
@@ -1692,8 +1652,6 @@ void ValueNoise2DNode::Render(void)
 	if (ImGui::Button("Generate Random")) {
 		GenerateRand();
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1777,11 +1735,10 @@ void RodriguesRotationNode::Compute(const Argument& global_arg, dvec3& data) con
 	data[1] = dot(r1, v);
 	data[2] = dot(r2, v);
 }
-void RodriguesRotationNode::Render(void)
+void RodriguesRotationNode::RenderEditor(void)
 {
 #ifndef _CLI
 	ImGui::PushID(iid);
-	ax::NodeEditor::BeginNode(id);
 	ImGui::Text("%s", name.c_str());
 	if (inputs[1].connected_links.empty()) {
 		const double min = 0.0;
@@ -1799,8 +1756,6 @@ void RodriguesRotationNode::Render(void)
 		ImGui::SliderScalar("theta", ImGuiDataType_Double, &theta, &theta_min, &theta_max, "%f");
 		ImGui::PopItemWidth();
 	}
-	RenderPins();
-	ax::NodeEditor::EndNode();
 	ImGui::PopID();
 #endif
 }
@@ -1962,12 +1917,12 @@ void NodeMaterial::DumpJson(json& j) const
 	}
 }
 
-void NodeMaterial::Render(void)
+void NodeMaterial::RenderNode(void)
 {
 #ifndef _CLI
 
 	for (auto& node : material_nodes) {
-		node->Render();
+		node->RenderNode();
 	}
 
 	for (auto& link_info : links) {

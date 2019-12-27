@@ -67,6 +67,11 @@ struct Vertex {
 };
 #endif
 
+enum FocusAdjustmentVariable {
+	FocalLength,
+	VFov
+};
+
 class Scene {
 	public:
 		explicit Scene(void);
@@ -87,7 +92,6 @@ class Scene {
 		glm::dvec3 cameraPos;
 		glm::dvec3 cameraFront;
 		glm::dvec3 cameraUp;
-		double vfov = 30;
 #ifndef _CLI
 		std::vector<GLubyte> img;
 #endif
@@ -116,7 +120,10 @@ class Scene {
 		const double WIDTH = 500;
 		const double HEIGHT = 500;
 		boost::filesystem::path project_file;
-		float d = 0.45, focal_length=0.4, aperture = 0.0;
+		double vfov = 30, focal_length=0.4, aperture = 0.5;
+		double film_height = 0.024;
+		FocusAdjustmentVariable focus_adjustment_variable = FocalLength;
+		double film_sensitivity = 1.0;
 		unsigned int activeObjectIndex = 0;
 		//GLubyte *img = nullptr;
 		bool img_loaded = false;

@@ -32,14 +32,16 @@ class Renderer {
 		obj obj_loader;
 		std::unique_ptr<ObjModel> world;
 		std::vector<const ConvexPolygon *> light_objects;
-		//LensCamera cam;
-		PinholeCamera cam;
+		LensCamera cam;
+		//PinholeCamera cam;
 		bool preview_img_flag = true;
 		bool img_updated = false;
 		bool rendering_runnnig = false;
 		bool stop_rendering = false;
 		float progress = 0.0;
 	private:
+		double GeometryTerm(double cos_theta0, double cos_theta1, double r);
+		double GeometryTerm(const HitRecord& rec0, const HitRecord& rec1);
 		std::mt19937 mt;
 };
 

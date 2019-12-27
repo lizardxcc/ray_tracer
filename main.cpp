@@ -63,7 +63,9 @@ int main(int argc, const char * argv[])
 			dvec3 veccameraUp = dvec3(scene.cameraUp.x, scene.cameraUp.y, scene.cameraUp.z);
 			glm::dvec3 lookat = scene.cameraPos + scene.cameraFront;
 			dvec3 vlookat = dvec3(lookat.x, lookat.y, lookat.z);
-			scene.renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(scene.vfov)), static_cast<double>(scene.scene_json["img_width"].get<int>())/scene.scene_json["img_height"].get<int>());
+			//scene.renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(scene.vfov)), static_cast<double>(scene.scene_json["img_width"].get<int>())/scene.scene_json["img_height"].get<int>());
+			//scene.renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(scene.scene_json["img_width"].get<int>())/scene.scene_json["img_height"].get<int>(), 1.0, 1.0, 1.0);
+			//scene.renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(scene.scene_json["img_width"].get<int>())/scene.scene_json["img_height"].get<int>(), d, focal_length, aperture);
 			scene.renderer.preview_img_flag = false;
 			scene.renderer.LoadMaterials(scene.obj_materials);
 			w = scene.scene_json["img_width"].get<int>();
