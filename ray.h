@@ -3,6 +3,12 @@
 
 #include "vec3.h"
 
+
+enum RayType {
+	LightType,
+	ImportanceType
+};
+
 class ray {
 public:
 	ray()

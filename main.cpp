@@ -190,6 +190,10 @@ int main(int argc, const char * argv[])
 				scene.RenderMaterialNodeEditorWindow();
 				ImGui::EndTabItem();
 			}
+			if (ImGui::BeginTabItem("Retouch")) {
+				scene.retouch_window.Render();
+				ImGui::EndTabItem();
+			}
 			ImGui::EndTabBar();
 		}
 		ImGui::End();

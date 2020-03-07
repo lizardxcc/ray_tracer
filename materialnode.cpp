@@ -327,7 +327,7 @@ void MaterialNode::AddOutput(int &unique_id, PinType type, const char *name)
 void BSDFMaterialNode::PreProcess(const Argument& global_arg, HitRecord &rec) const
 {
 }
-bool BSDFMaterialNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BSDF_divided_by_pdf, double& BSDF, double& pdfval) const
+bool BSDFMaterialNode::SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BSDF_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	return false;
 }
@@ -388,7 +388,7 @@ void LambertianNode::PreProcess(const Argument& global_arg, HitRecord& rec) cons
 	rec.normal = new_normal;
 }
 
-bool LambertianNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
+bool LambertianNode::SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	CosinePdf Pdf(rec.normal);
 
@@ -481,7 +481,7 @@ void DielectricNode::PreProcess(const Argument& global_arg, HitRecord& rec) cons
 	rec.normal = new_normal;
 }
 
-bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
+bool DielectricNode::SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -527,7 +527,12 @@ bool DielectricNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec
 		double sin_t = sin_o/relative_ref_idx;
 		double cos_t = sqrt(1.0-sin_t*sin_t);
 		vi = (-cos_t)*normal - sin_t*unit_vector(dvec3(vo[0], vo[1], 0));
-		bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 3) / cos_t;
+		//bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 3) / cos_t;
+		if (type == LightType) {
+			bxdf_divided_by_pdf = surface_scale*pow(relative_ref_idx, 3) / cos_t;
+		} else if (type == ImportanceType) {
+			bxdf_divided_by_pdf = surface_scale/pow(relative_ref_idx, 3) / cos_t;
+		}
 	}
 
 	return true;
@@ -600,7 +605,7 @@ void ConductorNode::PreProcess(const Argument& global_arg, HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool ConductorNode::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
+bool ConductorNode::SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	wli = wlo;
 	double ref_idx = n.get(wlo);
@@ -690,7 +695,7 @@ void ColoredMetal::PreProcess(const Argument& global_arg, HitRecord& rec) const
 	rec.normal = new_normal;
 }
 
-bool ColoredMetal::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
+bool ColoredMetal::SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	wli = wlo;
 
@@ -776,7 +781,7 @@ void GGXReflection::RenderEditor(void)
 void GGXReflection::PreProcess(const Argument& global_arg, HitRecord& rec) const
 {
 }
-bool GGXReflection::SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
+bool GGXReflection::SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	double phi = 2 * M_PI * drand48();
 	double u = drand48();
@@ -2087,7 +2092,7 @@ void NodeMaterial::PreProcess(HitRecord& rec) const
 	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
 	p->PreProcess(global_arg, rec);
 }
-bool NodeMaterial::SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
+bool NodeMaterial::SampleBSDF(RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const
 {
 	const PinInfo *bsdf_pin = &material_nodes[Output_i]->inputs[0];
 	const MaterialNode *parent = material_nodes[Output_i]->GetInputParentNode(bsdf_pin);
@@ -2095,7 +2100,7 @@ bool NodeMaterial::SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3&
 		return false;
 	auto p = dynamic_cast<const BSDFMaterialNode *>(parent);
 	Argument global_arg = { rec.vt };
-	return p->SampleBSDF(global_arg, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BSDF, pdfval);
+	return p->SampleBSDF(global_arg, type, rec, uvw, vo, wlo, vi, wli, bxdf_divided_by_pdf, BSDF, pdfval);
 }
 double NodeMaterial::BSDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const
 {

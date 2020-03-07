@@ -6,9 +6,11 @@
 #include "aabb.h"
 #include "onb.h"
 //#include "pdf.h"
+#include "materialnode.h"
 
 class Material;
 class NodeMaterial;
+
 class Pdf;
 class Hittable;
 

@@ -34,7 +34,7 @@ bool cli = false;
 
 
 #ifndef _CLI
-void ImgViewer::LoadImage(const std::vector<double>& img, int width, int height)
+void ImgViewer::LoadImage(const std::vector<dvec3>& img, int width, int height)
 {
 	if (glimg != nullptr)
 		delete[] glimg;
@@ -43,16 +43,16 @@ void ImgViewer::LoadImage(const std::vector<double>& img, int width, int height)
 		for (int j = 0; j < height; j++) {
 			size_t i_ = width-i-1;
 			size_t j_ = height-j-1;
-			const double dr = img[((height-j_-1)*width+i_)*4];
-			const double dg = img[((height-j_-1)*width+i_)*4+1];
-			const double db = img[((height-j_-1)*width+i_)*4+2];
+			const double dr = img[i*height+j].x();
+			const double dg = img[i*height+j].y();
+			const double db = img[i*height+j].z();
 			int ir = std::min(std::max(int(255.99*dr), 0), 255);
 			int ig = std::min(std::max(int(255.99*dg), 0), 255);
 			int ib = std::min(std::max(int(255.99*db), 0), 255);
-			glimg[((height-j_-1)*width+i_)*4] = ir;
-			glimg[((height-j_-1)*width+i_)*4+1] = ig;
-			glimg[((height-j_-1)*width+i_)*4+2] = ib;
-			glimg[((height-j_-1)*width+i_)*4+3] = 255;
+			glimg[(j*width+i_)*4] = ir;
+			glimg[(j*width+i_)*4+1] = ig;
+			glimg[(j*width+i_)*4+2] = ib;
+			glimg[(j*width+i_)*4+3] = 255;
 		}
 	}
 
@@ -84,13 +84,13 @@ void ImgRetouch::Render(void)
 	ImGui::SliderScalar("sigma_r", ImGuiDataType_Double, &sigma_r, &sigma_r_min, &sigma_r_max, "%f");
 	ImGui::SliderScalar("window", ImGuiDataType_U64, &window, &win_min, &win_max, "%d");
 	if (ImGui::Button("Apply filter")) {
-		BiliteralFilter filter(orig_img, width, height);
-		filter.sigma_d = sigma_d;
-		filter.sigma_r = sigma_r;
-		filter.window = window;
-		filter.FilterImage();
-		retouched = filter.result;
-		retouched_viewer.LoadImage(retouched, width, height);
+		//BiliteralFilter filter(orig_img, width, height);
+		//filter.sigma_d = sigma_d;
+		//filter.sigma_r = sigma_r;
+		//filter.window = window;
+		//filter.FilterImage();
+		//retouched = filter.result;
+		//retouched_viewer.LoadImage(retouched, width, height);
 	}
 	ImGui::Separator();
 	ImGui::Text("Tone Mapping");
@@ -100,7 +100,7 @@ void ImgRetouch::Render(void)
 	retouched_viewer.Render();
 }
 
-void ImgRetouch::LoadImage(const std::vector<double>& img, int width, int height)
+void ImgRetouch::LoadImage(const std::vector<dvec3>& img, int width, int height)
 {
 	orig_img = img;
 	retouched = img;
@@ -112,7 +112,7 @@ void ImgRetouch::LoadImage(const std::vector<double>& img, int width, int height
 
 void RetouchWindow::Render(void)
 {
-	ImGui::Begin("Retouch");
+	//ImGui::Begin("Retouch");
 	if (ImGui::BeginTabBar("Tabs")) {
 		for (size_t i = 0; i < tabs.size(); i++) {
 			if (ImGui::BeginTabItem(img_names[i].c_str())) {
@@ -122,11 +122,11 @@ void RetouchWindow::Render(void)
 		}
 		ImGui::EndTabBar();
 	}
-	ImGui::End();
+	//ImGui::End();
 }
 
 
-void RetouchWindow::AddImage(const std::vector<double>& img, int width, int height, const char *name)
+void RetouchWindow::AddImage(const std::vector<dvec3>& img, int width, int height, const char *name)
 {
 	std::string s = name;
 	if (s == "")
@@ -609,11 +609,12 @@ void Scene::RenderScene(void)
 					double a = glm::length(v-cameraPos);
 					if (focus_adjustment_variable == FocalLength) {
 						double theta = vfov*M_PI/180;
-						double d = 0.5*film_height/tan(theta/2.0);
+						double d = 0.5*renderer.cam.film_height/tan(theta/2.0);
 						focal_length = 1.0/(1.0/d + 1.0/a);
+						renderer.cam.SetLens(vfov, focal_length);
 					} else if (focus_adjustment_variable == VFov) {
 						double d = 1.0/(1.0/focal_length-1.0/a);
-						vfov = 2.0*atan(0.5*film_height/d) / M_PI*180.0;
+						vfov = 2.0*atan(0.5*renderer.cam.film_height/d) / M_PI*180.0;
 					}
 				}
 			}
@@ -649,19 +650,20 @@ void Scene::RenderScene(void)
 		{
 			const double min = 0.00001;
 			const double max = 2;
-			ImGui::SliderScalar("aperture", ImGuiDataType_Double, &aperture, &min, &max, "%f");
+			ImGui::SliderScalar("aperture", ImGuiDataType_Double, &renderer.cam.aperture, &min, &max, "%f");
 		}
 		{
 			const double min = 0.00001;
 			const double max = 100;
-			ImGui::SliderScalar("film sensitivity", ImGuiDataType_Double, &film_sensitivity, &min, &max, "%f");
+			ImGui::SliderScalar("film sensitivity", ImGuiDataType_Double, &renderer.cam.film_sensitivity, &min, &max, "%f");
 		}
 		{
 			const double min = 0.00001;
 			const double max = 0.100;
-			ImGui::SliderScalar("film height", ImGuiDataType_Double, &film_height, &min, &max, "%f");
+			ImGui::SliderScalar("film height", ImGuiDataType_Double, &renderer.cam.film_height, &min, &max, "%f");
+			renderer.cam.film_width = renderer.cam.film_height * scene_json["img_width"].get<int>()/scene_json["img_height"].get<int>();
 		}
-		ImGui::Text("F number: %f", focal_length/aperture);
+		ImGui::Text("F number: %f", focal_length/renderer.cam.aperture);
 		const char *focus_adjustment_options[] = {"Change Focal Length", "Change VFOV"};
 		if (ImGui::BeginCombo("Select Focus Adjustment Variable", focus_adjustment_options[focus_adjustment_variable])) {
 			for (size_t i = 0; i < 3; i++) {
@@ -694,15 +696,84 @@ void Scene::RenderScene(void)
 			const double max = 5.0;
 			ImGui::SliderScalarN("p/y/r angular speed", ImGuiDataType_Double, pyr_angular_velocity, 3, &min, &max, "%f");
 		}
+
+		if (ImGui::CollapsingHeader("Camera Lens Refractive Index", ImGuiTreeNodeFlags_DefaultOpen)) {
+			const char *refractive_index_equation_options[] = {"Cauchy's Equation", "Manual"};
+			if (ImGui::BeginCombo("Select Refractive Index Setting Options", refractive_index_equation_options[refractive_index_variable])) {
+				for (size_t i = 0; i < 2; i++) {
+					bool is_selected = (refractive_index_variable == i);
+					if (ImGui::Selectable(refractive_index_equation_options[i], is_selected)) {
+						refractive_index_variable = static_cast<RefractiveIndexVariable>(i);
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			if (refractive_index_variable == Cauchy) {
+				const double B_min = 1.0;
+				const double B_max = 3.0;
+				const double CD_min = 1.0;
+				const double CD_max = 10.0;
+				ImGui::SliderScalar("B", ImGuiDataType_Double, &B, &B_min, &B_max, "%f");
+				ImGui::SliderScalar("C", ImGuiDataType_Double, &C, &CD_min, &CD_max, "%f");
+				ImGui::SliderScalar("D", ImGuiDataType_Double, &D, &CD_min, &CD_max, "%f");
+				const double min = 1.0;
+				const double max = 3.0;
+				const ImVec2 slider_size(14, 100);
+				for (size_t i = 0; i < N_SAMPLE; i++) {
+					double wavelength = (405.0 + i * SAMPLE_SIZE)/1000.0; // in um
+					renderer.cam.n.data[i] = B + C/(wavelength*wavelength) + D/pow(wavelength, 4);
+
+					if (i > 0)
+						ImGui::SameLine();
+					ImGui::PushID(i);
+					ImGui::VSliderScalar("##v", slider_size, ImGuiDataType_Double, &renderer.cam.n.data[i], &min, &max, "");
+					if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+						ImGui::SetTooltip("%f", renderer.cam.n.data[i]);
+					ImGui::PopID();
+				}
+			} else if (refractive_index_variable == Manual) {
+				const double min = 1.0;
+				const double max = 3.0;
+				const ImVec2 slider_size(14, 100);
+				for (int i = 0; i < N_SAMPLE; i++) {
+					if (i > 0)
+						ImGui::SameLine();
+					ImGui::PushID(i);
+					ImGui::VSliderScalar("##lens_n", slider_size, ImGuiDataType_Double, &renderer.cam.n.data[i], &min, &max, "");
+					if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+						ImGui::SetTooltip("%f", renderer.cam.n.data[i]);
+					ImGui::PopID();
+				}
+			}
+
+			const double min = 0.0;
+			const double max = 5.0;
+			const ImVec2 slider_size(14, 100);
+			double focal_length[N_SAMPLE];
+			for (size_t i = 0; i < N_SAMPLE; i++) {
+				double wavelength = (405.0 + i * SAMPLE_SIZE); // in nm
+				focal_length[i] = renderer.cam.LensMakersFormula(wavelength);
+				if (i > 0)
+					ImGui::SameLine();
+				ImGui::PushID(i);
+				ImGui::VSliderScalar("##focal_length_preview", slider_size, ImGuiDataType_Double, &focal_length[i], &min, &max, "");
+				if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+					ImGui::SetTooltip("%f", focal_length[i]);
+				ImGui::PopID();
+			}
+		}
 	}
+
 	if (ImGui::CollapsingHeader("Rendering Options", ImGuiTreeNodeFlags_DefaultOpen)) {
 		if (renderer.rendering_runnnig) {
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 		}
-		const char *algorithms[] = {"Naive", "Next Event Estiation", "NEE and MIS"};
+		const char *algorithms[] = {"Naive", "Next Event Estiation", "NEE and MIS", "Naive BDPT", "MIS BDPT"};
 		if (ImGui::BeginCombo("Select Algorithm", algorithms[renderer.algorithm_type])) {
-			for (size_t i = 0; i < 3; i++) {
+			for (size_t i = 0; i < 5; i++) {
 				bool is_selected = (renderer.algorithm_type == i);
 				if (ImGui::Selectable(algorithms[i], is_selected)) {
 					renderer.algorithm_type = static_cast<RenderingAlgorithm>(i);
@@ -787,8 +858,10 @@ void Scene::RenderPreviewWindow(void)
 					dvec3 vlookat = dvec3(lookat.x, lookat.y, lookat.z);
 					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, glm::radians(static_cast<double>(vfov)), static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>());
 					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>(), d, focal_length, aperture);
-					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, vfov, static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>(), focal_length, aperture, film_height);
-					renderer.cam.film_sensitivity = film_sensitivity;
+					//renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp, vfov, static_cast<double>(scene_json["img_width"].get<int>())/scene_json["img_height"].get<int>(), focal_length, aperture, film_height);
+					renderer.cam.SetLens(vfov, focal_length);
+					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp);
+					//renderer.cam.film_sensitivity = film_sensitivity;
 					renderer.LoadMaterials(obj_materials);
 					std::thread t(&Renderer::RenderImage, &renderer, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>(), scene_json["img_samples"].get<int>(), img_spectral_samples, enable_openmp, false);
 					t.detach();
@@ -803,7 +876,7 @@ void Scene::RenderPreviewWindow(void)
 		}
 		if (ImGui::BeginMenu("Retouch")) {
 			if (ImGui::MenuItem("Add to Retouch Window")) {
-				//retouch_window.AddImage(renderer.orig_img, img_width, scene_json["img_height"].get<int>());
+				retouch_window.AddImage(renderer.preview_img, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>());
 			}
 			ImGui::EndMenu();
 		}
@@ -820,9 +893,9 @@ void Scene::RenderPreviewWindow(void)
 			for (int j = 0; j < ny; j++) {
 				size_t i_ = nx-i-1;
 				size_t j_ = ny-j-1;
-				img[((ny-j_-1)*nx+i_)*3] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][0]);
-				img[((ny-j_-1)*nx+i_)*3+1] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][1]);
-				img[((ny-j_-1)*nx+i_)*3+2] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][2]);
+				img[(j*nx+i_)*3] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][0]);
+				img[(j*nx+i_)*3+1] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][1]);
+				img[(j*nx+i_)*3+2] = static_cast<GLubyte>(255.0*renderer.preview_img[i*ny+j][2]);
 			}
 		}
 		glBindTexture(GL_TEXTURE_2D, preview_texture);

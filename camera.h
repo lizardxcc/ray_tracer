@@ -1,6 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+
+#include "spectrum.h"
+
 class Camera {
 	public:
 		Camera(){}
@@ -98,31 +101,47 @@ class PinholeCamera {
 class LensCamera {
 	public:
 		LensCamera() {}
-		//void set_Camera(dvec3 lookfrom, dvec3 lookat, dvec3 vup, double aspect, double d, double focal_length, double aperture)
-		void set_Camera(dvec3 lookfrom, dvec3 lookat, dvec3 vup, double vfov, double aspect, double focal_length, double aperture, double film_height)
-		{
-			this->film_height = film_height;
-			this->film_width = aspect*film_height;
-			double half_height = 0.5 * film_height;
-			double half_width = aspect * half_height;
+		// Lens Maker's Formula
+		// 1/f = (n-1) * (1/R1 - 1/R2)
+		// In this source code, LensMakerCoefficient denotes (1/R1 - 1/R2) in Lens Maker's Formula
 
+		void SetLens(double vfov, double focal_length)
+		{
+			//this->film_height = film_height;
+			//this->film_width = aspect*film_height;
+			//double half_height = 0.5 * film_height;
+			//double half_width = 0.5 * film_width;
 			double theta = vfov*M_PI/180;
+
 			// イメージセンサとレンズの間の距離
-			this->d = half_height/tan(theta/2.0);
-			this->focal_length = focal_length;
-			this->aperture = aperture; // aperture of the lens
+			this->d = (0.5*film_height)/tan(theta/2.0);
+			//this->focal_length = focal_length;
+			//this->aperture = aperture; // aperture of the lens
+
+			//LensMakerCoefficient = 1.0/(focal_length*(n.data[0]-1));
+			LensMakerCoefficient = 1.0/(focal_length*(n.data[N_SAMPLE/2]-1));
 			// レンズとオブジェクトプレーンの間の距離
-			this->a = 1.0/(1.0/focal_length - 1.0/d);
+			//this->a = 1.0/(1.0/focal_length - 1.0/d);
+		}
+
+		//void set_Camera(dvec3 lookfrom, dvec3 lookat, dvec3 vup, double aspect, double d, double focal_length, double aperture)
+		void set_Camera(dvec3 lookfrom, dvec3 lookat, dvec3 vup)
+		{
+			//this->n = n;
+			//this->film_height = film_height;
+			//this->film_width = aspect*film_height;
+			//double half_height = 0.5 * film_height;
+			//double half_width = aspect * half_height;
 
 			// レンズの中心
 			origin = lookfrom;
 			w = unit_vector(lookfrom - lookat);
 			u = unit_vector(cross(vup, w));
 			v = cross(w, u);
-			film_lower_left_corner = origin - half_width * u - half_height * v + d * w;
+			film_lower_left_corner = origin - 0.5*film_width * u - 0.5*film_height * v + d * w;
 			pinhole = origin;
-			horizontal = 2 * half_width * u;
-			vertical = 2 * half_height * v;
+			horizontal = film_width * u;
+			vertical = film_height * v;
 		}
 
 		// sample from a circle whose diameter equals to aperture
@@ -137,8 +156,12 @@ class LensCamera {
 			return p*(aperture/2.0);
 		}
 
-		ray get_ray(double u, double v, double& p_image, double& p_lens, double& cos_theta)
+		ray get_ray(double u, double v, double wavelength, double& p_image, double& p_lens, double& cos_theta)
 		{
+			double focal_length = LensMakersFormula(wavelength);
+			// レンズとオブジェクトプレーンの間の距離
+			double a = 1.0/(1.0/focal_length - 1.0/d);
+
 			//dvec3 target = (-a/d * (film_lower_left_corner + u*horizontal + v*vertical - origin));
 
 			// イメージセンサの座標
@@ -156,22 +179,33 @@ class LensCamera {
 			}
 			//return ray(random_point_on_disk, target-random_point_on_disk);
 			//return ray(origin+random_point_on_lens, target);
-			return ray(random_point_on_lens, unit_vector(target-random_point_on_lens));
+			if (a > 0.0)
+				return ray(random_point_on_lens, unit_vector(target-random_point_on_lens));
+			else
+				return ray(random_point_on_lens, -unit_vector(target-random_point_on_lens));
 			//return ray(origin, origin-(film_lower_left_corner + u*horizontal + v*vertical));
 		}
 
+		double film_sensitivity = 1.0;
+		double aperture = 0.5;
+		double film_width = 0.024;
+		double film_height = 0.024;
+		Spectrum n = Spectrum(2.0);
+		double d;
+
+		// returns focal length
+		double LensMakersFormula(double wavelength)
+		{
+			return 1.0/((n.get(wavelength)-1)*LensMakerCoefficient);
+		}
+	private:
+		double LensMakerCoefficient;
 		dvec3 origin;
 		dvec3 film_lower_left_corner;
 		dvec3 pinhole;
 		dvec3 horizontal;
 		dvec3 vertical;
 		dvec3 w, u, v;
-		double d;
-		double focal_length;
-		double film_sensitivity = 1.0;
-		double aperture;
-		double a;
-		double film_width, film_height;
 };
 
 #endif

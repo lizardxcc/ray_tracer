@@ -12,7 +12,9 @@
 enum RenderingAlgorithm {
 	Naive,
 	NEE,
-	MIS
+	MIS,
+	NaiveBDPTType,
+	MISBDPTType
 };
 
 class NodeMaterial;
@@ -26,7 +28,9 @@ class Renderer {
 		double NaivePathTracing(const ray& r);
 		double NEEPathTracingWithoutSpecular(const ray& r);
 		double NEEMISPathTracing(const ray& r);
-		enum RenderingAlgorithm algorithm_type = MIS;
+		double NaiveBDPT(const ray& r);
+		double MISBDPT(const ray& r);
+		enum RenderingAlgorithm algorithm_type = NaiveBDPTType;
 		std::vector<Spectrum> spectrum_img;
 		std::vector<dvec3> preview_img;
 		obj obj_loader;

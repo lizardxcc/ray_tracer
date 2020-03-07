@@ -57,7 +57,7 @@ class ConvexPolygon : public Hittable {
 		bool Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const override;
 		bool BoundingBox(AABB& box) const override;
 		std::unique_ptr<Pdf> GeneratePdfObject(const dvec3& o) override;
-		void GetRandomPointOnPolygon(dvec3& p, double& area) const;
+		void GetRandomPointOnPolygon(dvec3& p, double& area, dvec3& normal) const;
 		std::vector<dvec3> v;
 		std::vector<dvec3> vt;
 		std::vector<dvec3> normal;

@@ -24,7 +24,7 @@ extern bool cli;
 class ImgViewer {
 	public:
 		void Render(void);
-		void LoadImage(const std::vector<double>& img, int width, int height);
+		void LoadImage(const std::vector<dvec3>& img, int width, int height);
 	private:
 		GLuint opengl_texture;
 		GLubyte *glimg = nullptr;
@@ -36,9 +36,9 @@ class ImgViewer {
 class ImgRetouch {
 	public:
 		void Render(void);
-		void LoadImage(const std::vector<double>& img, int width, int height);
-		std::vector<double> orig_img;
-		std::vector<double> retouched;
+		void LoadImage(const std::vector<dvec3>& img, int width, int height);
+		std::vector<dvec3> orig_img;
+		std::vector<dvec3> retouched;
 		int width;
 		int height;
 	private:
@@ -52,7 +52,7 @@ class ImgRetouch {
 class RetouchWindow {
 	public:
 		void Render(void);
-		void AddImage(const std::vector<double>& img, int width, int height, const char *name = "");
+		void AddImage(const std::vector<dvec3>& img, int width, int height, const char *name = "");
 	private:
 		std::vector<std::string> img_names;
 		std::vector<ImgRetouch> tabs;
@@ -70,6 +70,12 @@ struct Vertex {
 enum FocusAdjustmentVariable {
 	FocalLength,
 	VFov
+};
+
+
+enum RefractiveIndexVariable {
+	Cauchy,
+	Manual
 };
 
 class Scene {
@@ -120,10 +126,11 @@ class Scene {
 		const double WIDTH = 500;
 		const double HEIGHT = 500;
 		boost::filesystem::path project_file;
-		double vfov = 30, focal_length=0.4, aperture = 0.5;
-		double film_height = 0.024;
+		double focal_length = 0.4;
+		double vfov = 30;
+		RefractiveIndexVariable refractive_index_variable = Cauchy;
+		double B = 1.728, C = 0.01342, D = 0.0;
 		FocusAdjustmentVariable focus_adjustment_variable = FocalLength;
-		double film_sensitivity = 1.0;
 		unsigned int activeObjectIndex = 0;
 		//GLubyte *img = nullptr;
 		bool img_loaded = false;

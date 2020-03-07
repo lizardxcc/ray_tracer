@@ -19,6 +19,7 @@ namespace ed = ax::NodeEditor;
 
 class MaterialNode;
 struct PinInfo;
+struct HitRecord;
 
 struct LinkInfo {
 #ifndef _CLI
@@ -141,7 +142,9 @@ class MaterialNode {
 class BSDFMaterialNode : public virtual MaterialNode {
 	public:
 		virtual void PreProcess(const Argument& global_arg, HitRecord &rec) const;
-		virtual bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BSDF_divided_by_solidangle_pdf, double& BSDF, double& solidangle_pdfval) const;
+		// Fix argument names later
+		virtual bool SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& BSDF_divided_by_solidangle_pdf, double& BSDF, double& solidangle_pdfval) const;
+		// phsycial light passes from vi to vo
 		virtual double BSDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const;
 		virtual double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const;
 		virtual double Emitted(const Argument& global_arg, const ray& r, const HitRecord& rec) const;
@@ -167,7 +170,7 @@ class LambertianNode : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void RenderEditor(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
+		bool SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
 		double BSDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
@@ -183,7 +186,7 @@ class DielectricNode : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void RenderEditor(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
+		bool SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
 		double BSDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
@@ -199,7 +202,7 @@ class ConductorNode : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void RenderEditor(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
+		bool SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
 		double BSDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
@@ -216,7 +219,7 @@ class ColoredMetal : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void RenderEditor(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
+		bool SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
 		double BSDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
@@ -232,7 +235,7 @@ class GGXReflection : public BSDFMaterialNode {
 		void DumpJson(json& j) const override;
 		void RenderEditor(void) override;
 		void PreProcess(const Argument& global_arg, HitRecord& rec) const override;
-		bool SampleBSDF(const Argument& global_arg, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
+		bool SampleBSDF(const Argument& global_arg, RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const override;
 		double BSDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 		double PDF(const Argument& global_arg, const dvec3& vi, double wli, const dvec3& vo, double wlo) const override;
 	private:
@@ -454,7 +457,7 @@ class NodeMaterial {
 		void AddLink(PinInfo *input, PinInfo *b);
 		void DumpJson(json& j) const;
 		void PreProcess(HitRecord& rec) const;
-		bool SampleBSDF(const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const;
+		bool SampleBSDF(RayType type, const HitRecord& rec, const ONB& uvw, const dvec3& vo, double wlo, dvec3& vi, double& wli, double& bxdf_divided_by_pdf, double& BSDF, double& pdfval) const;
 		double BSDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const;
 		double PDF(const dvec3& vi, double wli, const dvec3& vo, double wlo, const dvec3& vt) const;
 		double Emitted(const ray& r, const HitRecord& rec, const dvec3& vt) const;
@@ -473,5 +476,6 @@ class NodeMaterial {
 		size_t uv_i = 0;
 		size_t Output_i = 1;
 };
+
 
 #endif

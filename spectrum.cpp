@@ -1,10 +1,11 @@
 #include <cmath>
 #include "spectrum.h"
 
+// CVRL
 static const double cie_x[N_SAMPLE] = {
-	4.742986E-02,
-	1.446214E-01,
-	2.488523E-01,
+	4.742986E-02, // 405nm
+	1.446214E-01, // 415nm
+	2.488523E-01, // 425nm
 	3.227087E-01,
 	3.418483E-01,
 	2.826646E-01,
@@ -31,7 +32,7 @@ static const double cie_x[N_SAMPLE] = {
 	1.263808E-01,
 	6.63996E-02,
 	3.292138E-02,
-	1.575417E-02
+	1.575417E-02 // 695nm
 };
 
 static const double cie_y[N_SAMPLE] = {
@@ -229,3 +230,151 @@ Spectrum RGBtoSpectrum(const dvec3& rgb)
 	}
 	return s;
 }
+
+double convert_spec_data_from_wl_to_freq(double data, double wavelength)
+{
+	return data*(wavelength*wavelength * 1000.0)/LIGHT_SPEED;
+}
+double convert_spec_data_from_freq_to_wl(double data, double freq)
+{
+	return data*(freq*freq * 1000.0)/LIGHT_SPEED;
+}
+FrequencyBasedDividedSpectrum::FrequencyBasedDividedSpectrum(void) : data(FSPECTRUM_N_SAMPLE, 0.0)
+{
+}
+
+void WSpectrum::Add(double value, double range_start, double range_end)
+{
+	for (size_t i = 0; i < data.size(); i++) {
+		//double i_freq_start = FSPECTRUM_START+FSPECTRUM_SAMPLE_SIZE*(FSPECTRUM_N_SAMPLE-i);
+		//double i_freq_end = FSPECTRUM_START+FSPECTRUM_SAMPLE_SIZE*(FSPECTRUM_N_SAMPLE-(i+1));
+		//double i_freq_middle = (i_freq_start + i_freq_end) / 2.0; // frequency based middle
+		double i_wavelength_start = wl_range_start_array.array[i];
+		double i_wavelength_end = wl_range_end_array.array[i];
+		//double i_wavelength_middle = freq_to_wavelength(_freq_middle); // frequency based middle
+		double i_wavelength_middle = (i_wavelength_start + i_wavelength_end)/2.0;
+		double i_wavelength_range_size = wl_range_size_array.array[i];
+		if (range_end < i_wavelength_start)
+			continue;
+		if (i_wavelength_end < range_start)
+			continue;
+		double start = std::max(i_wavelength_start, range_start);
+		double end = std::min(i_wavelength_end, range_end);
+		if (end < start) {
+			std::cout << "error start: " << start << " end: " << end << std::endl;
+			continue;
+		}
+		//double sample_size = i_wavelength_end - i_wavelength_end;
+		data[i] += value * (end-start)/i_wavelength_range_size;
+	}
+}
+
+void FSpectrum::Add(double value, double range_start, double range_end)
+{
+	for (size_t i = 0; i < data.size(); i++) {
+		double start = FSPECTRUM_START+FSPECTRUM_SAMPLE_SIZE*i;
+		if (range_end < start)
+			continue;
+		double end = FSPECTRUM_START+FSPECTRUM_SAMPLE_SIZE*(i+1);
+		if (end < range_start)
+			continue;
+		start = std::max(start, range_start);
+		end = std::min(end, range_end);
+		if (end < start) {
+			std::cout << "error start: " << start << " end: " << end << std::endl;
+			continue;
+		}
+		data[i] += value * (end-start)/FSPECTRUM_SAMPLE_SIZE;
+	}
+	//int min_i = (int)std::ceil((range_start-FSPECTRUM_START) / FSPECTRUM_SAMPLE_SIZE);
+	//std::cout << "min: " << (range_start-FSPECTRUM_START)/FSPECTRUM_SAMPLE_SIZE << " " << min_i << std::endl;
+	//int max_i = (int)std::floor((range_end-FSPECTRUM_START) / FSPECTRUM_SAMPLE_SIZE)-1;
+	//std::cout << "max: " << (range_end-FSPECTRUM_START)/FSPECTRUM_SAMPLE_SIZE << " " << max_i << std::endl;
+	//std::cout << "min_i :" << min_i << std::endl;
+	//std::cout << "max_i :" << max_i << std::endl;
+	//min_i = std::max(0, min_i);
+	//max_i = std::min(FSPECTRUM_N_SAMPLE-1, max_i);
+	////if (min_i < 0)
+	////	min_i = 0;
+	////if (max_i >= FSPECTRUM_N_SAMPLE)
+	////	max_i = FSPECTRUM_N_SAMPLE-1;
+	//for (size_t i = min_i; i <= max_i; i++) {
+	//	data[i] += value;
+	//}
+	//if (min_i-1 >= 0) {
+	//	double a = value * (FSPECTRUM_START+min_i * FSPECTRUM_SAMPLE_SIZE -range_start) / FSPECTRUM_SAMPLE_SIZE;
+	//	std::cout << "min a: " << a << std::endl;
+	//	data[min_i-1] +=  a;
+	//}
+	//if (max_i+1 < FSPECTRUM_N_SAMPLE) {
+	//	double a = value * (range_end - ((max_i)*FSPECTRUM_SAMPLE_SIZE+FSPECTRUM_START)) / FSPECTRUM_SAMPLE_SIZE;
+	//	std::cout << "max a: "  << a << std::endl;
+	//	data[max_i+1] += a;
+	//}
+}
+
+
+WSpectrum FSpectrum::ToWSpectrum(void)
+{
+	WSpectrum result;
+	for (size_t i = 0; i < FSPECTRUM_N_SAMPLE; i++) {
+		size_t wl_i = FSPECTRUM_N_SAMPLE - (i+1);
+		result.data[wl_i] = FSPECTRUM_SAMPLE_SIZE * convert_spec_data_from_freq_to_wl(data[i], freq_range_middle_array.array[i]) / wl_range_size_array.array[wl_i];
+	}
+	return result;
+}
+
+FSpectrum WSpectrum::ToFSpectrum(void)
+{
+	FSpectrum result;
+	for (size_t i = 0; i < data.size(); i++) {
+		size_t freq_i = FSPECTRUM_N_SAMPLE - (i+1);
+		result.data[freq_i] = wl_range_size_array.array[i] * convert_spec_data_from_wl_to_freq(data[i], wl_range_middle_array.array[i]) / FSPECTRUM_SAMPLE_SIZE;
+	}
+	return result;
+}
+void ArbitrarySpectrum::AddLast(double data, double range_start, double range_end)
+{
+	this->data.push_back(data);
+	range.push_back(std::make_pair(range_start, range_end));
+}
+
+FSpectrum FrequencyArbitrarySpectrum::ToFSpectrum(void)
+{
+	FSpectrum result;
+	for (size_t i = 0; i < data.size(); i++) {
+		result.Add(data[i], range[i].first, range[i].second);
+	}
+	return result;
+}
+
+
+ArbitrarySpectrum::ArbitrarySpectrum(const double *data, size_t size, double range_start, double range_end) : data(size), range(size)
+{
+	double range_size = range_end - range_start;
+	double interval_size = static_cast<double>(range_size)/static_cast<double>(size);
+	for (size_t i = 0; i < size; i++) {
+		double start = interval_size*i;
+		double end = interval_size*(i+1);
+		this->data[i] = data[i];
+		this->range[i] = std::make_pair(start, end);
+	}
+}
+FrequencyArbitrarySpectrum::FrequencyArbitrarySpectrum(const double *data, size_t size, double range_start, double range_end) : ArbitrarySpectrum(data, size, range_start, range_end)
+{
+}
+WavelengthArbitrarySpectrum::WavelengthArbitrarySpectrum(const double *data, size_t size, double range_start, double range_end) : ArbitrarySpectrum(data, size, range_start, range_end)
+{
+}
+
+WSpectrum WavelengthArbitrarySpectrum::ToWSpectrum(void)
+{
+	WSpectrum result;
+	for (size_t i = 0; i < data.size(); i++) {
+		result.Add(data[i], range[i].first, range[i].second);
+	}
+	return result;
+}
+const WavelengthArbitrarySpectrum cie_x_spec(cie_x, WSPECTRUM_N_SAMPLE, 400.0, 700.0);
+const WavelengthArbitrarySpectrum cie_y_spec(cie_y, WSPECTRUM_N_SAMPLE, 400.0, 700.0);
+const WavelengthArbitrarySpectrum cie_z_spec(cie_z, WSPECTRUM_N_SAMPLE, 400.0, 700.0);
