@@ -3,6 +3,7 @@ CXX = g++
 
 TARGET = renderer
 SRCS = $(wildcard *.cpp)
+TEST_SRCS = $(wildcard test/*.cpp)
 
 BIN_DIR = ./bin
 RELEASE_BIN_DIR = ./bin/release
@@ -12,10 +13,16 @@ CLI_TARGET = $(CLI_BIN_DIR)/$(TARGET)
 DEBUG_BIN_DIR = ./bin/debug
 DEBUG_TARGET = $(DEBUG_BIN_DIR)/$(TARGET)
 
+TEST_RELEASE_TARGET = $(RELEASE_BIN_DIR)/test
+
 OBJS_DIR = ./objs
 RELEASE_OBJS_DIR = ./objs/release
+TEST_RELEASE_OBJS_DIR = ./objs/release/test
 RELEASE_OBJS = $(SRCS:%.cpp=$(RELEASE_OBJS_DIR)/%.o)
 RELEASE_OBJS += $(RELEASE_OBJS_DIR)/gl3w.o
+TEST_RELEASE_OBJS = $(filter-out $(RELEASE_OBJS_DIR)/main.o, $(RELEASE_OBJS))
+TEST_RELEASE_OBJS += $(TEST_SRCS:%.cpp=$(RELEASE_OBJS_DIR)/%.o)
+
 CLI_OBJS_DIR = ./objs/cli
 CLI_OBJS = $(filter-out $(CLI_OBJS_DIR)/im%, $(SRCS:%.cpp=$(CLI_OBJS_DIR)/%.o))
 DEBUG_OBJS_DIR = ./objs/debug
@@ -24,6 +31,7 @@ DEBUG_OBJS += $(DEBUG_OBJS_DIR)/gl3w.o
 
 DEPS_DIR = ./objs
 RELEASE_DEPS_DIR = $(DEPS_DIR)/release
+TEST_RELEASE_DEPS_DIR = $(DEPS_DIR)/release/test
 RELEASE_DEPS = $(SRCS:%.cpp=$(RELEASE_DEPS_DIR)/%.d)
 RELEASE_DEPS += $(RELEASE_OBJS_DIR)/gl3w.d
 CLI_DEPS_DIR = $(DEPS_DIR)/cli
@@ -40,7 +48,7 @@ CLI_FLAGS = -O3 -D _CLI
 INCLUDE += -I./
 INCLUDE += `pkg-config glm --cflags`
 GUI_INCLUDE += `pkg-config glfw3 --cflags`
-GUI_INCLUDE = -I./nativefiledialog/src/include
+GUI_INCLUDE += -I./nativefiledialog/src/include
 
 CFLAGS = -Wall -Wextra
 CFLAGS += -Wno-unused-parameter
@@ -63,8 +71,8 @@ GUI_LDLIBS += -framework Cocoa
 OPENMPFLAGS = -Xpreprocessor -fopenmp
 OPENMPLDLIBS = -lomp
 #LDLIBS += -lGL
-#INCLUDE += -I/usr/local/Cellar/boost/1.70.0/include
-#LDFLAGS += -L/usr/local/Cellar/boost/1.70.0/lib
+INCLUDE += -I/usr/local/Cellar/boost/1.71.0/include
+LDFLAGS += -L/usr/local/Cellar/boost/1.71.0/lib
 #OPENMPFLAGS = -fopenmp
 else
 GUI_LDLIBS += -lGL
@@ -84,12 +92,17 @@ LDLIBS += -lboost_program_options
 NATIVEFILEDIALOG_LIB = ./nativefiledialog/build/lib/Release/x64/libnfd.a
 
 
-.PHONY: all debug release clean
+.PHONY: all test debug release clean
 
 all: $(RELEASE_TARGET)
 
 run: $(RELEASE_TARGET)
 	$(RELEASE_TARGET) $(ARGS)
+
+runtest: $(TEST_RELEASE_TARGET)
+	$(TEST_RELEASE_TARGET) $(ARGS)
+
+test: $(TEST_RELEASE_TARGET)
 
 release: $(RELEASE_TARGET)
 
@@ -100,6 +113,8 @@ debug: $(DEBUG_TARGET)
 ifeq ($(shell uname), Darwin)
 $(RELEASE_TARGET) : $(RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
 	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS)
+$(TEST_RELEASE_TARGET) : $(TEST_RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
+	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) -lboost_unit_test_framework -lboost_test_exec_monitor $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(TEST_RELEASE_OBJS)
 else
 $(RELEASE_TARGET) : $(RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
 	#$(CXX) -Wl,--start-group $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS) -Wl,--end-group
@@ -123,6 +138,8 @@ $(RELEASE_BIN_DIR):
 	mkdir -p $@
 $(RELEASE_OBJS_DIR):
 	mkdir -p $@
+$(TEST_RELEASE_OBJS_DIR):
+	mkdir -p $@
 $(CLI_BIN_DIR):
 	mkdir -p $@
 $(CLI_OBJS_DIR):
@@ -144,8 +161,11 @@ endif
 
 
 
+$(TEST_RELEASE_OBJS_DIR)/%.o: test/%.cpp Makefile | $(TEST_RELEASE_OBJS_DIR) $(TEST_RELEASE_DEPS_DIR)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDE) $(GUI_INCLUDE) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
 $(RELEASE_OBJS_DIR)/%.o: %.cpp Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDE) $(GUI_INCLUDE) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
+
 
 $(RELEASE_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
 	gcc $(CFLAGS) $(CPPFLAGS) $(INCLUDE) $(GUI_INCLUDE) $(RELEASE_FLAGS) -c -o $@ $<
