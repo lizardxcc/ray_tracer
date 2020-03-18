@@ -1,13 +1,13 @@
 {
     "camera_front": [
-        6.123233995736766e-17,
+        0,
         0.0,
         -1.0
     ],
     "camera_pos": [
-        -1.255262969126038e-16,
+        0,
         0.0,
-        5.049999999999993
+        3.0
     ],
     "camera_up": [
         0.0,
@@ -21,5 +21,11 @@
         "materials.json"
     ],
     "model": "cornell_box.obj",
-    "objmatmap": "objmatmap.json"
+    "objmatmap": "objmatmap.json",
+    "pyr": [
+        0.0,
+        -90.0,
+        0.0
+    ],
+    "vfov": 60.0
 }
