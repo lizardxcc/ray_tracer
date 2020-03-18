@@ -1,3 +1,9 @@
 [submodule "nativefiledialog"]
 	path = nativefiledialog
 	url = https://github.com/mlabbe/nativefiledialog.git
+[submodule "ImNodes"]
+	path = ImNodes
+	url = https://github.com/rokups/ImNodes.git
+[submodule "imgui"]
+	path = imgui
+	url = https://github.com/ocornut/imgui.git
