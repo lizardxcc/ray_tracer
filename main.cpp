@@ -194,6 +194,10 @@ int main(int argc, const char * argv[])
 				scene.retouch_window.Render();
 				ImGui::EndTabItem();
 			}
+			if (ImGui::BeginTabItem("Log")) {
+				scene.RenderLog();
+				ImGui::EndTabItem();
+			}
 			ImGui::EndTabBar();
 		}
 		ImGui::End();

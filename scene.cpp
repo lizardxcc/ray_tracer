@@ -257,7 +257,7 @@ void Scene::LoadMaterial(const char *path)
 	boost::filesystem::path p(path);
 
 	for (const auto& material_j : j) {
-		std::shared_ptr<NodeMaterial> mat = std::make_shared<NodeMaterial>(material_j, p.parent_path().c_str());
+		std::shared_ptr<NodeMaterial> mat = std::make_shared<NodeMaterial>(material_j);
 		materials.push_back(mat);
 	}
 	i.close();
@@ -473,6 +473,7 @@ void Scene::RenderSceneWindow(void)
 				if (result == NFD_OKAY) {
 					LoadProject(path);
 					scene_loaded = true;
+					log += "Loaded Project\n";
 					free(path);
 				}
 			}
@@ -513,6 +514,9 @@ void Scene::RenderSceneWindow(void)
 	}
 	if (scene_loaded)
 		RenderScene();
+
+
+
 	//ImGui::End();
 #endif
 }
@@ -862,9 +866,12 @@ void Scene::RenderPreviewWindow(void)
 					renderer.cam.SetLens(vfov, focal_length);
 					renderer.cam.set_Camera(veccameraPos, vlookat, veccameraUp);
 					//renderer.cam.film_sensitivity = film_sensitivity;
-					renderer.LoadMaterials(obj_materials);
-					std::thread t(&Renderer::RenderImage, &renderer, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>(), scene_json["img_samples"].get<int>(), img_spectral_samples, enable_openmp, false);
-					t.detach();
+					if (renderer.LoadMaterials(obj_materials) == true) {
+						std::thread t(&Renderer::RenderImage, &renderer, scene_json["img_width"].get<int>(), scene_json["img_height"].get<int>(), scene_json["img_samples"].get<int>(), img_spectral_samples, enable_openmp, false);
+						t.detach();
+					} else {
+						log += "[Error] Failed to load materials\n";
+					}
 				}
 			}
 			if (renderer.rendering_runnnig) {
@@ -934,7 +941,6 @@ void Scene::RenderPreviewWindow(void)
 void Scene::RenderMaterialNodeEditorWindow(void)
 {
 #ifndef _CLI
-	ImGui::BeginChild("left pane", ImVec2(800, 0));
 	//ImGui::Begin("Material Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -978,10 +984,11 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 		//ImGui::End();
 		return;
 	}
+	ImGui::BeginChild("left pane", ImVec2(800, 0));
 
 	char str[32] = "";
 	if (ImGui::InputText("Press Enter to add new Material", &str[0], sizeof(str)/sizeof(char), ImGuiInputTextFlags_EnterReturnsTrue)) {
-		std::shared_ptr<NodeMaterial> new_material = std::make_shared<NodeMaterial>(str, project_file.parent_path().c_str());
+		std::shared_ptr<NodeMaterial> new_material = std::make_shared<NodeMaterial>(str);
 		materials.push_back(new_material);
 	}
 
@@ -1007,38 +1014,31 @@ void Scene::RenderMaterialNodeEditorWindow(void)
 	}
 
 
-	std::vector<ax::NodeEditor::NodeId> selected_nodes;
+	//std::vector<ax::NodeEditor::NodeId> selected_nodes;
 	if (selected_material != nullptr){
 		ImGui::Checkbox("Light", &selected_material->light_flag);
-		ax::NodeEditor::SetCurrentEditor(selected_material->context);
-		ax::NodeEditor::Begin("material node editor##tmp");
 		selected_material->RenderNode();
 
-		int selected_objs_count = ax::NodeEditor::GetSelectedObjectCount();
-		selected_nodes.resize(selected_objs_count);
-		int selected_node_count = GetSelectedNodes(selected_nodes.data(), selected_objs_count);
-		selected_nodes.resize(selected_node_count);
+		//int selected_objs_count = ax::NodeEditor::GetSelectedObjectCount();
+		//selected_nodes.resize(selected_objs_count);
+		//int selected_node_count = GetSelectedNodes(selected_nodes.data(), selected_objs_count);
+		//selected_nodes.resize(selected_node_count);
 
-		ax::NodeEditor::End();
-		ax::NodeEditor::SetCurrentEditor(nullptr);
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::BeginChild("right pane", ImVec2(0, 0));
 	ImGui::Text("Material Editor");
-	if (selected_nodes.size() >= 1){
-		for (int i = 0; i < selected_material->material_nodes.size(); i++) {
-			if (selected_material->material_nodes[i]->id == selected_nodes[0]) {
-				selected_material->material_nodes[i]->RenderEditor();
-				ImGui::Text("%s", selected_material->material_nodes[i]->name.c_str());
-			}
+	if (selected_material != nullptr) {
+		if (selected_material->selected_nodes_count == 1){
+			selected_material->material_nodes[selected_material->last_selected_node_index]->RenderEditor();
 		}
 	}
 	ImGui::EndChild();
-	//ImGui::End();
 #endif
 }
 
 void Scene::RenderLog(void)
 {
+	ImGui::TextUnformatted(log.c_str(), log.c_str()+log.length());
 }

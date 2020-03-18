@@ -5,6 +5,8 @@ TARGET = renderer
 SRCS = $(wildcard *.cpp)
 TEST_SRCS = $(wildcard test/*.cpp)
 
+
+
 BIN_DIR = ./bin
 RELEASE_BIN_DIR = ./bin/release
 RELEASE_TARGET = $(RELEASE_BIN_DIR)/$(TARGET)
@@ -17,9 +19,10 @@ TEST_RELEASE_TARGET = $(RELEASE_BIN_DIR)/test
 
 OBJS_DIR = ./objs
 RELEASE_OBJS_DIR = ./objs/release
-TEST_RELEASE_OBJS_DIR = ./objs/release/test
 RELEASE_OBJS = $(SRCS:%.cpp=$(RELEASE_OBJS_DIR)/%.o)
 RELEASE_OBJS += $(RELEASE_OBJS_DIR)/gl3w.o
+
+TEST_RELEASE_OBJS_DIR = ./objs/release/test
 TEST_RELEASE_OBJS = $(filter-out $(RELEASE_OBJS_DIR)/main.o, $(RELEASE_OBJS))
 TEST_RELEASE_OBJS += $(TEST_SRCS:%.cpp=$(RELEASE_OBJS_DIR)/%.o)
 
@@ -41,6 +44,33 @@ DEBUG_DEPS = $(SRCS:%.cpp=$(DEBUG_DEPS_DIR)/%.d)
 DEBUG_DEPS += $(DEBUG_OBJS_DIR)/gl3w.d
 
 
+# specify directory of lib
+define addlib
+$1_SRCS = $$(wildcard $1/*.cpp)
+$1_RELEASE_OBJS_DIR = $(RELEASE_OBJS_DIR)/$1
+$1_RELEASE_DEPS_DIR = $(RELEASE_DEPS_DIR)/$1
+$1_RELEASE_OBJS = $$($1_SRCS:$1/%.cpp=$$($1_RELEASE_OBJS_DIR)/%.o)
+$1_RELEASE_DEPS = $$($1_SRCS:$1/%.cpp=$$($1_RELEASE_DEPS_DIR)/%.d)
+
+$1_DEBUG_OBJS_DIR = $(DEBUG_OBJS_DIR)/$1
+$1_DEBUG_DEPS_DIR = $(DEBUG_DEPS_DIR)/$1
+$1_DEBUG_OBJS = $$($1_SRCS:$1/%.cpp=$$($1_DEBUG_OBJS_DIR)/%.o)
+$1_DEBUG_DEPS = $$($1_SRCS:$1/%.cpp=$$($1_DEBUG_DEPS_DIR)/%.d)
+
+INCLUDE += -I$1
+
+$$($1_RELEASE_OBJS_DIR):
+	mkdir -p $$@
+$$($1_DEBUG_OBJS_DIR):
+	mkdir -p $$@
+
+$$($1_RELEASE_OBJS_DIR)/%.o: $1/%.cpp | $$($1_RELEASE_OBJS_DIR) $$($1_RELEASE_DEPS_DIR)
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(INCLUDE) $$(GUI_INCLUDE) $$(RELEASE_FLAGS) $$(OPENMPFLAGS) -c -o $$@ $$<
+$$($1_DEBUG_OBJS_DIR)/%.o: $1/%.cpp | $$($1_DEBUG_OBJS_DIR) $$($1_DEBUG_DEPS_DIR)
+	$$(CXX) $$(CXXFLAGS) $$(CPPFLAGS) $$(INCLUDE) $$(GUI_INCLUDE) $$(DEBUG_FLAGS) -c -o $$@ $$<
+endef
+
+
 DEBUG_FLAGS = -g3 -O0
 RELEASE_FLAGS = -O3
 CLI_FLAGS = -O3 -D _CLI
@@ -49,6 +79,7 @@ INCLUDE += -I./
 INCLUDE += `pkg-config glm --cflags`
 GUI_INCLUDE += `pkg-config glfw3 --cflags`
 GUI_INCLUDE += -I./nativefiledialog/src/include
+INCLUDE += -I./ImNodes
 
 CFLAGS = -Wall -Wextra
 CFLAGS += -Wno-unused-parameter
@@ -57,6 +88,7 @@ CFLAGS += -MMD -MP
 CXXFLAGS = -Wall -Wextra -std=c++14
 CXXFLAGS += -Wno-unused-parameter
 CXXFLAGS += -MMD -MP
+CXXFLAGS += -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 
 #CXXFLAGS += $(INCLUDE)
 #CFLAGS += $(INCLUDE)
@@ -71,8 +103,6 @@ GUI_LDLIBS += -framework Cocoa
 OPENMPFLAGS = -Xpreprocessor -fopenmp
 OPENMPLDLIBS = -lomp
 #LDLIBS += -lGL
-INCLUDE += -I/usr/local/Cellar/boost/1.71.0/include
-LDFLAGS += -L/usr/local/Cellar/boost/1.71.0/lib
 #OPENMPFLAGS = -fopenmp
 else
 GUI_LDLIBS += -lGL
@@ -92,9 +122,10 @@ LDLIBS += -lboost_program_options
 NATIVEFILEDIALOG_LIB = ./nativefiledialog/build/lib/Release/x64/libnfd.a
 
 
-.PHONY: all test debug release clean
+.PHONY: all test debug release clean makedebug
 
 all: $(RELEASE_TARGET)
+
 
 run: $(RELEASE_TARGET)
 	$(RELEASE_TARGET) $(ARGS)
@@ -109,12 +140,36 @@ release: $(RELEASE_TARGET)
 cli: $(CLI_TARGET)
 
 debug: $(DEBUG_TARGET)
+
+
+#$(info $(call addlib,ImNodes))
+$(eval $(call addlib,ImNodes))
+#$(info $(call addlib,imgui/examples))
+$(eval $(call addlib,imgui/examples))
+#$(info $(call addlib,imgui))
+$(eval $(call addlib,imgui))
+#$(info $(call addlib,imgui/examples/libs/gl3w/GL))
+#$(eval $(call addlib,imgui/examples/libs/gl3w/GL))
+ImNodes_RELEASE_OBJS := $(filter-out $(ImNodes_RELEASE_OBJS_DIR)/sample.o, $(ImNodes_RELEASE_OBJS))
+imgui/examples_RELEASE_OBJS := $(imgui/examples_RELEASE_OBJS_DIR)/imgui_impl_opengl3.o
+imgui/examples_RELEASE_OBJS += $(imgui/examples_RELEASE_OBJS_DIR)/imgui_impl_glfw.o
+ImNodes_DEBUG_OBJS := $(filter-out $(ImNodes_DEBUG_OBJS_DIR)/sample.o, $(ImNodes_DEBUG_OBJS))
+imgui/examples_DEBUG_OBJS := $(imgui/examples_DEBUG_OBJS_DIR)/imgui_impl_opengl3.o
+imgui/examples_DEBUG_OBJS += $(imgui/examples_DEBUG_OBJS_DIR)/imgui_impl_glfw.o
+LIB_RELEASE_OBJS := $(ImNodes_RELEASE_OBJS) $(imgui_RELEASE_OBJS) $(imgui/examples_RELEASE_OBJS)
+LIB_DEBUG_OBJS := $(ImNodes_DEBUG_OBJS) $(imgui_DEBUG_OBJS) $(imgui/examples_DEBUG_OBJS)
+
+makedebug: 
+	@echo Debugging make
+	@echo Debugging make end
 	
 ifeq ($(shell uname), Darwin)
-$(RELEASE_TARGET) : $(RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
-	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS)
-$(TEST_RELEASE_TARGET) : $(TEST_RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
-	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) -lboost_unit_test_framework -lboost_test_exec_monitor $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(TEST_RELEASE_OBJS)
+#$(RELEASE_TARGET) : $(RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
+$(RELEASE_TARGET) : $(RELEASE_OBJS) $(LIB_RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) | $(RELEASE_BIN_DIR)
+	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS) $(LIB_RELEASE_OBJS)
+
+$(TEST_RELEASE_TARGET) : $(TEST_RELEASE_OBJS) $(LIB_RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
+	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) -lboost_unit_test_framework -lboost_test_exec_monitor $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(TEST_RELEASE_OBJS) $(LIB_RELEASE_OBJS)
 else
 $(RELEASE_TARGET) : $(RELEASE_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(RELEASE_BIN_DIR)
 	#$(CXX) -Wl,--start-group $(LDFLAGS) $(LDLIBS) $(OPENMPFLAGS) $(OPENMPLDLIBS) -o $@ $(RELEASE_OBJS) -Wl,--end-group
@@ -131,8 +186,8 @@ $(CLI_TARGET) : $(CLI_OBJS) Makefile | $(CLI_BIN_DIR)
 	#$(CXX) $(OPENMPFLAGS) $(OPENMPLDLIBS) $(LDFLAGS) $(LDLIBS) -o $@ $(RELEASE_OBJS)
 endif
 
-$(DEBUG_TARGET) : $(DEBUG_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(DEBUG_BIN_DIR)
-	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) -o $@ $(DEBUG_OBJS)
+$(DEBUG_TARGET) : $(DEBUG_OBJS) $(LIB_DEBUG_OBJS) $(NATIVEFILEDIALOG_LIB) Makefile | $(DEBUG_BIN_DIR)
+	$(CXX) $(LDFLAGS) $(LDLIBS) $(GUI_LDFLAGS) $(GUI_LDLIBS) -o $@ $(DEBUG_OBJS) $(LIB_DEBUG_OBJS)
 
 $(RELEASE_BIN_DIR):
 	mkdir -p $@
@@ -163,9 +218,9 @@ endif
 
 $(TEST_RELEASE_OBJS_DIR)/%.o: test/%.cpp Makefile | $(TEST_RELEASE_OBJS_DIR) $(TEST_RELEASE_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDE) $(GUI_INCLUDE) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
-$(RELEASE_OBJS_DIR)/%.o: %.cpp Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
+#$(RELEASE_OBJS_DIR)/%.o: %.cpp Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
+$(RELEASE_OBJS_DIR)/%.o: %.cpp | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDE) $(GUI_INCLUDE) $(RELEASE_FLAGS) $(OPENMPFLAGS) -c -o $@ $<
-
 
 $(RELEASE_OBJS_DIR)/gl3w.o: GL/gl3w.c Makefile | $(RELEASE_OBJS_DIR) $(RELEASE_DEPS_DIR)
 	gcc $(CFLAGS) $(CPPFLAGS) $(INCLUDE) $(GUI_INCLUDE) $(RELEASE_FLAGS) -c -o $@ $<

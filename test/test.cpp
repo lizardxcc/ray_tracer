@@ -5,6 +5,7 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "spectrum.h"
+#include "materialnode.h"
 
 const double TOLERANCE = 0.0000001;
 
@@ -14,6 +15,35 @@ BOOST_AUTO_TEST_CASE(simple_test) {
 	BOOST_CHECK_EQUAL(2+2, 4);
 }
 
+
+#define TEST1_SEQ (Type0)(Type1)(Type2)(Type3)
+DEFINE_ENUM(TestType1, TEST1_SEQ, 0)
+DEFINE_ENUM_FUNCTION(TestType1, TEST1_SEQ)
+BOOST_AUTO_TEST_CASE(enumtype_test) {
+	BOOST_CHECK_EQUAL("Type0", TestType1ToString(Type0));
+	BOOST_CHECK_EQUAL("Type1", TestType1ToString(Type1));
+	BOOST_CHECK_EQUAL("Type2", TestType1ToString(Type2));
+	BOOST_CHECK_EQUAL("Type3", TestType1ToString(Type3));
+	BOOST_CHECK_EQUAL(Type0, StringToTestType1("Type0"));
+	BOOST_CHECK_EQUAL(Type1, StringToTestType1("Type1"));
+	BOOST_CHECK_EQUAL(Type2, StringToTestType1("Type2"));
+	BOOST_CHECK_EQUAL(Type3, StringToTestType1("Type3"));
+}
+
+#define TEST2_SEQ (Type20)(Type21)(Type22)(Type23)
+DEFINE_ENUM(TestType2, TEST2_SEQ, 0)
+DEFINE_ENUM_FUNCTION(TestType2, TEST2_SEQ)
+BOOST_AUTO_TEST_CASE(enumtype_test2) {
+	BOOST_CHECK_EQUAL("Type20", TestType2ToString(Type20));
+	BOOST_CHECK_EQUAL("Type21", TestType2ToString(Type21));
+	BOOST_CHECK_EQUAL("Type22", TestType2ToString(Type22));
+	BOOST_CHECK_EQUAL("Type23", TestType2ToString(Type23));
+	BOOST_CHECK_EQUAL(Type20, StringToTestType2("Type20"));
+	BOOST_CHECK_EQUAL(Type21, StringToTestType2("Type21"));
+	BOOST_CHECK_EQUAL(Type22, StringToTestType2("Type22"));
+	BOOST_CHECK_EQUAL(Type23, StringToTestType2("Type23"));
+}
+/*
 BOOST_AUTO_TEST_CASE(spectrum_test1) {
 	FrequencyArbitrarySpectrum s;
 	s.AddLast(1.0, FSPECTRUM_START, FSPECTRUM_END);
@@ -109,4 +139,5 @@ BOOST_AUTO_TEST_CASE(spectrum_equallity_test2) {
 //		BOOST_TEST(result.data[i] == 1.0, boost::test_tools::tolerance(0.0001));
 //	}
 //}
+*/
 BOOST_AUTO_TEST_SUITE_END()

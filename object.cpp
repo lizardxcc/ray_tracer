@@ -58,7 +58,6 @@ bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 		rec.mat_ptr = mat_ptr;
 		rec.hit_object = this;
 		rec.hit_object_id = object_id;
-		mat_ptr->PreProcess(rec);
 		return true;
 	}
 	double t2 = (-b_prime + sqrt(discriminant_prime)) / a;
@@ -69,7 +68,6 @@ bool Sphere::Hit(const ray& r, double t_min, double t_max, HitRecord& rec) const
 		rec.mat_ptr = mat_ptr;
 		rec.hit_object = this;
 		rec.hit_object_id = object_id;
-		mat_ptr->PreProcess(rec);
 		return true;
 	}
 
@@ -279,7 +277,6 @@ bool ConvexPolygon::HitTriangle(const ray& r, double t_min, double t_max,
 		//rec.tbn.axis[2] = unit_vector(cross(t, b));
 		//rec.tbn.axis[2] = rec.normal;
 		//rec.tbn.axis[2] = face_normal;
-		mat_ptr->PreProcess(rec);
 
 		return true;
 	}
@@ -301,7 +298,6 @@ bool ConvexPolygon::Hit(const ray& r, double t_min, double t_max, HitRecord& rec
 			rec.mat_ptr = mat_ptr;
 			rec.hit_object = this;
 			rec.hit_object_id = object_id;
-			mat_ptr->PreProcess(rec);
 			return true;
 		}
 	}

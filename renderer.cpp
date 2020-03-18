@@ -21,12 +21,14 @@ void Renderer::Load(const char *objfilename)
 	world = std::make_unique<ObjModel>(obj_loader);
 }
 
-void Renderer::LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMaterial>>& materials)
+bool Renderer::LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMaterial>>& materials)
 {
 	light_objects.clear();
 	for (size_t i = 0; i < world->models.size(); i++) {
 		auto itr = materials.find(obj_loader.objects[i]->name);
 		if (itr == materials.end()) {
+			WarnMessage("Material is unset for %s\n", obj_loader.objects[i]->name.c_str());
+			return false;
 			continue;
 		}
 		world->models[i]->SetMaterial(itr->second.get());
@@ -36,6 +38,9 @@ void Renderer::LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMat
 			}
 		}
 	}
+	if (light_objects.size() == 0)
+		return false;
+	return true;
 }
 
 

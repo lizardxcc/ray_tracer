@@ -12,6 +12,9 @@
 #include "renderer.h"
 #include "materialnode.h"
 
+
+#define WarnMessage(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
+
 using json = nlohmann::json;
 
 extern uint8_t *env_mapping_texture;
@@ -104,6 +107,7 @@ class Scene {
 		int img_spectral_samples = N_SAMPLE;
 		bool enable_openmp = true;
 		std::map<std::string, std::shared_ptr<NodeMaterial>> obj_materials;
+		std::string log;
 	private:
 		void WriteProject(const char *path);
 		void LoadModel(const char *obj_path);

@@ -22,7 +22,7 @@ class Renderer {
 	public:
 		Renderer(void);
 		void Load(const char *objfilename);
-		void LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMaterial>>& materials);
+		bool LoadMaterials(const std::map<std::string, std::shared_ptr<NodeMaterial>>& materials);
 		void Clear(void);
 		void RenderImage(int nx, int ny, int ns, int spectral_samples, bool enable_openmp, bool print_progress = false);
 		double NaivePathTracing(const ray& r);
